@@ -1,0 +1,2 @@
+scenario_scope,tier,year,aggregation,demand_10kt,pipeline_served_10kt,no_terminal_unserved_10kt,mapped_unserved_10kt,account_status,scope_note
+pooled_S1_S8_2060_mid,mid,2060,demand_weighted,36250.0,17308.5633,13885.871941801657,5055.564758198342,closed,No-terminal and mapped-unserved components are additive under the strict city-service evidence contract; no physical component attribution is made.

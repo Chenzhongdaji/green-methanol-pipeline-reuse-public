@@ -1,0 +1,4 @@
+claim_id,scenario_scope,metric,expected_value,unit,tolerance,evidence_boundary
+strict_pipeline_service_gap,pooled_S1_S8_2060_mid,gap,52.3,percent,0.05,model-derived aggregate
+no_terminal_gap,pooled_S1_S8_2060_mid,gap,38.3,percentage_points,0.05,missing uniquely mapped terminal record under evidence contract
+mapped_unserved_gap,pooled_S1_S8_2060_mid,gap,13.9,percentage_points,0.05,mapped but unserved terminal record under evidence contract

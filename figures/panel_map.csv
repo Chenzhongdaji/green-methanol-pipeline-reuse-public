@@ -1,0 +1,6 @@
+figure,panel,status,source_data,dictionary,reason
+Figure 1,all,aggregate-only,figures/source_data/figure-01.csv,data/dictionaries/figure_01.md,conceptual aggregate workflow only; no topology or facility identifiers
+Figure 2,all,not-run,,,GS(2023)2767 map source and formal map review are not cleared for public release
+Figure 3,all,aggregate-only,figures/source_data/figure-03.csv,data/dictionaries/figure_03.md,scenario-level transport aggregates only; task-level routes are excluded
+Figure 4,c,aggregate-only,figures/source_data/figure-04.csv,data/dictionaries/figure_04.md,regional aggregate accounts only; refinery-proxy entities and coordinates are excluded
+Figure 5,c,aggregate-only,figures/source_data/figure-05.csv,data/dictionaries/figure_05.md,aggregate service-gain panel only; connector identifiers and geometry are excluded

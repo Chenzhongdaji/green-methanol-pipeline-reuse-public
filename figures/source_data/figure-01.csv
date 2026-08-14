@@ -1,0 +1,36 @@
+element_id,element_type,label,detail,source_class,target
+supply_potential,evidence,Renewable potential,Renewable potential,model_output,Provincial screen
+supply_screen,evidence,Provincial screen,Provincial screen,model_output,Facility links
+supply_links,evidence,Facility links,Facility links,model_output,
+demand_sector,evidence,Sector demand,Sector demand,model_output,Demand cases
+demand_cases,evidence,Demand cases,Demand cases,model_output,S1–S8 scenarios
+demand_scenarios,evidence,S1–S8 scenarios,S1–S8 scenarios,model_output,Low · mid · high
+demand_tiers,evidence,Low · mid · high,Low · mid · high,model_output,Local priority
+demand_priority,evidence,Local priority,Local priority,model_output,
+network_assets,evidence,Pipeline assets,Pipeline assets,model_output,Residual capacity
+network_capacity,evidence,Residual capacity,Residual capacity,model_output,Directed edges
+network_edges,evidence,Directed edges,Directed edges,model_output,Network graph
+network_graph,evidence,Network graph,Network graph,model_output,
+allocation_feasible,allocation,Feasible allocation,Feasible allocation,model_output,Maximise service
+allocation_service,allocation,Maximise service,Maximise service,model_output,Minimise cost
+allocation_cost,allocation,Minimise cost,Minimise cost,model_output,
+output_served,output,Served demand,Served demand,model_output,
+output_flows,output,Directed flows,Directed flows,model_output,
+output_tonne_km,output,Tonne-km,Tonne-km,model_output,
+output_accounts,output,Regional accounts,Regional accounts,model_output,
+output_plans,output,Fixed links,Fixed links,model_output,
+c1_factors,transform,Mode factors,Mode factors,post_model_transform,CNY t⁻¹ saved
+c1_transform,transform,Exact transform,Exact transform,post_model_transform,gCO₂e MJ⁻¹
+c1_cost,metric,CNY t⁻¹ saved,CNY/t saved,post_model_transform,
+c1_emissions,metric,gCO₂e MJ⁻¹,gCO2e/MJ,post_model_transform,
+c1_decision,decision,Use existing corridors?,Use existing corridors?,post_model_transform,
+c2_served,transform,Served share,Served share,post_model_transform,Supply gap
+c2_supply,transform,Supply share,Supply share,post_model_transform,Network gap
+c2_supply_gap,metric,Supply gap,Supply gap,post_model_transform,
+c2_network_gap,metric,Network gap,Network gap,post_model_transform,
+c2_decision,decision,Where is value locked?,Where is value locked?,post_model_transform,
+c3_replay,transform,Link evaluation,Link evaluation,post_model_transform,Annualised cost
+c3_priors,transform,Capital priors,Capital priors,post_model_transform,Net dividend
+c3_cost,metric,Annualised cost,Annualised cost,post_model_transform,
+c3_dividend,metric,Net dividend,Net dividend,post_model_transform,
+c3_decision,decision,Which links merit screening?,Which links merit screening?,post_model_transform,

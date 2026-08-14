@@ -1,0 +1,17 @@
+panel,scenario,year,metric,value,unit,source_type,style,marker,capacity_relaxation_gain_mt_y,connector_gain_mt_y,capacity_reaches_connector
+c,S1,2060,capacity_relaxation_gain_mt_y,0.0,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.0,3.0021289999999987,False
+c,S1,2060,fixed_connector_gain_mt_y,3.0021289999999987,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.0,3.0021289999999987,False
+c,S2,2060,capacity_relaxation_gain_mt_y,0.027140999999996893,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.027140999999996893,3.6434999999999946,False
+c,S2,2060,fixed_connector_gain_mt_y,3.6434999999999946,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.027140999999996893,3.6434999999999946,False
+c,S3,2060,capacity_relaxation_gain_mt_y,0.0,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.0,0.4609910000000002,False
+c,S3,2060,fixed_connector_gain_mt_y,0.4609910000000002,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.0,0.4609910000000002,False
+c,S4,2060,capacity_relaxation_gain_mt_y,0.0,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.0,0.9949929999999996,False
+c,S4,2060,fixed_connector_gain_mt_y,0.9949929999999996,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.0,0.9949929999999996,False
+c,S5,2060,capacity_relaxation_gain_mt_y,0.0,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.0,3.4374559999999885,False
+c,S5,2060,fixed_connector_gain_mt_y,3.4374559999999885,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.0,3.4374559999999885,False
+c,S6,2060,capacity_relaxation_gain_mt_y,0.28473399999999854,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.28473399999999854,2.7799159999999983,False
+c,S6,2060,fixed_connector_gain_mt_y,2.7799159999999983,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.28473399999999854,2.7799159999999983,False
+c,S7,2060,capacity_relaxation_gain_mt_y,0.0,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.0,3.643499999999999,False
+c,S7,2060,fixed_connector_gain_mt_y,3.643499999999999,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.0,3.643499999999999,False
+c,S8,2060,capacity_relaxation_gain_mt_y,0.0,Mt/y,capacity_comparison_audit,dumbbell_endpoint,hollow_gray_circle,0.0,3.6434999999999946,False
+c,S8,2060,fixed_connector_gain_mt_y,3.6434999999999946,Mt/y,capacity_comparison_audit,dumbbell_endpoint,orange_square,0.0,3.6434999999999946,False
