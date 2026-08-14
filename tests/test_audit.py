@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from green_methanol_release.audit import audit_release
+import green_methanol_release.audit as audit_module
+from green_methanol_release.audit import audit_release, verify_manifest_closure
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +59,25 @@ def test_release_has_separate_data_and_code_statements():
     assert (ROOT / "CODE_AVAILABILITY.md").is_file()
 
 
+@pytest.mark.parametrize("directory", ["build", "dist", "env", "qa/external"])
+def test_common_payload_directories_are_not_silently_skipped(tmp_path: Path, directory: str):
+    root = _copy_release(tmp_path, directory.replace("/", "_"))
+    path = root / Path(*directory.split("/")) / "leak.txt"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("token=gh" + "p_" + "A" * 36 + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert report["pre_manifest"] == "FAIL"
+    assert path.relative_to(root).as_posix() in report["credential_hits"]
+
+
+def test_scan_exclusions_are_explicit_and_limited_to_non_payload_caches():
+    report = audit_release(ROOT, require_manifest=False)
+    exclusions = set(report["scan_exclusions"])
+    assert {".git", ".venv", "__pycache__", ".pytest_cache"} <= exclusions
+    assert not exclusions.intersection({"env", "build", "dist", "qa/external", "qa/reports", "external_qa"})
+
+
 @pytest.mark.parametrize(
     ("relative", "payload"),
     [
@@ -104,6 +124,25 @@ def test_dotfile_disclosure_is_scanned(tmp_path: Path):
 
 
 @pytest.mark.parametrize(
+    "payload",
+    [
+        "xox" + "b-" + "A" * 24,
+        "gl" + "pat-" + "A" * 24,
+        "npm" + "_" + "A" * 24,
+        "Bearer " + "A" * 24,
+        "password=" + "A" * 12,
+    ],
+)
+def test_common_credential_variants_fail_closed(tmp_path: Path, payload: str):
+    root = _copy_release(tmp_path, "credential_variant")
+    path = root / "README.md"
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert "README.md" in report["credential_hits"]
+
+
+@pytest.mark.parametrize(
     "filename",
     [
         "candidate_links.csv",
@@ -120,6 +159,118 @@ def test_restricted_payload_filename_variants_fail_closed(tmp_path: Path, filena
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert report["restricted_payload_hits"]
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "candidate_links_v01.dbf",
+        "candidate_links_v01.shx",
+        "candidate_links_v01.prj",
+        "refinery_to_pipeline_node_assignments_v01.csv",
+        "airport_to_refinery_assignments.csv",
+        "airport_to_refinery_assignment_v01.json",
+    ],
+)
+def test_restricted_filename_singular_plural_and_gis_sidecars_fail_closed(tmp_path: Path, filename: str):
+    root = _copy_release(tmp_path, filename.replace(".", "_"))
+    path = root / "data" / filename
+    path.write_text("placeholder\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert report["restricted_payload_hits"]
+
+
+@pytest.mark.parametrize("suffix", ["tsv", "json"])
+def test_restricted_schema_fields_are_parsed_in_tsv_and_json(tmp_path: Path, suffix: str):
+    root = _copy_release(tmp_path, suffix)
+    path = root / "data" / f"leak.{suffix}"
+    if suffix == "tsv":
+        payload = "node_id\tvalue\nnode-1\t1\n"
+    else:
+        payload = '[{"node_id": "node-1", "value": 1}]\n'
+    path.write_text(payload, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("node_id" in hit for hit in report["restricted_payload_hits"])
+
+
+def test_restricted_schema_header_whitespace_is_normalized(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "data" / "spaced.tsv"
+    path.write_text(" node_id \tvalue\nnode-1\t1\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("node_id" in hit for hit in report["restricted_payload_hits"])
+
+
+def test_malformed_json_is_fail_closed(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "data" / "malformed.json"
+    path.write_text("{not-json\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert "data/malformed.json" in report["format_hits"]
+
+
+def test_doi_url_is_not_accepted_as_a_release_identifier(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "README.md"
+    path.write_text(path.read_text(encoding="utf-8") + "\nhttps://doi" + ".org/10.5281/example\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert "README.md" in report["doi_hits"]
+
+
+def test_cff_doi_field_is_not_accepted_as_a_release_identifier(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "CITATION.cff"
+    path.write_text(
+        path.read_text(encoding="utf-8") + "doi: 10.5281/example\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("CITATION.cff" in error and "DOI" in error for error in report["errors"])
+
+
+@pytest.mark.parametrize("relative", ["README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md"])
+def test_public_release_metadata_requires_version(tmp_path: Path, relative: str):
+    root = _copy_release(tmp_path, relative.replace(".", "_"))
+    path = root / relative
+    text = path.read_text(encoding="utf-8").replace("v1.0.0", "release-version")
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any(relative in error and "version" in error for error in report["errors"])
+
+
+@pytest.mark.parametrize("field", ["version", "date-released"])
+def test_cff_requires_active_version_and_release_date_fields(tmp_path: Path, field: str):
+    root = _copy_release(tmp_path, field.replace("-", "_"))
+    path = root / "CITATION.cff"
+    text = path.read_text(encoding="utf-8").replace(
+        f"\n{field}: ", f"\n# {field}: ", 1
+    )
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("CITATION.cff" in error and field in error for error in report["errors"])
+
+
+@pytest.mark.parametrize("field", ["email", "affiliation", "orcid", "family-names", "given-names"])
+def test_cff_rejects_personal_author_fields(tmp_path: Path, field: str):
+    root = _copy_release(tmp_path, field.replace("-", "_"))
+    path = root / "CITATION.cff"
+    path.write_text(
+        path.read_text(encoding="utf-8") + f"  {field}: not-permitted\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("personal" in error.lower() for error in report["errors"])
 
 
 def test_orphan_manifest_row_fails_closed(tmp_path: Path):
@@ -156,3 +307,50 @@ def test_manifest_rejects_negative_bytes_and_blank_scope(tmp_path: Path):
     report = audit_release(root, require_manifest=True)
     assert report["status"] == "FAIL"
     assert report["manifest"]["errors"]
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    [
+        "../outside.txt",
+        "C:" + "/outside.txt",
+        "/outside.txt",
+        ".." + "\\outside.txt",
+        "\\\\server\\share\\outside.txt",
+    ],
+)
+def test_manifest_rejects_unsafe_path_before_external_resolution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unsafe_path: str
+):
+    root = _copy_release(tmp_path)
+    _write_manifest_fixture(root)
+    outside = root.parent / "outside.txt"
+    outside.write_text("outside sentinel\n", encoding="utf-8", newline="\n")
+    manifest = root / "FILE_MANIFEST.csv"
+    with manifest.open("a", encoding="utf-8", newline="") as handle:
+        handle.write(f"{unsafe_path},17," + "a" * 64 + ",unsafe,MIT,text\n")
+
+    resolved_reads: list[Path] = []
+    original_sha256 = audit_module._sha256
+
+    def guarded_sha256(path: Path) -> str:
+        resolved_reads.append(path.resolve())
+        assert root.resolve() in path.resolve().parents
+        return original_sha256(path)
+
+    monkeypatch.setattr(audit_module, "_sha256", guarded_sha256)
+    report = verify_manifest_closure(root)
+    assert report["status"] == "FAIL"
+    assert any("unsafe manifest path" in error for error in report["errors"])
+    assert outside.resolve() not in resolved_reads
+
+
+def test_manifest_closure_includes_payload_like_directories(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    _write_manifest_fixture(root)
+    payload = root / "build" / "late_payload.txt"
+    payload.parent.mkdir(parents=True, exist_ok=True)
+    payload.write_text("late payload\n", encoding="utf-8", newline="\n")
+    report = verify_manifest_closure(root)
+    assert report["status"] == "FAIL"
+    assert "build/late_payload.txt" in report["missing_files"]

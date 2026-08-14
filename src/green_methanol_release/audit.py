@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import io
+import json
 import re
 import tempfile
 import zipfile
@@ -26,16 +28,28 @@ _MANIFEST_FIELDS = ("path", "bytes", "sha256", "purpose", "licence_scope", "data
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _ZERO_HASH_RE = re.compile(r"(?<![0-9a-f])[0]{64}(?![0-9a-f])")
 _CHECKSUM_LINE_RE = re.compile(r"^([0-9a-f]{64})  ([^\r\n]+)$")
+_DOI_URL_RE = re.compile(r"https?://doi\.org/[^\s<>\"']+", re.IGNORECASE)
 
 # Only high-confidence credential forms are used.  The fragments are assembled
 # so the scanner's own source does not contain a copyable token-looking value.
-_TOKEN_PREFIXES = ("gh" + "p_", "github" + "_pat_", "sk-")
+_TOKEN_PREFIXES = (
+    "gh" + "p_",
+    "github" + "_pat_",
+    "sk-",
+    "xox" + "b-",
+    "gl" + "pat-",
+    "npm" + "_",
+)
 _TOKEN_RE = re.compile(
     r"(?:" + "|".join(re.escape(prefix) for prefix in _TOKEN_PREFIXES) + r")[A-Za-z0-9_\-]{20,}"
 )
 _AWS_KEY_RE = re.compile(r"(?<![A-Z0-9])AKIA[A-Z0-9]{16}(?![A-Z0-9])")
 _PRIVATE_KEY_RE = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
 _CREDENTIAL_URL_RE = re.compile(r"https?://[^\s/@:]+:[^\s/@]+@")
+_BEARER_RE = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._\-]{20,}")
+_CREDENTIAL_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(?:token|password|secret|api[_-]?key)\s*[:=]\s*[\"']?[A-Za-z0-9_\-+/=.]{8,}"
+)
 
 # A drive-letter path is bounded so ordinary URLs such as https:// do not
 # match the single letter immediately before their colon.  POSIX home names
@@ -51,10 +65,10 @@ _POSIX_HOME_RE = re.compile(r"(?<![A-Za-z0-9])/(?:home|Users|root)/")
 # an actual carrier leak.
 _RESTRICTED_NAME_RE = re.compile(
     r"(?i)(?:pipeline[_-]?network[_-]?segments|edge[_-]?flows|facility[_-]?to[_-]?(?:trunk|refinery)|"
-    r"refinery[_-]?to[_-]?pipeline[_-]?node[_-]?assignment|candidate[_-].*(?:link|links|geometry|geometries)|"
-    r"airport[_-]?to[_-]?refinery[_-]?assignment|full[_-]?airport[_-]?demand[_-]?nodes|"
-    r"physical[_-]?(?:edges|nodes)|standard[_-]?map[_-]?gs[_-]?2023[_-]?2767|"
-    r"gs[_-]?2023[_-]?2767)(?:[_-][a-z0-9]+)*\.(?:csv|tsv|json|graphml|geojson|gpkg|shp|jpg|eps)$"
+    r"refinery[_-]?to[_-]?pipeline[_-]?node[_-]?assignments?|candidate[_-].*(?:links?|geometr(?:y|ies))|"
+    r"airport[_-]?to[_-]?refinery[_-]?assignments?|full[_-]?airport[_-]?demand[_-]?nodes|"
+    r"physical[_-]?(?:edges|nodes)|standard[_-]?map[_-]?gs[_-]?\(?2023\)?[_-]?2767|"
+    r"gs[_-]?2023[_-]?2767)(?:[_-][a-z0-9]+)*\.(?:csv|tsv|json|graphml|geojson|gpkg|shp|dbf|shx|prj|jpg|eps|tif|tiff)$"
 )
 _RESTRICTED_SCHEMA_FIELDS = {
     "candidate_id",
@@ -95,17 +109,10 @@ _TEXT_NAMES = {".gitattributes", ".gitignore", "LICENSE", "LICENSE-DATA"}
 _SKIP_PARTS = {
     ".git",
     ".venv",
-    "venv",
-    "env",
     "__pycache__",
     ".pytest_cache",
     ".mypy_cache",
     ".ruff_cache",
-    "build",
-    "dist",
-    "qa/external",
-    "qa/reports",
-    "external_qa",
 }
 
 _REQUIRED_METADATA = (
@@ -175,33 +182,86 @@ def _docx_xml_payload(path: Path) -> Iterable[tuple[str, str]]:
         return
 
 
+def _schema_fields(text: str, suffix: str) -> set[str]:
+    """Parse a delimited or JSON payload and return normalized field names."""
+
+    if suffix == ".json":
+        value = json.loads(text)
+
+        def collect(item: object) -> set[str]:
+            if isinstance(item, dict):
+                fields = {str(key).strip().casefold() for key in item}
+                for child in item.values():
+                    fields.update(collect(child))
+                return fields
+            if isinstance(item, list):
+                fields: set[str] = set()
+                for child in item:
+                    fields.update(collect(child))
+                return fields
+            return set()
+
+        return collect(value)
+
+    delimiter = "\t" if suffix == ".tsv" else ","
+    reader = csv.reader(io.StringIO(text, newline=""), delimiter=delimiter, strict=True)
+    rows = list(reader)
+    if not rows or not rows[0] or any(len(row) != len(rows[0]) for row in rows[1:]):
+        raise ValueError("delimited payload has an invalid row shape")
+    return {field.strip().casefold() for field in rows[0] if field.strip()}
+
+
 def _scan_disclosures(root: Path) -> dict[str, Any]:
     absolute: list[str] = []
     credentials: list[str] = []
     restricted: list[str] = []
     zero_hashes: list[str] = []
+    doi_hits: list[str] = []
+    format_hits: list[str] = []
     lf_hits: list[str] = []
     utf8_hits: list[str] = []
     size_hits: list[str] = []
-    exclusions: list[str] = []
+    # Report the exact directory-name patterns that are intentionally omitted;
+    # payload-like directories are not in this set and are always scanned.
+    exclusions = sorted(_SKIP_PARTS)
 
-    def inspect(label: str, text: str, *, payload_schema: bool = False) -> None:
+    def inspect(label: str, text: str, *, payload_schema: bool = False, suffix: str = "") -> None:
         if "\r" in text:
             lf_hits.append(label)
         for pattern in (_DRIVE_PATH_RE, _UNC_PATH_RE, _POSIX_HOME_RE):
             if pattern.search(text):
                 absolute.append(label)
                 break
-        if any(pattern.search(text) for pattern in (_TOKEN_RE, _AWS_KEY_RE, _PRIVATE_KEY_RE, _CREDENTIAL_URL_RE)):
+        if any(
+            pattern.search(text)
+            for pattern in (
+                _TOKEN_RE,
+                _AWS_KEY_RE,
+                _PRIVATE_KEY_RE,
+                _CREDENTIAL_URL_RE,
+                _BEARER_RE,
+                _CREDENTIAL_ASSIGNMENT_RE,
+            )
+        ):
             credentials.append(label)
         if _ZERO_HASH_RE.search(text):
             zero_hashes.append(label)
+        if _DOI_URL_RE.search(text) and label in {
+            "README.md",
+            "DATA_AVAILABILITY.md",
+            "CODE_AVAILABILITY.md",
+            "CITATION.cff",
+            "NOTICE.md",
+            "MANUSCRIPT_SCOPE.md",
+        }:
+            doi_hits.append(label)
         if payload_schema:
             try:
-                fieldnames = next(csv.reader(text.splitlines()))
-            except (StopIteration, csv.Error):
-                fieldnames = []
-            forbidden = sorted({field.casefold() for field in fieldnames} & _RESTRICTED_SCHEMA_FIELDS)
+                fieldnames = _schema_fields(text, suffix)
+            except (TypeError, ValueError, json.JSONDecodeError, csv.Error):
+                format_hits.append(label)
+                return
+            forbidden = sorted(fieldnames & _RESTRICTED_SCHEMA_FIELDS)
             if forbidden:
                 restricted.append(f"{label}:schema={','.join(forbidden)}")
             if _RESTRICTED_NAME_RE.search(text):
@@ -218,7 +278,8 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
             if path.suffix.casefold() in _TEXT_SUFFIXES or path.name in _TEXT_NAMES:
                 utf8_hits.append(relative)
             continue
-        inspect(relative, text, payload_schema=path.suffix.casefold() in {".csv", ".tsv", ".json"})
+        suffix = path.suffix.casefold()
+        inspect(relative, text, payload_schema=suffix in {".csv", ".tsv", ".json"}, suffix=suffix)
 
     for path in _iter_payload_files(root):
         if path.suffix.casefold() != ".docx":
@@ -231,6 +292,8 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
         "credential_hits": sorted(set(credentials)),
         "restricted_payload_hits": sorted(set(restricted)),
         "zero_hash_hits": sorted(set(zero_hashes)),
+        "doi_hits": sorted(set(doi_hits)),
+        "format_hits": sorted(set(format_hits)),
         "lf_hits": sorted(set(lf_hits)),
         "utf8_hits": sorted(set(utf8_hits)),
         "size_hits": sorted(set(size_hits)),
@@ -274,7 +337,10 @@ def _validate_metadata(root: Path) -> list[str]:
     if "Code Availability" not in code or "Data Availability" in code:
         errors.append("CODE_AVAILABILITY.md must be a separate code statement")
     for relative in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md"):
-        if "10.5281/zenodo" in _read_text(root, relative).casefold() or "doi:" in _read_text(root, relative).casefold():
+        text = _read_text(root, relative)
+        if "v1.0.0" not in text:
+            errors.append(f"{relative} must identify release version v1.0.0")
+        if "10.5281/zenodo" in text.casefold() or "doi:" in text.casefold() or _DOI_URL_RE.search(text):
             errors.append(f"{relative} must not claim a DOI")
 
     scope = _read_text(root, "MANUSCRIPT_SCOPE.md")
@@ -288,16 +354,29 @@ def _validate_metadata(root: Path) -> list[str]:
     cff = _read_text(root, "CITATION.cff")
     required_cff = (
         "Green methanol pipeline reuse: public data and code release",
-        "version: 1.0.0",
         "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse",
-        "date-released: 2026-08-14",
-        "name: Research team",
     )
     for marker in required_cff:
         if marker not in cff:
             errors.append(f"CITATION.cff missing required metadata: {marker}")
-    if re.search(r"(?im)^\s*(?:-\s*)?(?:orcid|family-names|given-names):", cff):
+    cff_fields = {
+        "version": "1.0.0",
+        "date-released": "2026-08-14",
+    }
+    for field, expected in cff_fields.items():
+        match = re.search(rf"(?m)^\s*{re.escape(field)}\s*:\s*([^#\r\n]+?)\s*$", cff)
+        if not match or match.group(1).strip().strip('"\'') != expected:
+            errors.append(f"CITATION.cff requires active {field}: {expected}")
+    author_names = re.findall(r"(?im)^\s*-\s*name\s*:\s*([^\r\n#]+?)\s*$", cff)
+    if author_names != ["Research team"]:
+        errors.append("CITATION.cff authors must contain only the Research team entity")
+    if re.search(
+        r"(?im)^\s*(?:-\s*)?(?:email|affiliation|orcid|family-names|given-names)\s*:",
+        cff,
+    ):
         errors.append("CITATION.cff must not invent personal or ORCID metadata")
+    if re.search(r"(?im)^\s*doi\s*:", cff) or _DOI_URL_RE.search(cff):
+        errors.append("CITATION.cff must not claim a DOI")
     if "repository: " in cff and "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse" not in cff:
         errors.append("CITATION.cff repository URL differs from the release remote")
 
@@ -382,10 +461,16 @@ def _read_manifest(path: Path) -> tuple[list[dict[str, str]], list[str]]:
             errors.append(f"invalid manifest row {line_number}")
             continue
         normalized = {field: row[field].strip() for field in _MANIFEST_FIELDS}
+        unsafe_path = False
         try:
             safe_relative_path(normalized["path"])
         except ValueError:
             errors.append(f"unsafe manifest path at row {line_number}")
+            unsafe_path = True
+        if unsafe_path:
+            # Do not retain an unsafe row: verify_manifest_closure must never
+            # construct or read a path before the root-relative contract passes.
+            continue
         if not normalized["path"] or not _SHA256_RE.fullmatch(normalized["sha256"]):
             errors.append(f"invalid manifest digest/path at row {line_number}")
         try:
@@ -510,6 +595,8 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         "restricted_payload_hits": [],
         "credential_hits": [],
         "zero_hash_hits": [],
+        "doi_hits": [],
+        "format_hits": [],
         "lf_hits": [],
         "utf8_hits": [],
         "size_hits": [],
@@ -530,6 +617,8 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         "restricted_payload_hits",
         "credential_hits",
         "zero_hash_hits",
+        "doi_hits",
+        "format_hits",
         "lf_hits",
         "utf8_hits",
         "size_hits",
