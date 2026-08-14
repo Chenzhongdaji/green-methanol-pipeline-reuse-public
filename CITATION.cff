@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "Please cite this release when reusing its code or author-generated aggregate carriers."
+title: "Green methanol pipeline reuse: public data and code release"
+type: software
+version: 1.0.0
+date-released: 2026-08-14
+repository-code: "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse"
+url: "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse"
+license: MIT
+authors:
+  - name: Research team
