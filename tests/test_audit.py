@@ -59,6 +59,81 @@ def test_release_has_separate_data_and_code_statements():
     assert (ROOT / "CODE_AVAILABILITY.md").is_file()
 
 
+def test_license_data_rejects_controlled_metadata_grant(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "LICENSE-DATA"
+    text = path.read_text(encoding="utf-8")
+    text += "\n- `data/controlled_inputs_metadata.csv` (CC BY 4.0)\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+
+
+def test_license_data_rejects_plaintext_controlled_metadata_grant(tmp_path: Path):
+    root = _copy_release(tmp_path, "license_plaintext_boundary")
+    path = root / "LICENSE-DATA"
+    text = path.read_text(encoding="utf-8")
+    text += "\nCC BY 4.0 covers data/controlled_inputs_metadata.csv.\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("LICENSE-DATA" in error and "controlled" in error.lower() for error in report["errors"])
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "Controlled/restricted data included under CC BY 4.0.",
+        "The controlled metadata is covered by CC BY 4.0.",
+    ],
+)
+def test_notice_rejects_controlled_or_restricted_inclusion(tmp_path: Path, payload: str):
+    root = _copy_release(tmp_path, "notice_boundary")
+    path = root / "NOTICE.md"
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("NOTICE.md" in error and "exclude" in error.lower() for error in report["errors"])
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "data/public_sources.csv",
+        "data/dictionaries/controlled_inputs.md",
+        "external/third_party_payload.csv",
+    ],
+)
+def test_license_data_allowlist_rejects_public_or_controlled_metadata_paths(tmp_path: Path, relative: str):
+    root = _copy_release(tmp_path, relative.replace("/", "_"))
+    path = root / "LICENSE-DATA"
+    text = path.read_text(encoding="utf-8") + f"\n- `{relative}`\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+
+
+def test_code_license_must_remain_mit_boundary(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "LICENSE"
+    path.write_text(path.read_text(encoding="utf-8") + "\nCC BY 4.0 applies to all code.\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("LICENSE" in error and "MIT" in error for error in report["errors"])
+
+
+def test_pyproject_requires_release_version(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    path = root / "pyproject.toml"
+    text = path.read_text(encoding="utf-8").replace('version = "1.0.0"', 'version = "0.9.0"', 1)
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("pyproject.toml" in error and "version" in error.lower() for error in report["errors"])
+
+
 @pytest.mark.parametrize("directory", ["build", "dist", "env", "qa/external"])
 def test_common_payload_directories_are_not_silently_skipped(tmp_path: Path, directory: str):
     root = _copy_release(tmp_path, directory.replace("/", "_"))
@@ -121,6 +196,38 @@ def test_dotfile_disclosure_is_scanned(tmp_path: Path):
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert ".gitattributes" in report["credential_hits"]
+
+
+@pytest.mark.parametrize(
+    ("filename", "payload", "hit_key"),
+    [
+        (".env", "TOKEN=gh" + "p_" + "A" * 36, "credential_hits"),
+        (".npmrc", "//registry.npmjs.org/:_authToken=gh" + "p_" + "A" * 36, "credential_hits"),
+        (".pypirc", "password=" + "A" * 12, "credential_hits"),
+        ("Dockerfile", "ENV SECRET=gh" + "p_" + "A" * 36, "credential_hits"),
+        ("Makefile", "TOKEN=gh" + "p_" + "A" * 36, "credential_hits"),
+        ("credentials", "path=C:" + "/" + "Users/author/private.txt", "absolute_path_hits"),
+        ("config", "Bearer " + "A" * 24, "credential_hits"),
+    ],
+)
+def test_known_extensionless_text_names_are_scanned(
+    tmp_path: Path, filename: str, payload: str, hit_key: str
+):
+    root = _copy_release(tmp_path, filename.replace(".", "_"))
+    path = root / filename
+    path.write_text(payload + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert filename in report[hit_key]
+
+
+def test_known_extensionless_text_restricted_token_is_scanned(tmp_path: Path):
+    root = _copy_release(tmp_path, "extensionless_restricted")
+    path = root / "config"
+    path.write_text("candidate_links_v01.csv\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert "config" in report["restricted_payload_hits"]
 
 
 @pytest.mark.parametrize(

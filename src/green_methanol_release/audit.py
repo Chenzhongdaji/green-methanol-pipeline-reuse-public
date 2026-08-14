@@ -94,6 +94,19 @@ _RESTRICTED_SCHEMA_FIELDS = {
     "refinery_node_id",
 }
 
+_CC_BY_ALLOWED_CARRIERS = frozenset(
+    {
+        "data/author_derived/terminal_gap_aggregate.csv",
+        "figures/source_data/figure-01.csv",
+        "figures/source_data/figure-03.csv",
+        "figures/source_data/figure-04.csv",
+        "figures/source_data/figure-05.csv",
+        "qa/expected/headline_claims.csv",
+        "figures/panel_map.csv",
+    }
+)
+_LICENSE_BULLET_RE = re.compile(r"(?im)^\s*-\s+(.+?)\s*$")
+
 _TEXT_SUFFIXES = {
     ".c",
     ".cff",
@@ -114,7 +127,19 @@ _TEXT_SUFFIXES = {
     ".yml",
     ".yaml",
 }
-_TEXT_NAMES = {".gitattributes", ".gitignore", "LICENSE", "LICENSE-DATA"}
+_TEXT_NAMES = {
+    ".gitattributes",
+    ".gitignore",
+    ".env",
+    ".npmrc",
+    ".pypirc",
+    "Dockerfile",
+    "Makefile",
+    "LICENSE",
+    "LICENSE-DATA",
+    "credentials",
+    "config",
+}
 _SKIP_PARTS = {
     ".git",
     ".venv",
@@ -131,6 +156,7 @@ _REQUIRED_METADATA = (
     "MANUSCRIPT_SCOPE.md",
     "CITATION.cff",
     "NOTICE.md",
+    "pyproject.toml",
     "LICENSE",
     "LICENSE-DATA",
     "environment/requirements.txt",
@@ -234,7 +260,14 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
     # payload-like directories are not in this set and are always scanned.
     exclusions = sorted(_SKIP_PARTS)
 
-    def inspect(label: str, text: str, *, payload_schema: bool = False, suffix: str = "") -> None:
+    def inspect(
+        label: str,
+        text: str,
+        *,
+        payload_schema: bool = False,
+        restricted_text: bool = False,
+        suffix: str = "",
+    ) -> None:
         if "\r" in text:
             lf_hits.append(label)
         for pattern in (_DRIVE_PATH_RE, _UNC_PATH_RE, _POSIX_HOME_RE):
@@ -277,6 +310,8 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
                 restricted.append(f"{label}:schema={','.join(forbidden)}")
             if _RESTRICTED_NAME_RE.search(text):
                 restricted.append(label)
+        elif restricted_text and _RESTRICTED_NAME_RE.search(text):
+            restricted.append(label)
 
     for path in _iter_payload_files(root):
         relative = _relative(root, path)
@@ -290,7 +325,13 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
                 utf8_hits.append(relative)
             continue
         suffix = path.suffix.casefold()
-        inspect(relative, text, payload_schema=suffix in {".csv", ".tsv", ".json"}, suffix=suffix)
+        inspect(
+            relative,
+            text,
+            payload_schema=suffix in {".csv", ".tsv", ".json"},
+            restricted_text=path.name in _TEXT_NAMES,
+            suffix=suffix,
+        )
 
     for path in _iter_payload_files(root):
         if path.suffix.casefold() != ".docx":
@@ -359,6 +400,16 @@ def _validate_metadata(root: Path) -> list[str]:
         ):
             errors.append(f"{relative} must not claim a DOI")
 
+    pyproject = _read_text(root, "pyproject.toml")
+    project_block = re.search(r"(?ms)^\[project\]\s*(.*?)(?=^\[|\Z)", pyproject)
+    version_match = (
+        re.search(r"(?m)^version\s*=\s*['\"]([^'\"]+)['\"]\s*$", project_block.group(1))
+        if project_block
+        else None
+    )
+    if not version_match or version_match.group(1) != "1.0.0":
+        errors.append("pyproject.toml project version must be 1.0.0")
+
     scope = _read_text(root, "MANUSCRIPT_SCOPE.md")
     if "green_methanol_pipeline_reuse_v1.21_en.docx" not in scope:
         errors.append("MANUSCRIPT_SCOPE.md must record the authority filename")
@@ -405,12 +456,45 @@ def _validate_metadata(root: Path) -> list[str]:
     license_text = _read_text(root, "LICENSE")
     if "MIT License" not in license_text or "Permission is hereby granted, free of charge" not in license_text:
         errors.append("LICENSE must contain the complete MIT notice")
+    if re.search(r"(?i)\b(?:cc\s*by|creative commons)\b", license_text):
+        errors.append("LICENSE must remain an MIT-only code boundary")
     data_license = _read_text(root, "LICENSE-DATA")
     if "Creative Commons Attribution 4.0 International" not in data_license or "creativecommons.org/licenses/by/4.0/" not in data_license:
         errors.append("LICENSE-DATA must state CC BY 4.0 and its official reference")
+    license_paths = {
+        item.strip().strip("`").strip()
+        for item in _LICENSE_BULLET_RE.findall(data_license)
+        if item.strip()
+    }
+    if license_paths != _CC_BY_ALLOWED_CARRIERS:
+        errors.append("LICENSE-DATA CC BY carrier allowlist does not match the exact aggregate paths")
+    forbidden_paths = {
+        "data/controlled_inputs_metadata.csv",
+        "data/public_sources.csv",
+        "data/dictionaries/controlled_inputs.md",
+        "data/dictionaries/public_sources.md",
+    }
+    if license_paths & forbidden_paths or any(path in data_license for path in forbidden_paths):
+        errors.append("LICENSE-DATA must exclude controlled and public-source metadata paths")
+    data_license_lower = data_license.casefold()
+    if not all(
+        marker in data_license_lower
+        for marker in ("author-generated aggregate data", "public-source", "third-party", "controlled", "not covered")
+    ):
+        errors.append("LICENSE-DATA must state the controlled/public-source exclusion boundary")
     notice = _read_text(root, "NOTICE.md")
     if "third-party" not in notice.casefold() or "controlled" not in notice.casefold():
         errors.append("NOTICE.md must exclude third-party and controlled materials")
+    notice_lower = notice.casefold()
+    protected = r"(?:controlled|restricted|public[- ]source|third[- ]party)"
+    grant = r"(?:cc\s*by|covered|included|licen(?:s|c)e(?:d|s|ing)?|relicens\w*)"
+    if re.search(
+        rf"(?:{protected})[\s\S]{{0,120}}(?:{grant})|(?:{grant})[\s\S]{{0,120}}(?:{protected})",
+        notice_lower,
+    ):
+        errors.append("NOTICE.md must exclude controlled/restricted/source payloads from CC BY grants")
+    if not re.search(rf"{protected}[\s\S]{{0,240}}\bexcluded\b", notice_lower):
+        errors.append("NOTICE.md must explicitly exclude controlled/restricted/source materials")
 
     requirements = _read_text(root, "environment/requirements.txt").splitlines()
     requirement_lines = [line.strip() for line in requirements if line.strip() and not line.lstrip().startswith("#")]
