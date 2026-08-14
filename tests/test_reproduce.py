@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from pathlib import Path
@@ -212,6 +213,30 @@ def test_dictionary_rejects_unknown_structural_column_row(tmp_path):
     text += "\n| unexpected_column | test definition | not_applicable | blank forbidden | test derivation | test panel |\n"
     path.write_text(text, encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "dictionary-extra-row.json")
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+
+
+@pytest.mark.parametrize(
+    ("column", "replacement"),
+    [
+        ("metric", "share"),
+        ("tolerance", "999"),
+        ("expected_value", "52.25"),
+        ("evidence_boundary", "spoofed evidence boundary"),
+    ],
+)
+def test_headline_claim_rows_are_immutable(tmp_path, column, replacement):
+    root = _copy_release(tmp_path, f"claim-{column}")
+    path = root / "qa" / "expected" / "headline_claims.csv"
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    rows[0][column] = replacement
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=rows[0].keys(), lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    report = run_reproduction(root, "smoke", tmp_path / f"claim-{column}.json")
     assert report["status"] == "FAIL"
     assert report["level_1_status"] == "FAIL"
 

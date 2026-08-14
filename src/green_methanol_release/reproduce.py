@@ -38,9 +38,30 @@ _CLAIM_FIELDS = (
     "evidence_boundary",
 )
 _EXPECTED_CLAIMS = {
-    "strict_pipeline_service_gap": "percent",
-    "no_terminal_gap": "percentage_points",
-    "mapped_unserved_gap": "percentage_points",
+    "strict_pipeline_service_gap": {
+        "scenario_scope": "pooled_S1_S8_2060_mid",
+        "metric": "gap",
+        "expected_value": "52.3",
+        "unit": "percent",
+        "tolerance": "0.05",
+        "evidence_boundary": "model-derived aggregate",
+    },
+    "no_terminal_gap": {
+        "scenario_scope": "pooled_S1_S8_2060_mid",
+        "metric": "gap",
+        "expected_value": "38.3",
+        "unit": "percentage_points",
+        "tolerance": "0.05",
+        "evidence_boundary": "missing uniquely mapped terminal record under evidence contract",
+    },
+    "mapped_unserved_gap": {
+        "scenario_scope": "pooled_S1_S8_2060_mid",
+        "metric": "gap",
+        "expected_value": "13.9",
+        "unit": "percentage_points",
+        "tolerance": "0.05",
+        "evidence_boundary": "mapped but unserved terminal record under evidence contract",
+    },
 }
 
 _ACCOUNT_FIELDS = (
@@ -523,10 +544,14 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
             raise ValueError(f"headline claim IDs differ: {sorted(claim_ids)}")
         for row in claim_rows:
             claim_id = row["claim_id"].strip()
-            if row["scenario_scope"].strip() != "pooled_S1_S8_2060_mid":
-                raise ValueError(f"claim {claim_id!r} has an unexpected denominator")
-            if row["unit"].strip() != _EXPECTED_CLAIMS[claim_id]:
-                raise ValueError(f"claim {claim_id!r} has an unexpected unit")
+            expected = _EXPECTED_CLAIMS[claim_id]
+            mismatches = {
+                field: (row[field].strip(), expected[field])
+                for field in expected
+                if row[field].strip() != expected[field]
+            }
+            if mismatches:
+                raise ValueError(f"claim {claim_id!r} differs from the immutable contract: {mismatches}")
         account_path = _resolve(root, "data/author_derived/terminal_gap_aggregate.csv")
         account_rows = _load_csv(account_path, _ACCOUNT_FIELDS, "terminal gap aggregate")
         checked_paths.append(account_path)
