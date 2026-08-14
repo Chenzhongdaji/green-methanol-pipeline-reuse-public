@@ -49,10 +49,7 @@ CONTROLLED_DATASET_IDS = {
 }
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-_AUTHOR_SOURCE_TYPES = {
-    "author-derived aggregate",
-    "author-generated aggregate",
-}
+_AUTHOR_SOURCE_TYPE = "author-generated aggregate"
 _ENGINEERING_SOURCE_TYPE = "engineering source"
 
 
@@ -112,8 +109,8 @@ def load_controlled_inputs(path: Path) -> list[dict[str, str]]:
 
 
 def _claims_repository_cc_by(row: dict[str, str]) -> bool:
-    rights = row["licence_or_rights_status"].strip().lower()
-    return "cc by 4.0" in rights or "cc-by 4.0" in rights
+    rights = re.sub(r"[^a-z0-9]+", "", row["licence_or_rights_status"].casefold())
+    return "ccby40" in rights
 
 
 def _validate_controlled_rows(rows: list[dict[str, str]]) -> int:
@@ -132,9 +129,10 @@ def _validate_controlled_rows(rows: list[dict[str, str]]) -> int:
         digest = row["sha256"].strip()
         hash_note = row["hash_note"].strip()
         if not digest:
-            if not hash_note:
+            marker = "hash_unavailable:"
+            if not hash_note.startswith(marker) or not hash_note[len(marker) :].strip():
                 raise ValueError(
-                    f"controlled input {row['dataset_id']!r} needs hash_note when sha256 is unavailable"
+                    f"controlled input {row['dataset_id']!r} needs a hash_unavailable: marker and non-empty reason"
                 )
             continue
         if set(digest) == {"0"}:
@@ -143,6 +141,10 @@ def _validate_controlled_rows(rows: list[dict[str, str]]) -> int:
         if not _SHA256_RE.fullmatch(digest):
             raise ValueError(
                 f"sha256 for {row['dataset_id']!r} must be 64 lowercase hexadecimal characters"
+            )
+        if hash_note:
+            raise ValueError(
+                f"controlled input {row['dataset_id']!r} must leave hash_note empty when sha256 is present"
             )
     return zero_hash_rows
 
@@ -175,7 +177,7 @@ def validate_inventory(root: Path) -> dict[str, int]:
         1
         for row in public_rows
         if _claims_repository_cc_by(row)
-        and row["source_type"].strip().lower() not in _AUTHOR_SOURCE_TYPES
+        and row["source_type"] != _AUTHOR_SOURCE_TYPE
     )
     if third_party_cc_by_rows:
         raise ValueError("third-party source rows must not claim the repository CC BY licence")
