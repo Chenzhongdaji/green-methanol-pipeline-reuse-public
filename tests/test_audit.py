@@ -81,11 +81,24 @@ def test_license_data_rejects_plaintext_controlled_metadata_grant(tmp_path: Path
     assert any("LICENSE-DATA" in error and "controlled" in error.lower() for error in report["errors"])
 
 
+def test_license_data_rejects_plaintext_third_party_path(tmp_path: Path):
+    root = _copy_release(tmp_path, "license_plaintext_third_party")
+    path = root / "LICENSE-DATA"
+    text = path.read_text(encoding="utf-8")
+    text += "\nCC BY 4.0 covers external/third_party_payload.csv.\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+
+
 @pytest.mark.parametrize(
     "payload",
     [
         "Controlled/restricted data included under CC BY 4.0.",
         "The controlled metadata is covered by CC BY 4.0.",
+        "CC BY covers external/third_party_payload.csv.",
+        "Third_party data is included under CC BY 4.0.",
     ],
 )
 def test_notice_rejects_controlled_or_restricted_inclusion(tmp_path: Path, payload: str):
@@ -228,6 +241,48 @@ def test_known_extensionless_text_restricted_token_is_scanned(tmp_path: Path):
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert "config" in report["restricted_payload_hits"]
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        ".env.local",
+        ".ENV",
+        ".npmrc.local",
+        ".pypirc.local",
+        "dockerfile",
+        "makefile",
+        "Credentials",
+        "config.local",
+        ".gitconfig",
+    ],
+)
+def test_dotfile_and_case_variants_are_sniffed(tmp_path: Path, filename: str):
+    root = _copy_release(tmp_path, filename.replace(".", "_"))
+    path = root / filename
+    path.write_text("token=gh" + "p_" + "A" * 36 + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert filename in report["credential_hits"]
+
+
+def test_unknown_small_utf8_file_is_sniffed(tmp_path: Path):
+    root = _copy_release(tmp_path, "unknown_text")
+    path = root / "mystery.payload"
+    path.write_text("path=C:" + "/" + "Users/author/private.txt\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert "mystery.payload" in report["absolute_path_hits"]
+
+
+def test_unknown_utf8_payload_over_four_megabytes_is_still_scanned(tmp_path: Path):
+    root = _copy_release(tmp_path, "large_unknown_text")
+    path = root / "large.payload"
+    payload = "A" * (4 * 1024 * 1024 + 1) + "\ntoken=gh" + "p_" + "A" * 36 + "\n"
+    path.write_text(payload, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert "large.payload" in report["credential_hits"]
 
 
 @pytest.mark.parametrize(

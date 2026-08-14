@@ -106,6 +106,9 @@ _CC_BY_ALLOWED_CARRIERS = frozenset(
     }
 )
 _LICENSE_BULLET_RE = re.compile(r"(?im)^\s*-\s+(.+?)\s*$")
+_LICENSE_PATH_RE = re.compile(
+    r"(?i)(?<![a-z0-9_./:])(?:[a-z0-9_.-]+/)+[a-z0-9_.-]+\.[a-z0-9]+"
+)
 
 _TEXT_SUFFIXES = {
     ".c",
@@ -140,6 +143,7 @@ _TEXT_NAMES = {
     "credentials",
     "config",
 }
+_TEXT_SNIFF_LIMIT = 100 * 1024 * 1024
 _SKIP_PARTS = {
     ".git",
     ".venv",
@@ -147,6 +151,7 @@ _SKIP_PARTS = {
     ".pytest_cache",
     ".mypy_cache",
     ".ruff_cache",
+    "src/green_methanol_pipeline_reuse.egg-info",
 }
 
 _REQUIRED_METADATA = (
@@ -194,10 +199,15 @@ def _iter_payload_files(root: Path) -> Iterable[Path]:
 def _text_payload(path: Path) -> str | None:
     """Decode a text-like payload; return None for opaque binary files."""
 
-    if path.suffix.casefold() not in _TEXT_SUFFIXES and path.name not in _TEXT_NAMES:
+    known_text = path.suffix.casefold() in _TEXT_SUFFIXES or path.name in _TEXT_NAMES
+    try:
+        payload = path.read_bytes()
+    except OSError:
+        return None
+    if not known_text and (len(payload) > _TEXT_SNIFF_LIMIT or b"\x00" in payload):
         return None
     try:
-        return path.read_bytes().decode("utf-8")
+        return payload.decode("utf-8")
     except UnicodeDecodeError:
         return None
 
@@ -466,7 +476,8 @@ def _validate_metadata(root: Path) -> list[str]:
         for item in _LICENSE_BULLET_RE.findall(data_license)
         if item.strip()
     }
-    if license_paths != _CC_BY_ALLOWED_CARRIERS:
+    all_license_paths = set(_LICENSE_PATH_RE.findall(data_license))
+    if license_paths != _CC_BY_ALLOWED_CARRIERS or all_license_paths != _CC_BY_ALLOWED_CARRIERS:
         errors.append("LICENSE-DATA CC BY carrier allowlist does not match the exact aggregate paths")
     forbidden_paths = {
         "data/controlled_inputs_metadata.csv",
@@ -474,7 +485,7 @@ def _validate_metadata(root: Path) -> list[str]:
         "data/dictionaries/controlled_inputs.md",
         "data/dictionaries/public_sources.md",
     }
-    if license_paths & forbidden_paths or any(path in data_license for path in forbidden_paths):
+    if license_paths & forbidden_paths or all_license_paths & forbidden_paths or any(path in data_license for path in forbidden_paths):
         errors.append("LICENSE-DATA must exclude controlled and public-source metadata paths")
     data_license_lower = data_license.casefold()
     if not all(
@@ -486,14 +497,15 @@ def _validate_metadata(root: Path) -> list[str]:
     if "third-party" not in notice.casefold() or "controlled" not in notice.casefold():
         errors.append("NOTICE.md must exclude third-party and controlled materials")
     notice_lower = notice.casefold()
+    notice_normalized = re.sub(r"[_-]+", " ", notice_lower)
     protected = r"(?:controlled|restricted|public[- ]source|third[- ]party)"
-    grant = r"(?:cc\s*by|covered|included|licen(?:s|c)e(?:d|s|ing)?|relicens\w*)"
+    grant = r"(?:\bcc\s*by\b|\bcovered\b|\bincluded\b|\blicen(?:s|c)e(?:d|s|ing)?\b)"
     if re.search(
         rf"(?:{protected})[\s\S]{{0,120}}(?:{grant})|(?:{grant})[\s\S]{{0,120}}(?:{protected})",
-        notice_lower,
+        notice_normalized,
     ):
         errors.append("NOTICE.md must exclude controlled/restricted/source payloads from CC BY grants")
-    if not re.search(rf"{protected}[\s\S]{{0,240}}\bexcluded\b", notice_lower):
+    if not re.search(rf"{protected}[\s\S]{{0,240}}\bexcluded\b", notice_normalized):
         errors.append("NOTICE.md must explicitly exclude controlled/restricted/source materials")
 
     requirements = _read_text(root, "environment/requirements.txt").splitlines()
