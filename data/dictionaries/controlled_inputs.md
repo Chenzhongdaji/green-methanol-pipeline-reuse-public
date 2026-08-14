@@ -3,6 +3,9 @@
 `data/controlled_inputs_metadata.csv` records restricted inputs needed for a
 full network-model rerun; controlled payloads are not distributed here.
 
+This dictionary describes controlled metadata only; it does not claim a CC BY
+licence for third-party or restricted inputs.
+
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
 | dataset_id | Stable identifier for an approved restricted-input family. | text | blank forbidden | metadata transcription from the controlled-input manifest | network_model |
@@ -12,7 +15,7 @@ full network-model rerun; controlled payloads are not distributed here.
 | restriction_reason | Reason the payload is excluded from this public release. | text | blank forbidden | restriction review annotation | network_model |
 | schema_summary | Human-readable description of expected fields or objects. | text | blank forbidden | schema metadata transcription | network_model |
 | access_route | Route for a future authorized request. | text | blank forbidden | access-process annotation | network_model |
-| sha256 | Checksum when a legitimately available payload was hashed. | 64 lowercase hexadecimal or not_applicable | explicit not_applicable allowed only when unavailable | checksum transcription or absence annotation | network_model |
+| sha256 | Checksum when a legitimately available payload was hashed. | 64 lowercase hexadecimal or blank | blank when unavailable; explain in hash_note | checksum transcription or absence annotation | network_model |
 | hash_note | Explanation for an unavailable checksum or checksum provenance note. | text | blank forbidden | checksum audit annotation | network_model |
 
 The current rows intentionally describe restricted inputs without redistributing

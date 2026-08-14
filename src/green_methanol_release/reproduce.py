@@ -250,7 +250,17 @@ def _validate_utf8_lf(path: Path, label: str) -> None:
 
 
 def _git_head(root: Path) -> str:
+    root = Path(root).resolve()
     try:
+        top_level = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if Path(top_level.stdout.strip()).resolve() != root:
+            return "unrecorded"
         completed = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             cwd=root,

@@ -4,6 +4,8 @@
 used to recompute the three public headline checks. It contains no facility
 identifiers, trunk links, coordinates, or physical edge records.
 
+Licence class: author-generated aggregate data (CC BY 4.0).
+
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
 | scenario_scope | Frozen pooled denominator across S1-S8, mid tier, 2060. | S1-S8 pooled | blank forbidden | account-scope transcription | headline checks |

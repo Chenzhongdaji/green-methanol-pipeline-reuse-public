@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import shutil
+import subprocess
 
 import pytest
 
@@ -106,6 +107,22 @@ def test_non_git_copy_cannot_report_level1_pass(tmp_path):
     assert report["release_commit"] == "unrecorded"
 
 
+def test_nested_release_cannot_inherit_parent_git_commit(tmp_path):
+    parent = tmp_path / "parent-git"
+    parent.mkdir()
+    root = parent / "nested-release"
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", ".venv", "__pycache__"))
+    subprocess.run(["git", "init", "-q"], cwd=parent, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=parent, check=True)
+    subprocess.run(["git", "config", "user.name", "Task 3 test"], cwd=parent, check=True)
+    subprocess.run(["git", "add", "nested-release"], cwd=parent, check=True)
+    subprocess.run(["git", "commit", "-qm", "parent fixture"], cwd=parent, check=True)
+    report = run_reproduction(root, "smoke", tmp_path / "nested-parent.json")
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+    assert report["release_commit"] == "unrecorded"
+
+
 @pytest.mark.parametrize("filename", ["public_sources.csv", "controlled_inputs_metadata.csv"])
 def test_inventory_crlf_mutation_is_fail_closed(tmp_path, filename):
     root = _copy_release(tmp_path, filename.replace(".csv", ""))
@@ -174,3 +191,36 @@ def test_non_reproduced_workflows_have_explicit_reasons(tmp_path):
     reasons = report["workflow_reasons"]
     assert set(reasons) == {"figure_source_data", "manuscript_artifacts", "network_model"}
     assert all(isinstance(value, str) and value.strip() for value in reasons.values())
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "figure_01.md",
+        "figure_03.md",
+        "figure_04.md",
+        "figure_05.md",
+        "headline_claims.md",
+        "panel_map.md",
+        "terminal_gap_aggregate.md",
+    ],
+)
+def test_cc_by_intended_carriers_are_explicitly_labelled(name):
+    text = (ROOT / "data" / "dictionaries" / name).read_text(encoding="utf-8")
+    assert "author-generated aggregate data" in text
+
+
+@pytest.mark.parametrize("name", ["public_sources.md", "controlled_inputs.md"])
+def test_metadata_dictionaries_do_not_claim_cc_by(name):
+    text = (ROOT / "data" / "dictionaries" / name).read_text(encoding="utf-8")
+    assert "author-generated aggregate data" not in text
+
+
+def test_dictionary_missing_codes_match_released_blanks():
+    figure_01 = (ROOT / "data" / "dictionaries" / "figure_01.md").read_text(encoding="utf-8")
+    panel_map = (ROOT / "data" / "dictionaries" / "panel_map.md").read_text(encoding="utf-8")
+    controlled = (ROOT / "data" / "dictionaries" / "controlled_inputs.md").read_text(encoding="utf-8")
+    assert "| target |" in figure_01 and "text or blank for terminal stage" in figure_01
+    assert "| source_data |" in panel_map and "POSIX path or blank" in panel_map
+    assert "| dictionary |" in panel_map and "POSIX path or blank" in panel_map
+    assert "| sha256 |" in controlled and "64 lowercase hexadecimal or blank" in controlled

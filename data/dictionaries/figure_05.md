@@ -4,6 +4,8 @@
 capacity and fixed-connector service gains. Candidate IDs, link names,
 directions, coordinates, and network-edge locators are excluded.
 
+Licence class: author-generated aggregate data (CC BY 4.0).
+
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
 | panel | Figure panel identifier. | c | blank forbidden | panel-contract transcription | Figure 5 panel c |

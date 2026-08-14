@@ -4,6 +4,8 @@
 2060 across S1-S8. It deliberately contains region aggregates only and omits
 city, refinery-proxy, node, coordinate, and route fields.
 
+Licence class: author-generated aggregate data (CC BY 4.0).
+
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
 | scenario | Frozen demand scenario. | S1-S8 | blank forbidden | scenario-label transcription | Figure 4 panel c |

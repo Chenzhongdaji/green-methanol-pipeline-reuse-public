@@ -3,6 +3,8 @@
 `qa/expected/headline_claims.csv` contains the three release-level checks used
 by the portable reproduction runner.
 
+Licence class: author-generated aggregate data (CC BY 4.0).
+
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
 | claim_id | Stable check identifier for a bounded headline quantity. | strict_pipeline_service_gap, no_terminal_gap, mapped_unserved_gap | blank forbidden | contract transcription from the release specification | terminal account checks |

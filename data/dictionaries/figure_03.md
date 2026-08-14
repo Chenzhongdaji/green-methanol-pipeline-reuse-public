@@ -4,6 +4,8 @@
 aggregates for the Figure 3 C1 panel. It has no task, demand-node, station,
 edge, coordinate, or route identifier.
 
+Licence class: author-generated aggregate data (CC BY 4.0).
+
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
 | scenario | Frozen demand scenario. | S1-S8 | blank forbidden | scenario-label transcription | Figure 3 (aggregate C1) |
