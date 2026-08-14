@@ -15,7 +15,13 @@ def safe_relative_path(value: str) -> PurePosixPath:
     """Return a repository-relative POSIX path or reject unsafe input."""
 
     path = PurePosixPath(value)
-    if not value or path.is_absolute() or ".." in path.parts or ":" in value:
+    if (
+        not value
+        or path.is_absolute()
+        or ".." in path.parts
+        or ":" in value
+        or "\\" in value
+    ):
         raise ValueError(f"unsafe repository-relative path: {value}")
     return path
 

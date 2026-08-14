@@ -18,7 +18,16 @@ def test_status_vocabulary_is_closed():
         validate_status("PASS")
 
 
-@pytest.mark.parametrize("value", ["../secret.csv", "C:/Users/name/file.csv", "/home/name/file"])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "../secret.csv",
+        "C:/Users/name/file.csv",
+        "/home/name/file",
+        r"folder\file.csv",
+        r"\\server\share\file.csv",
+    ],
+)
 def test_safe_relative_path_rejects_escape_and_absolute_paths(value):
     with pytest.raises(ValueError):
         safe_relative_path(value)
