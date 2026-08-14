@@ -109,6 +109,9 @@ _LICENSE_BULLET_RE = re.compile(r"(?im)^\s*-\s+(.+?)\s*$")
 _LICENSE_PATH_RE = re.compile(
     r"(?i)(?<![a-z0-9_./:])(?:\.{0,2}[\\/])?(?:[a-z0-9_.-]+[\\/]+)+[a-z0-9_.-]+(?:\.[a-z0-9]+)?"
 )
+_LICENSE_ABSOLUTE_RE = re.compile(
+    r"(?i)(?<![a-z0-9])(?:[a-z]:[" + chr(92) * 2 + chr(47) + r"])[^`\s]+"
+)
 
 _TEXT_SUFFIXES = {
     ".c",
@@ -497,7 +500,8 @@ def _validate_metadata(root: Path) -> list[str]:
     data_license = _read_text(root, "LICENSE-DATA")
     if "Creative Commons Attribution 4.0 International" not in data_license or "creativecommons.org/licenses/by/4.0/" not in data_license:
         errors.append("LICENSE-DATA must state CC BY 4.0 and its official reference")
-    bullet_candidates = _LICENSE_BULLET_RE.findall(data_license)
+    bullet_matches = list(_LICENSE_BULLET_RE.finditer(data_license))
+    bullet_candidates = [match.group(1) for match in bullet_matches]
     extracted_candidates = [*bullet_candidates, *_LICENSE_PATH_RE.findall(data_license)]
     normalized_candidates = [_normalize_license_path(item) for item in extracted_candidates if item.strip()]
     unsafe_candidates = {
@@ -514,10 +518,37 @@ def _validate_metadata(root: Path) -> list[str]:
     all_license_paths = {
         normalized for normalized in normalized_candidates if normalized is not None
     }
-    if license_paths != _CC_BY_ALLOWED_CARRIERS or all_license_paths != _CC_BY_ALLOWED_CARRIERS:
+    canonical_lines = {f"- `{path}`" for path in _CC_BY_ALLOWED_CARRIERS}
+    canonical_bullets = {
+        line.strip()
+        for match in bullet_matches
+        if (line := match.group(0).strip()) in canonical_lines
+    }
+    invalid_bullets = [
+        match.group(0).strip()
+        for match in bullet_matches
+        if match.group(0).strip() not in canonical_lines
+    ]
+    noncanonical_paths = []
+    for match in _LICENSE_PATH_RE.finditer(data_license):
+        line_start = data_license.rfind("\n", 0, match.start()) + 1
+        line_end = data_license.find("\n", match.end())
+        if line_end < 0:
+            line_end = len(data_license)
+        if data_license[line_start:line_end].strip() not in canonical_lines:
+            noncanonical_paths.append(match.group(0))
+    if (
+        license_paths != _CC_BY_ALLOWED_CARRIERS
+        or all_license_paths != _CC_BY_ALLOWED_CARRIERS
+        or canonical_bullets != canonical_lines
+        or invalid_bullets
+        or noncanonical_paths
+    ):
         errors.append("LICENSE-DATA CC BY carrier allowlist does not match the exact aggregate paths")
     if unsafe_candidates:
         errors.append("LICENSE-DATA CC BY carrier allowlist rejects unsafe or absolute paths")
+    if _LICENSE_ABSOLUTE_RE.search(data_license) or _UNC_PATH_RE.search(data_license):
+        errors.append("LICENSE-DATA CC BY carrier allowlist rejects absolute paths")
     forbidden_paths = {
         "data/controlled_inputs_metadata.csv",
         "data/public_sources.csv",

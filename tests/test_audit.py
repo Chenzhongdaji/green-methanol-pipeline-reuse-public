@@ -104,6 +104,13 @@ def test_license_data_rejects_plaintext_third_party_path(tmp_path: Path):
         "CC BY covers .\\external//third_party_payload.csv.",
         "CC BY covers ../data/public_sources.csv.",
         "CC BY covers /data/public_sources.csv.",
+        "CC BY covers C:\\data\\public_sources.csv.",
+        "CC BY covers \\\\server\\share\\data\\public_sources.csv.",
+        "CC BY covers C:\\data\\author_derived\\terminal_gap_aggregate.csv.",
+        "CC BY covers data/author_derived/terminal_gap_aggregate.csv?foo.",
+        "CC BY covers data/author_derived/terminal_gap_aggregate.csv#foo.",
+        "CC BY covers data/author_derived/terminal_gap_aggregate.csv:foo.",
+        "CC BY covers data/author_derived/terminal_gap_aggregate.csv extra.",
     ],
 )
 def test_license_data_normalizes_and_rejects_unauthorized_paths(tmp_path: Path, payload: str):
