@@ -257,20 +257,30 @@ def _git_head(root: Path) -> str:
             cwd=root,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="strict",
             check=True,
         )
-        if Path(top_level.stdout.strip()).resolve() != root:
+        top_level_text = top_level.stdout
+        if not isinstance(top_level_text, str) or not top_level_text.strip():
+            return "unrecorded"
+        if Path(top_level_text.strip()).resolve() != root:
             return "unrecorded"
         completed = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             cwd=root,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="strict",
             check=True,
         )
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, ValueError, UnicodeError, subprocess.CalledProcessError):
         return "unrecorded"
-    commit = completed.stdout.strip()
+    commit_text = completed.stdout
+    if not isinstance(commit_text, str):
+        return "unrecorded"
+    commit = commit_text.strip()
     return commit if _COMMIT_RE.fullmatch(commit) else "unrecorded"
 
 

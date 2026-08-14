@@ -1,7 +1,9 @@
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 import pytest
 
@@ -121,6 +123,23 @@ def test_nested_release_cannot_inherit_parent_git_commit(tmp_path):
     assert report["status"] == "FAIL"
     assert report["level_1_status"] == "FAIL"
     assert report["release_commit"] == "unrecorded"
+
+
+def test_chinese_release_root_git_head_decodes_without_pythonutf8(tmp_path):
+    env = os.environ.copy()
+    env.pop("PYTHONUTF8", None)
+    output = tmp_path / "chinese-root.json"
+    completed = subprocess.run(
+        [sys.executable, "scripts/reproduce.py", "--mode", "smoke", "--output", str(output)],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+    )
+    assert completed.returncode == 0, completed.stderr.decode("utf-8", errors="replace")
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["status"] == "PASS"
+    assert report["level_1_status"] == "PASS"
+    assert len(report["release_commit"]) == 40
 
 
 @pytest.mark.parametrize("filename", ["public_sources.csv", "controlled_inputs_metadata.csv"])
