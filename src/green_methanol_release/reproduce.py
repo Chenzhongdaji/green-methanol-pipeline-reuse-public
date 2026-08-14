@@ -364,10 +364,9 @@ def _validate_dictionary(path: Path, fields: tuple[str, ...], label: str) -> Non
         if len(cells) != len(expected_header):
             continue
         column = cells[0]
-        if column in fields:
-            if column in table_rows:
-                raise ValueError(f"dictionary repeats column row {column!r}: {label}")
-            table_rows[column] = cells[1:]
+        if column in table_rows:
+            raise ValueError(f"dictionary repeats column row {column!r}: {label}")
+        table_rows[column] = cells[1:]
     missing = [field for field in fields if field not in table_rows]
     extra = sorted(set(table_rows) - set(fields))
     if missing or extra:

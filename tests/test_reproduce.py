@@ -205,6 +205,17 @@ def test_dictionary_row_deletion_is_rejected_even_when_field_token_remains(tmp_p
     assert report["level_1_status"] == "FAIL"
 
 
+def test_dictionary_rejects_unknown_structural_column_row(tmp_path):
+    root = _copy_release(tmp_path)
+    path = root / "data" / "dictionaries" / "figure_03.md"
+    text = path.read_text(encoding="utf-8")
+    text += "\n| unexpected_column | test definition | not_applicable | blank forbidden | test derivation | test panel |\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = run_reproduction(root, "smoke", tmp_path / "dictionary-extra-row.json")
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+
+
 def test_non_reproduced_workflows_have_explicit_reasons(tmp_path):
     report = run_reproduction(ROOT, "smoke", tmp_path / "workflow-reasons.json")
     reasons = report["workflow_reasons"]
