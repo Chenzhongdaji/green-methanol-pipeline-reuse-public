@@ -28,7 +28,9 @@ _MANIFEST_FIELDS = ("path", "bytes", "sha256", "purpose", "licence_scope", "data
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _ZERO_HASH_RE = re.compile(r"(?<![0-9a-f])[0]{64}(?![0-9a-f])")
 _CHECKSUM_LINE_RE = re.compile(r"^([0-9a-f]{64})  ([^\r\n]+)$")
-_DOI_URL_RE = re.compile(r"https?://doi\.org/[^\s<>\"']+", re.IGNORECASE)
+_DOI_URL_RE = re.compile(r"https?://(?:dx\.)?doi\.org/[^\s<>\"']+", re.IGNORECASE)
+_BARE_DOI_RE = re.compile(r"(?i)\b10\.\d{4,9}/[-._;()/:a-z0-9]+\b")
+_PERSISTENT_IDENTIFIER_RE = re.compile(r"(?i)\bpersistent[_ -]?identifier\b")
 
 # Only high-confidence credential forms are used.  The fragments are assembled
 # so the scanner's own source does not contain a copyable token-looking value.
@@ -64,11 +66,18 @@ _POSIX_HOME_RE = re.compile(r"(?<![A-Za-z0-9])/(?:home|Users|root)/")
 # redistributing the files; an extension or restricted schema field indicates
 # an actual carrier leak.
 _RESTRICTED_NAME_RE = re.compile(
-    r"(?i)(?:pipeline[_-]?network[_-]?segments|edge[_-]?flows|facility[_-]?to[_-]?(?:trunk|refinery)|"
-    r"refinery[_-]?to[_-]?pipeline[_-]?node[_-]?assignments?|candidate[_-].*(?:links?|geometr(?:y|ies))|"
-    r"airport[_-]?to[_-]?refinery[_-]?assignments?|full[_-]?airport[_-]?demand[_-]?nodes|"
-    r"physical[_-]?(?:edges|nodes)|standard[_-]?map[_-]?gs[_-]?\(?2023\)?[_-]?2767|"
-    r"gs[_-]?2023[_-]?2767)(?:[_-][a-z0-9]+)*\.(?:csv|tsv|json|graphml|geojson|gpkg|shp|dbf|shx|prj|jpg|eps|tif|tiff)$"
+    r"(?ix)^(?:"
+    r"pipeline[_-]?network[_-]?segments?"
+    r"|edge[_-]?flows?"
+    r"|facility[_-]?to[_-]?(?:trunk|refinery)"
+    r"|refinery[_-]?to[_-]?pipeline[_-]?node[_-]?assignments?"
+    r"|candidate[_-].*(?:links?|geometr(?:y|ies))"
+    r"|airport[_-]?to[_-]?refinery[_-]?assignments?"
+    r"|full[_-]?airport[_-]?demand[_-]?nodes"
+    r"|physical[_-]?(?:edges?|nodes?)"
+    r"|standard[_-]?map[_-]?gs[_-]?\(?2023\)?[_-]?2767"
+    r"|gs[_-]?2023[_-]?2767"
+    r")(?:[_-][a-z0-9]+)*(?:\.[a-z0-9][a-z0-9_-]*)+$"
 )
 _RESTRICTED_SCHEMA_FIELDS = {
     "candidate_id",
@@ -246,15 +255,17 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
             credentials.append(label)
         if _ZERO_HASH_RE.search(text):
             zero_hashes.append(label)
-        if _DOI_URL_RE.search(text) and label in {
-            "README.md",
-            "DATA_AVAILABILITY.md",
-            "CODE_AVAILABILITY.md",
-            "CITATION.cff",
-            "NOTICE.md",
-            "MANUSCRIPT_SCOPE.md",
-        }:
-            doi_hits.append(label)
+        if _DOI_URL_RE.search(text) or _BARE_DOI_RE.search(text):
+            metadata_label = label in {
+                "README.md",
+                "DATA_AVAILABILITY.md",
+                "CODE_AVAILABILITY.md",
+                "CITATION.cff",
+                "NOTICE.md",
+                "MANUSCRIPT_SCOPE.md",
+            }
+            if metadata_label or _PERSISTENT_IDENTIFIER_RE.search(text):
+                doi_hits.append(label)
         if payload_schema:
             try:
                 fieldnames = _schema_fields(text, suffix)
@@ -340,7 +351,12 @@ def _validate_metadata(root: Path) -> list[str]:
         text = _read_text(root, relative)
         if "v1.0.0" not in text:
             errors.append(f"{relative} must identify release version v1.0.0")
-        if "10.5281/zenodo" in text.casefold() or "doi:" in text.casefold() or _DOI_URL_RE.search(text):
+        if (
+            "10.5281/zenodo" in text.casefold()
+            or "doi:" in text.casefold()
+            or _DOI_URL_RE.search(text)
+            or _BARE_DOI_RE.search(text)
+        ):
             errors.append(f"{relative} must not claim a DOI")
 
     scope = _read_text(root, "MANUSCRIPT_SCOPE.md")
@@ -352,20 +368,29 @@ def _validate_metadata(root: Path) -> list[str]:
         errors.append("MANUSCRIPT_SCOPE.md must not include a local path")
 
     cff = _read_text(root, "CITATION.cff")
-    required_cff = (
-        "Green methanol pipeline reuse: public data and code release",
-        "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse",
-    )
-    for marker in required_cff:
-        if marker not in cff:
-            errors.append(f"CITATION.cff missing required metadata: {marker}")
+    remote = "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse"
     cff_fields = {
+        "title": "Green methanol pipeline reuse: public data and code release",
+        "type": "software",
+        "repository-code": remote,
+        "license": "MIT",
         "version": "1.0.0",
         "date-released": "2026-08-14",
     }
+
+    def active_cff_scalar(field: str) -> str | None:
+        match = re.search(rf"(?m)^{re.escape(field)}\s*:\s*(.*?)\s*$", cff)
+        if not match:
+            return None
+        value = match.group(1).strip()
+        if not value or value.startswith("#"):
+            return None
+        if value.startswith(('"', "'")) and value.endswith(value[0]) and len(value) >= 2:
+            value = value[1:-1]
+        return value
+
     for field, expected in cff_fields.items():
-        match = re.search(rf"(?m)^\s*{re.escape(field)}\s*:\s*([^#\r\n]+?)\s*$", cff)
-        if not match or match.group(1).strip().strip('"\'') != expected:
+        if active_cff_scalar(field) != expected:
             errors.append(f"CITATION.cff requires active {field}: {expected}")
     author_names = re.findall(r"(?im)^\s*-\s*name\s*:\s*([^\r\n#]+?)\s*$", cff)
     if author_names != ["Research team"]:
@@ -375,11 +400,8 @@ def _validate_metadata(root: Path) -> list[str]:
         cff,
     ):
         errors.append("CITATION.cff must not invent personal or ORCID metadata")
-    if re.search(r"(?im)^\s*doi\s*:", cff) or _DOI_URL_RE.search(cff):
+    if re.search(r"(?im)^\s*doi\s*:", cff) or _DOI_URL_RE.search(cff) or _BARE_DOI_RE.search(cff):
         errors.append("CITATION.cff must not claim a DOI")
-    if "repository: " in cff and "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse" not in cff:
-        errors.append("CITATION.cff repository URL differs from the release remote")
-
     license_text = _read_text(root, "LICENSE")
     if "MIT License" not in license_text or "Permission is hereby granted, free of charge" not in license_text:
         errors.append("LICENSE must contain the complete MIT notice")

@@ -181,6 +181,33 @@ def test_restricted_filename_singular_plural_and_gis_sidecars_fail_closed(tmp_pa
     assert report["restricted_payload_hits"]
 
 
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "pipeline_network_segment_v01.csv",
+        "edge_flow_v01.csv",
+        "physical_edge_v01.graphml",
+        "physical_node_v01.csv",
+        "candidate_links_v01.cpg",
+        "candidate_links_v01.qpj",
+        "candidate_links_v01.sbn",
+        "candidate_links_v01.sbx",
+        "candidate_links_v01.shp.xml",
+        "standard_map_gs2023_2767_v01.pgw",
+        "candidate_links_v01.gml",
+        "candidate_links_v01.parquet",
+    ],
+)
+def test_restricted_filename_singular_stems_fail_closed(tmp_path: Path, filename: str):
+    root = _copy_release(tmp_path, filename.replace(".", "_"))
+    path = root / "data" / filename
+    path.write_text("placeholder\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert report["pre_manifest"] == "FAIL"
+    assert any(filename in hit for hit in report["restricted_payload_hits"])
+
+
 @pytest.mark.parametrize("suffix", ["tsv", "json"])
 def test_restricted_schema_fields_are_parsed_in_tsv_and_json(tmp_path: Path, suffix: str):
     root = _copy_release(tmp_path, suffix)
@@ -216,17 +243,62 @@ def test_malformed_json_is_fail_closed(tmp_path: Path):
 def test_doi_url_is_not_accepted_as_a_release_identifier(tmp_path: Path):
     root = _copy_release(tmp_path)
     path = root / "README.md"
-    path.write_text(path.read_text(encoding="utf-8") + "\nhttps://doi" + ".org/10.5281/example\n", encoding="utf-8", newline="\n")
+    path.write_text(
+        path.read_text(encoding="utf-8") + "\nhttps://doi" + ".org/10." + "5281/example\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert "README.md" in report["doi_hits"]
+
+
+@pytest.mark.parametrize("relative", ["README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md"])
+@pytest.mark.parametrize("payload", ["https://dx.doi" + ".org/10." + "1234/example", "10." + "1234/example"])
+def test_release_metadata_rejects_doi_url_and_bare_doi_variants(
+    tmp_path: Path, relative: str, payload: str
+):
+    root = _copy_release(tmp_path, relative.replace(".", "_") + payload[:4].replace("/", "_"))
+    path = root / relative
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert relative in report["doi_hits"]
+
+
+def test_explicit_persistent_identifier_doi_is_rejected_but_public_source_doi_is_allowed(tmp_path: Path):
+    root = _copy_release(tmp_path)
+    source = root / "data" / "public_sources.csv"
+    source_text = source.read_text(encoding="utf-8")
+    source.write_text(
+        source_text.replace(
+            "external_sources.csv evidence_level=primary",
+            "external_sources.csv evidence_level=primary; DOI 10." + "1234/literature",
+            1,
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
+    allowed = audit_release(root, require_manifest=False)
+    assert allowed["status"] == "PASS"
+    assert allowed["doi_hits"] == []
+
+    persistent = root / "data" / "persistent_identifiers.csv"
+    persistent.write_text(
+        "persistent_identifier\n10." + "1234/release\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    rejected = audit_release(root, require_manifest=False)
+    assert rejected["status"] == "FAIL"
+    assert "data/persistent_identifiers.csv" in rejected["doi_hits"]
 
 
 def test_cff_doi_field_is_not_accepted_as_a_release_identifier(tmp_path: Path):
     root = _copy_release(tmp_path)
     path = root / "CITATION.cff"
     path.write_text(
-        path.read_text(encoding="utf-8") + "doi: 10.5281/example\n",
+        path.read_text(encoding="utf-8") + "doi: 10." + "5281/example\n",
         encoding="utf-8",
         newline="\n",
     )
@@ -254,6 +326,41 @@ def test_cff_requires_active_version_and_release_date_fields(tmp_path: Path, fie
         f"\n{field}: ", f"\n# {field}: ", 1
     )
     path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("CITATION.cff" in error and field in error for error in report["errors"])
+
+
+@pytest.mark.parametrize("field", ["title", "repository-code"])
+def test_cff_requires_active_title_and_repository_fields(tmp_path: Path, field: str):
+    root = _copy_release(tmp_path, field.replace("-", "_"))
+    path = root / "CITATION.cff"
+    text = path.read_text(encoding="utf-8").replace(f"\n{field}:", f"\n# {field}:", 1)
+    path.write_text(text, encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("CITATION.cff" in error and field in error for error in report["errors"])
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("title", "Wrong title"),
+        ("type", "dataset"),
+        ("license", "CC-BY-4.0"),
+        ("repository-code", "https://example.invalid/release"),
+    ],
+)
+def test_cff_active_target_fields_must_match(tmp_path: Path, field: str, replacement: str):
+    root = _copy_release(tmp_path, field.replace("-", "_"))
+    path = root / "CITATION.cff"
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith(f"{field}:"):
+            lines[index] = f'{field}: "{replacement}"' if field in {"title", "repository-code"} else f"{field}: {replacement}"
+            break
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert any("CITATION.cff" in error and field in error for error in report["errors"])
