@@ -7,10 +7,10 @@ registry and cannot reconstruct physical nodes, edges or facility mappings.
 | Column | Definition | Unit or codes |
 | --- | --- | --- |
 | element_id | Stable conceptual stage identifier. | text |
-| element_type | Workflow lane. | `evidence`, `allocation`, `output` |
+| element_type | Workflow lane. | `evidence`, `allocation`, `output`, `transform`, `metric`, `decision` |
 | label | Short display label. | text |
 | detail | Display detail repeated for editing convenience. | text |
-| source_class | Evidence class used in the conceptual diagram. | `model_output` |
+| source_class | Evidence class used in the conceptual diagram. | `model_output`, `post_model_transform` |
 | target | Next conceptual stage label when present. | text or blank |
 
 Missing values are blank only for terminal conceptual stages. Derivation is a
