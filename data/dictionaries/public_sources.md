@@ -8,13 +8,13 @@ use boundaries; it does not grant redistribution rights for linked material.
 | source_id | Stable row identifier unique within the register. | text | blank forbidden | metadata transcription from the release manifest | release inventory |
 | title | Source title or concise title of an author-derived aggregate. | text | blank forbidden | metadata transcription | release inventory |
 | provider | Issuing body or author provenance. | text | blank forbidden | metadata transcription | release inventory |
-| source_type | Evidence class assigned to the source. | text; public_source, engineering_source, author_generated_aggregate | blank forbidden | controlled vocabulary assignment | release inventory |
-| stable_url_or_doi | Stable locator used to identify the evidence. | URL or DOI; not_applicable for an author-only aggregate | explicit not_applicable allowed when no external locator exists | metadata transcription and locator review | release inventory |
+| source_type | Evidence class assigned to the source. | `public source`, `engineering source`, or `author-generated aggregate` | blank forbidden | controlled vocabulary assignment | release inventory |
+| stable_url_or_doi | Stable locator used to identify the evidence. | URL or DOI | blank forbidden | metadata transcription and locator review | release inventory |
 | version_or_publication_date | Publication, release, or aggregate-calculation date. | ISO date or version text | blank forbidden | metadata transcription | release inventory |
 | access_date | Date on which source metadata was checked. | ISO date | blank forbidden | metadata transcription | release inventory |
 | used_for | Parameter, boundary, or screening use in this release. | text | blank forbidden | evidence-use annotation | release inventory |
 | evidence_boundary | What the evidence supports and the limit of that support. | text | blank forbidden | evidence-boundary annotation | release inventory |
-| redistribution_status | Whether payload or metadata is redistributed. | metadata_only or author_aggregate | blank forbidden | rights review annotation | release inventory |
+| redistribution_status | Whether payload or metadata is redistributed. | `Metadata only; source payload not redistributed` or `Aggregate value only; no third-party raw payload` | blank forbidden | rights review annotation | release inventory |
 | licence_or_rights_status | Rights status for third-party or author-generated material. | text | blank forbidden | rights review annotation | release inventory |
 | notes | Additional traceability or derivation note. | text | blank forbidden | metadata transcription | release inventory |
 
