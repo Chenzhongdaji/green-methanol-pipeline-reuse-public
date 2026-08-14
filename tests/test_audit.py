@@ -95,6 +95,29 @@ def test_license_data_rejects_plaintext_third_party_path(tmp_path: Path):
 @pytest.mark.parametrize(
     "payload",
     [
+        "CC BY covers data\\public_sources.csv.",
+        "CC BY covers .\\data\\public_sources.csv.",
+        "CC BY covers data//public_sources.csv.",
+        "CC BY covers data\\controlled_inputs_metadata.csv.",
+        "CC BY covers .\\data//controlled_inputs_metadata.csv.",
+        "CC BY covers external\\third_party_payload.csv.",
+        "CC BY covers .\\external//third_party_payload.csv.",
+        "CC BY covers ../data/public_sources.csv.",
+        "CC BY covers /data/public_sources.csv.",
+    ],
+)
+def test_license_data_normalizes_and_rejects_unauthorized_paths(tmp_path: Path, payload: str):
+    root = _copy_release(tmp_path, "license_path_normalization")
+    path = root / "LICENSE-DATA"
+    path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
         "Controlled/restricted data included under CC BY 4.0.",
         "The controlled metadata is covered by CC BY 4.0.",
         "CC BY covers external/third_party_payload.csv.",
@@ -358,6 +381,11 @@ def test_restricted_filename_singular_plural_and_gis_sidecars_fail_closed(tmp_pa
         "standard_map_gs2023_2767_v01.pgw",
         "candidate_links_v01.gml",
         "candidate_links_v01.parquet",
+        "candidate_links_v01",
+        "candidate_links",
+        "pipeline_network_segment_v01",
+        "candidate_links_v01.csv~",
+        ".candidate_links_v01.csv",
     ],
 )
 def test_restricted_filename_singular_stems_fail_closed(tmp_path: Path, filename: str):
@@ -388,6 +416,17 @@ def test_restricted_schema_header_whitespace_is_normalized(tmp_path: Path):
     root = _copy_release(tmp_path)
     path = root / "data" / "spaced.tsv"
     path.write_text(" node_id \tvalue\nnode-1\t1\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("node_id" in hit for hit in report["restricted_payload_hits"])
+
+
+@pytest.mark.parametrize("suffix", ["csv", "tsv"])
+def test_restricted_schema_header_bom_is_normalized(tmp_path: Path, suffix: str):
+    root = _copy_release(tmp_path, "bom_schema")
+    delimiter = "," if suffix == "csv" else "\t"
+    path = root / "data" / f"bom.{suffix}"
+    path.write_text(f"\ufeffnode_id{delimiter}value\nnode-1{delimiter}1\n", encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert any("node_id" in hit for hit in report["restricted_payload_hits"])

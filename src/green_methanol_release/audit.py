@@ -66,7 +66,7 @@ _POSIX_HOME_RE = re.compile(r"(?<![A-Za-z0-9])/(?:home|Users|root)/")
 # redistributing the files; an extension or restricted schema field indicates
 # an actual carrier leak.
 _RESTRICTED_NAME_RE = re.compile(
-    r"(?ix)^(?:"
+    r"(?ix)^\.?(?:"
     r"pipeline[_-]?network[_-]?segments?"
     r"|edge[_-]?flows?"
     r"|facility[_-]?to[_-]?(?:trunk|refinery)"
@@ -77,7 +77,7 @@ _RESTRICTED_NAME_RE = re.compile(
     r"|physical[_-]?(?:edges?|nodes?)"
     r"|standard[_-]?map[_-]?gs[_-]?\(?2023\)?[_-]?2767"
     r"|gs[_-]?2023[_-]?2767"
-    r")(?:[_-][a-z0-9]+)*(?:\.[a-z0-9][a-z0-9_-]*)+$"
+    r")(?:[_-][a-z0-9]+)*(?:\.[a-z0-9][a-z0-9_-]*)*~?$"
 )
 _RESTRICTED_SCHEMA_FIELDS = {
     "candidate_id",
@@ -107,7 +107,7 @@ _CC_BY_ALLOWED_CARRIERS = frozenset(
 )
 _LICENSE_BULLET_RE = re.compile(r"(?im)^\s*-\s+(.+?)\s*$")
 _LICENSE_PATH_RE = re.compile(
-    r"(?i)(?<![a-z0-9_./:])(?:[a-z0-9_.-]+/)+[a-z0-9_.-]+\.[a-z0-9]+"
+    r"(?i)(?<![a-z0-9_./:])(?:\.{0,2}[\\/])?(?:[a-z0-9_.-]+[\\/]+)+[a-z0-9_.-]+(?:\.[a-z0-9]+)?"
 )
 
 _TEXT_SUFFIXES = {
@@ -230,12 +230,15 @@ def _docx_xml_payload(path: Path) -> Iterable[tuple[str, str]]:
 def _schema_fields(text: str, suffix: str) -> set[str]:
     """Parse a delimited or JSON payload and return normalized field names."""
 
+    def normalize_field(field: object) -> str:
+        return str(field).lstrip("\ufeff").strip().casefold()
+
     if suffix == ".json":
         value = json.loads(text)
 
         def collect(item: object) -> set[str]:
             if isinstance(item, dict):
-                fields = {str(key).strip().casefold() for key in item}
+                fields = {normalize_field(key) for key in item}
                 for child in item.values():
                     fields.update(collect(child))
                 return fields
@@ -253,7 +256,7 @@ def _schema_fields(text: str, suffix: str) -> set[str]:
     rows = list(reader)
     if not rows or not rows[0] or any(len(row) != len(rows[0]) for row in rows[1:]):
         raise ValueError("delimited payload has an invalid row shape")
-    return {field.strip().casefold() for field in rows[0] if field.strip()}
+    return {normalize_field(field) for field in rows[0] if normalize_field(field)}
 
 
 def _scan_disclosures(root: Path) -> dict[str, Any]:
@@ -376,6 +379,29 @@ def _read_text(root: Path, relative: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _normalize_license_path(value: str) -> str | None:
+    """Normalize a candidate licence path and reject unsafe traversal forms."""
+
+    normalized = value.strip().strip("`\"'").rstrip(".,;:!?)]}")
+    normalized = normalized.replace("\\", "/")
+    while "//" in normalized:
+        normalized = normalized.replace("//", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    if (
+        not normalized
+        or normalized in {".", ".."}
+        or normalized.startswith("/")
+        or re.match(r"(?i)^[a-z]:", normalized)
+        or normalized == ".."
+        or normalized.startswith("../")
+        or "/../" in normalized
+        or normalized.endswith("/..")
+    ):
+        return None
+    return normalized
+
+
 def _validate_metadata(root: Path) -> list[str]:
     errors: list[str] = []
     missing = _check_required_metadata(root)
@@ -471,14 +497,27 @@ def _validate_metadata(root: Path) -> list[str]:
     data_license = _read_text(root, "LICENSE-DATA")
     if "Creative Commons Attribution 4.0 International" not in data_license or "creativecommons.org/licenses/by/4.0/" not in data_license:
         errors.append("LICENSE-DATA must state CC BY 4.0 and its official reference")
-    license_paths = {
-        item.strip().strip("`").strip()
-        for item in _LICENSE_BULLET_RE.findall(data_license)
-        if item.strip()
+    bullet_candidates = _LICENSE_BULLET_RE.findall(data_license)
+    extracted_candidates = [*bullet_candidates, *_LICENSE_PATH_RE.findall(data_license)]
+    normalized_candidates = [_normalize_license_path(item) for item in extracted_candidates if item.strip()]
+    unsafe_candidates = {
+        item.strip()
+        for item, normalized in zip(extracted_candidates, normalized_candidates)
+        if normalized is None
+        and any(marker in item for marker in ("/", "\\"))
     }
-    all_license_paths = set(_LICENSE_PATH_RE.findall(data_license))
+    license_paths = {
+        normalized
+        for item in bullet_candidates
+        if (normalized := _normalize_license_path(item)) is not None
+    }
+    all_license_paths = {
+        normalized for normalized in normalized_candidates if normalized is not None
+    }
     if license_paths != _CC_BY_ALLOWED_CARRIERS or all_license_paths != _CC_BY_ALLOWED_CARRIERS:
         errors.append("LICENSE-DATA CC BY carrier allowlist does not match the exact aggregate paths")
+    if unsafe_candidates:
+        errors.append("LICENSE-DATA CC BY carrier allowlist rejects unsafe or absolute paths")
     forbidden_paths = {
         "data/controlled_inputs_metadata.csv",
         "data/public_sources.csv",
