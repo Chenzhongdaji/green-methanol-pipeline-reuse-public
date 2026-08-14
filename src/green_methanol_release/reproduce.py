@@ -167,7 +167,10 @@ def _load_csv(path: Path, fields: tuple[str, ...], label: str) -> list[dict[str,
         raise ValueError(f"{label} is not UTF-8: {path.as_posix()}") from exc
     if any(marker in text for marker in _MOJIBAKE_MARKERS):
         raise ValueError(f"{label} contains a known mojibake marker")
-    reader = csv.DictReader(text.splitlines())
+    try:
+        reader = csv.DictReader(text.splitlines())
+    except csv.Error as exc:
+        raise ValueError(f"{label} is not valid CSV") from exc
     actual = tuple(reader.fieldnames or ())
     if actual != fields:
         raise ValueError(f"{label} columns differ: expected={fields}, actual={actual}")
