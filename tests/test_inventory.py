@@ -7,6 +7,7 @@ import pytest
 from green_methanol_release.inventory import (
     CONTROLLED_FIELDS,
     PUBLIC_SOURCE_FIELDS,
+    load_public_sources,
     validate_inventory,
 )
 
@@ -49,6 +50,18 @@ def test_controlled_register_has_exact_approved_families():
 def test_third_party_sources_are_not_cc_by_relicensed():
     result = validate_inventory(ROOT)
     assert result["third_party_cc_by_rows"] == 0
+
+
+def test_connector_scenario_base_locator_matches_reviewed_source():
+    row = next(
+        row
+        for row in load_public_sources(ROOT / "data" / "public_sources.csv")
+        if row["source_id"] == "CONNECTOR-SCENARIO-BASE"
+    )
+    assert row["stable_url_or_doi"] == (
+        "https://sthjt.shaanxi.gov.cn/xxgk/fdnr/zcwj/shpf/"
+        "202602/t20260224_3614544.html"
+    )
 
 
 @pytest.mark.parametrize("hash_note", ["reason without marker", "hash_unavailable", "hash_unavailable:   "])
