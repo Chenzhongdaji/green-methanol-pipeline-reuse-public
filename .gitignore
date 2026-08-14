@@ -1,0 +1,19 @@
+# Local Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+
+# External QA reports (kept outside the immutable release tree)
+qa/external/
+qa/reports/
+external_qa/
