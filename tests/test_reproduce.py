@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 import shutil
 
+import pytest
+
 from green_methanol_release.reproduce import run_reproduction
 
 
@@ -52,5 +54,21 @@ def test_dictionary_column_coverage_is_fail_closed(tmp_path):
         newline="\n",
     )
     report = run_reproduction(root, "smoke", tmp_path / "run.json")
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["figure-01.csv", "figure-03.csv", "figure-04.csv", "figure-05.csv"],
+)
+def test_every_figure_schema_rejects_restricted_identifier_columns(tmp_path, name):
+    root = tmp_path / name.replace(".csv", "")
+    shutil.copytree(ROOT, root, ignore=shutil.ignore_patterns(".git", ".venv", "__pycache__"))
+    path = root / "figures" / "source_data" / name
+    lines = path.read_text(encoding="utf-8").splitlines()
+    lines[0] = lines[0] + ",node_id"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    report = run_reproduction(root, "smoke", tmp_path / f"{name}.json")
     assert report["status"] == "FAIL"
     assert report["level_1_status"] == "FAIL"
