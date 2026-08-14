@@ -1,22 +1,22 @@
 # Public-source register dictionary
 
-public_sources.csv is a metadata register. It records where evidence came
-from and how it was used; it is not a licence for the linked source.
+`data/public_sources.csv` is a metadata register. It records provenance and
+use boundaries; it does not grant redistribution rights for linked material.
 
-| Field | Meaning |
-| --- | --- |
-| source_id | Stable row identifier; unique within this register. |
-| title | Source title or concise title of an author-derived aggregate. |
-| provider | Issuing body or author provenance. |
-| source_type | public source, engineering source, or explicitly labelled author-generated aggregate. |
-| stable_url_or_doi | Stable public URL or DOI used to locate the evidence. |
-| version_or_publication_date | Publication, release, or aggregate-calculation date. |
-| access_date | Date on which the metadata was checked. |
-| used_for | Parameter, boundary, or screening use in the release. |
-| evidence_boundary | What the evidence supports and the limit of that support. |
-| redistribution_status | States that only metadata or an author aggregate is redistributed. |
-| licence_or_rights_status | Source-specific rights for third-party material; CC BY 4.0 only for author-generated aggregate rows. |
-| notes | Traceability note such as source-manifest evidence class or derivation. |
+| Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
+| --- | --- | --- | --- | --- | --- |
+| source_id | Stable row identifier unique within the register. | text | blank forbidden | metadata transcription from the release manifest | release inventory |
+| title | Source title or concise title of an author-derived aggregate. | text | blank forbidden | metadata transcription | release inventory |
+| provider | Issuing body or author provenance. | text | blank forbidden | metadata transcription | release inventory |
+| source_type | Evidence class assigned to the source. | text; public_source, engineering_source, author_generated_aggregate | blank forbidden | controlled vocabulary assignment | release inventory |
+| stable_url_or_doi | Stable locator used to identify the evidence. | URL or DOI; not_applicable for an author-only aggregate | explicit not_applicable allowed when no external locator exists | metadata transcription and locator review | release inventory |
+| version_or_publication_date | Publication, release, or aggregate-calculation date. | ISO date or version text | blank forbidden | metadata transcription | release inventory |
+| access_date | Date on which source metadata was checked. | ISO date | blank forbidden | metadata transcription | release inventory |
+| used_for | Parameter, boundary, or screening use in this release. | text | blank forbidden | evidence-use annotation | release inventory |
+| evidence_boundary | What the evidence supports and the limit of that support. | text | blank forbidden | evidence-boundary annotation | release inventory |
+| redistribution_status | Whether payload or metadata is redistributed. | metadata_only or author_aggregate | blank forbidden | rights review annotation | release inventory |
+| licence_or_rights_status | Rights status for third-party or author-generated material. | text | blank forbidden | rights review annotation | release inventory |
+| notes | Additional traceability or derivation note. | text | blank forbidden | metadata transcription | release inventory |
 
 An open URL is not treated as an open licence. Third-party rows therefore
 remain metadata-only unless source-specific redistribution rights are verified.

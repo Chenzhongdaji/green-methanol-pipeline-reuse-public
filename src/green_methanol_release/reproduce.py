@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import io
 import json
 import math
 import re
@@ -20,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import ReleaseRoot, validate_status
-from .inventory import validate_inventory
+from .inventory import CONTROLLED_FIELDS, PUBLIC_SOURCE_FIELDS, validate_inventory
 
 
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -99,6 +100,8 @@ _FIGURE_SPECS: dict[str, tuple[str, ...]] = {
     ),
 }
 _DICTIONARY_PATHS = (
+    "data/dictionaries/public_sources.md",
+    "data/dictionaries/controlled_inputs.md",
     "data/dictionaries/figure_01.md",
     "data/dictionaries/figure_03.md",
     "data/dictionaries/figure_04.md",
@@ -109,6 +112,8 @@ _DICTIONARY_PATHS = (
 )
 _PANEL_FIELDS = ("figure", "panel", "status", "source_data", "dictionary", "reason")
 _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
+    "data/dictionaries/public_sources.md": PUBLIC_SOURCE_FIELDS,
+    "data/dictionaries/controlled_inputs.md": CONTROLLED_FIELDS,
     "data/dictionaries/figure_01.md": _FIGURE_SPECS["figures/source_data/figure-01.csv"],
     "data/dictionaries/figure_03.md": _FIGURE_SPECS["figures/source_data/figure-03.csv"],
     "data/dictionaries/figure_04.md": _FIGURE_SPECS["figures/source_data/figure-04.csv"],
@@ -129,6 +134,52 @@ _REQUIRED_PATHS = (
 _FIGURE2_REASON = (
     "GS(2023)2767 map source and formal map review are not cleared for public release"
 )
+_EXPECTED_PANEL_ROWS = (
+    (
+        "Figure 1",
+        "all",
+        "aggregate-only",
+        "figures/source_data/figure-01.csv",
+        "data/dictionaries/figure_01.md",
+        "conceptual aggregate workflow only; no topology or facility identifiers",
+    ),
+    ("Figure 2", "all", "not-run", "", "", _FIGURE2_REASON),
+    (
+        "Figure 3",
+        "all",
+        "aggregate-only",
+        "figures/source_data/figure-03.csv",
+        "data/dictionaries/figure_03.md",
+        "scenario-level transport aggregates only; task-level routes are excluded",
+    ),
+    (
+        "Figure 4",
+        "c",
+        "aggregate-only",
+        "figures/source_data/figure-04.csv",
+        "data/dictionaries/figure_04.md",
+        "regional aggregate accounts only; refinery-proxy entities and coordinates are excluded",
+    ),
+    (
+        "Figure 5",
+        "c",
+        "aggregate-only",
+        "figures/source_data/figure-05.csv",
+        "data/dictionaries/figure_05.md",
+        "aggregate service-gain panel only; connector identifiers and geometry are excluded",
+    ),
+)
+_WORKFLOW_REASONS = {
+    "figure_source_data": (
+        "Only reviewed aggregate carriers are released; topology-bearing and coordinate-bearing panels are withheld."
+    ),
+    "manuscript_artifacts": (
+        "The manuscript is not redistributed; this release records only metadata and bounded aggregate evidence."
+    ),
+    "network_model": (
+        "Exact directed topology, facility mappings, candidate geometry and map-review-pending inputs are absent."
+    ),
+}
 _FORBIDDEN_COLUMNS = {
     "candidate_id",
     "candidate_ids",
@@ -168,20 +219,34 @@ def _load_csv(path: Path, fields: tuple[str, ...], label: str) -> list[dict[str,
     if any(marker in text for marker in _MOJIBAKE_MARKERS):
         raise ValueError(f"{label} contains a known mojibake marker")
     try:
-        reader = csv.DictReader(text.splitlines())
+        reader = csv.DictReader(io.StringIO(text, newline=""), strict=True)
+        actual = tuple(reader.fieldnames or ())
+        if actual != fields:
+            raise ValueError(f"{label} columns differ: expected={fields}, actual={actual}")
+        rows: list[dict[str, str]] = []
+        for line_number, row in enumerate(reader, start=2):
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(f"{label} has malformed row {line_number}")
+            rows.append({field: row[field] for field in fields})
     except csv.Error as exc:
         raise ValueError(f"{label} is not valid CSV") from exc
-    actual = tuple(reader.fieldnames or ())
-    if actual != fields:
-        raise ValueError(f"{label} columns differ: expected={fields}, actual={actual}")
-    rows: list[dict[str, str]] = []
-    for line_number, row in enumerate(reader, start=2):
-        if None in row or any(value is None for value in row.values()):
-            raise ValueError(f"{label} has malformed row {line_number}")
-        rows.append({field: row[field] for field in fields})
     if not rows:
         raise ValueError(f"{label} cannot be empty")
     return rows
+
+
+def _validate_utf8_lf(path: Path, label: str) -> None:
+    """Reject CRLF and invalid UTF-8 before the Task 2 inventory loader runs."""
+
+    payload = path.read_bytes()
+    if b"\r" in payload:
+        raise ValueError(f"{label} must use LF line endings: {path.as_posix()}")
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{label} is not UTF-8: {path.as_posix()}") from exc
+    if any(marker in text for marker in _MOJIBAKE_MARKERS):
+        raise ValueError(f"{label} contains a known mojibake marker")
 
 
 def _git_head(root: Path) -> str:
@@ -206,6 +271,13 @@ def _resolve(root: Path, relative: str) -> Path:
 def _validate_panel_map(root: Path) -> list[dict[str, str]]:
     path = _resolve(root, "figures/panel_map.csv")
     rows = _load_csv(path, _PANEL_FIELDS, "panel map")
+    actual_contract = {
+        tuple(row[field].strip() for field in _PANEL_FIELDS)
+        for row in rows
+    }
+    expected_contract = set(_EXPECTED_PANEL_ROWS)
+    if len(rows) != len(_EXPECTED_PANEL_ROWS) or actual_contract != expected_contract:
+        raise ValueError("panel map must match the exact five-row release contract")
     seen: set[tuple[str, str]] = set()
     for row in rows:
         key = (row["figure"].strip(), row["panel"].strip())
@@ -253,19 +325,47 @@ def _validate_dictionary(path: Path, fields: tuple[str, ...], label: str) -> Non
     text = payload.decode("utf-8")
     if any(marker in text for marker in _MOJIBAKE_MARKERS):
         raise ValueError(f"dictionary contains a known mojibake marker: {label}")
-    missing = [
+    expected_header = (
+        "Column",
+        "Definition",
+        "Unit or codes",
+        "Missing-value policy",
+        "Derivation",
+        "Related panel",
+    )
+    table_rows: dict[str, tuple[str, ...]] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not (stripped.startswith("|") and stripped.endswith("|")):
+            continue
+        cells = tuple(cell.strip() for cell in stripped[1:-1].split("|"))
+        if cells == expected_header or all(set(cell) <= {"-", ":", " "} for cell in cells):
+            continue
+        if len(cells) != len(expected_header):
+            continue
+        column = cells[0]
+        if column in fields:
+            if column in table_rows:
+                raise ValueError(f"dictionary repeats column row {column!r}: {label}")
+            table_rows[column] = cells[1:]
+    missing = [field for field in fields if field not in table_rows]
+    extra = sorted(set(table_rows) - set(fields))
+    if missing or extra:
+        raise ValueError(f"dictionary column rows differ for {label}: missing={missing}, extra={extra}")
+    incomplete = [
         field
-        for field in fields
-        if re.search(rf"(?<![A-Za-z0-9_]){re.escape(field)}(?![A-Za-z0-9_])", text)
-        is None
+        for field, values in table_rows.items()
+        if any(not value.strip() for value in values)
     ]
-    if missing:
-        raise ValueError(f"dictionary does not document columns {missing}: {label}")
+    if incomplete:
+        raise ValueError(f"dictionary rows have blank metadata for {incomplete}: {label}")
 
 
 def _recompute_claims(
     account_rows: list[dict[str, str]], claim_rows: list[dict[str, str]]
 ) -> dict[str, dict[str, Any]]:
+    if len(account_rows) != 1:
+        raise ValueError("terminal gap aggregate must contain exactly one row")
     selected = [
         row
         for row in account_rows
@@ -355,9 +455,20 @@ def _base_report(mode: str, root: Path) -> dict[str, Any]:
         ),
         "release_commit": _git_head(root),
         "workflows": workflows,
+        "workflow_reasons": dict(_WORKFLOW_REASONS),
         "input_hashes": {},
         "output_hashes": {},
     }
+
+
+def _validate_workflow_reasons(report: dict[str, Any]) -> None:
+    workflows = report.get("workflows", {})
+    reasons = report.get("workflow_reasons", {})
+    required = {name for name, status in workflows.items() if status != "reproduced"}
+    if set(reasons) != required or any(
+        not isinstance(reasons[name], str) or not reasons[name].strip() for name in required
+    ):
+        raise ValueError("workflow reasons must cover every non-reproduced workflow")
 
 
 def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
@@ -374,11 +485,14 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
     errors: list[str] = []
     checked_paths: list[Path] = []
     try:
+        _validate_workflow_reasons(report)
+        if not _COMMIT_RE.fullmatch(str(report.get("release_commit", ""))):
+            raise ValueError("release commit must be a verified 40-character lowercase Git commit")
+        for relative in ("data/public_sources.csv", "data/controlled_inputs_metadata.csv"):
+            path = _resolve(root, relative)
+            _validate_utf8_lf(path, relative)
+            checked_paths.append(path)
         validate_inventory(root)
-        checked_paths.extend(
-            _resolve(root, relative)
-            for relative in ("data/public_sources.csv", "data/controlled_inputs_metadata.csv")
-        )
         panel_rows = _validate_panel_map(root)
         checked_paths.append(_resolve(root, "figures/panel_map.csv"))
         claim_rows = _load_csv(
@@ -386,7 +500,7 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
         )
         checked_paths.append(_resolve(root, "qa/expected/headline_claims.csv"))
         claim_ids = {row["claim_id"].strip() for row in claim_rows}
-        if claim_ids != set(_EXPECTED_CLAIMS):
+        if len(claim_rows) != len(claim_ids) or claim_ids != set(_EXPECTED_CLAIMS):
             raise ValueError(f"headline claim IDs differ: {sorted(claim_ids)}")
         for row in claim_rows:
             claim_id = row["claim_id"].strip()
