@@ -76,6 +76,7 @@ def test_disclosure_mutations_fail_closed(tmp_path: Path, relative: str, payload
         path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
+    assert report["pre_manifest"] == "FAIL"
     if relative == "README.md" and payload.startswith("fixture"):
         assert report["absolute_path_hits"]
     elif relative == "README.md":

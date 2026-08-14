@@ -554,6 +554,10 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         report["offline_smoke"] = "FAIL"
         errors.append(f"offline smoke audit failed: {exc}")
 
+    # Freeze the non-manifest gate result before optionally adding closure
+    # errors.  A mutated payload must not report a misleading pre-manifest
+    # PASS merely because manifest checks were skipped.
+    report["pre_manifest"] = "PASS" if not errors else "FAIL"
     if require_manifest:
         closure = verify_manifest_closure(root)
         report["manifest"] = closure
@@ -563,9 +567,6 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
             report["public_release"] = "PASS"
     else:
         report["manifest"] = {"status": "NOT_RUN"}
-    report["pre_manifest"] = "PASS" if not errors or (not require_manifest and all(
-        not error.startswith("manifest") and not error.startswith("manifest/checksum") for error in errors
-    ) and report.get("offline_smoke") == "PASS") else "FAIL"
     if errors:
         report["status"] = "FAIL"
         report["public_release"] = "FAIL" if require_manifest else "BLOCKED_MANIFEST"
