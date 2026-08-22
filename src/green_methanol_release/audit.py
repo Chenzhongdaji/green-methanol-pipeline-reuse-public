@@ -477,14 +477,14 @@ def _validate_metadata(root: Path) -> list[str]:
 
     scope = _read_text(root, "MANUSCRIPT_SCOPE.md")
     for filename in (
-        "green_methanol_manuscript_references_v02_2026-08-14_rev03_data_code_2026-08-22.docx",
-        "green_methanol_supplementary_information_rev03_data_code_2026-08-22.docx",
+        "green_methanol_manuscript_references_v02_2026-08-14_rev04_public_data_code_2026-08-22.docx",
+        "green_methanol_supplementary_information_rev04_public_data_code_2026-08-22.docx",
     ):
         if filename not in scope:
             errors.append(f"MANUSCRIPT_SCOPE.md must record the current authority filename: {filename}")
     for digest in (
-        "FAB8876EF06DA0A48F7D8B102FA51AD3A8D97515A6BF264635AEC0F387D64D0B",
-        "DA53964D3AC2CEB38D266D8EBE62016BADEF7AA23A9FA6DAE58284B42A406A3D",
+        "9A93C3FE87F86426D79466872F910A861B8AF06543AA3C4B4B0BD0A258499458",
+        "94379F97A40120353EC70762B2C305774865EEE5CA9281B8C5CFFA213F1C1CF0",
     ):
         if digest not in scope:
             errors.append(f"MANUSCRIPT_SCOPE.md must record the current authority SHA-256: {digest}")

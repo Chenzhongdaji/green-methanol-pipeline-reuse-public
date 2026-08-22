@@ -16,7 +16,7 @@ itself, which closes the inventory without a checksum self-reference cycle.
 
 ## Manuscript binding
 
-The candidate is bound to the current rev03 data/code manuscript and Supplementary
+The candidate is bound to the current rev04 public-data/code manuscript and Supplementary
 Information pair and their SHA-256 values in [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md).
 The authority DOCX files are not redistributed here.
 

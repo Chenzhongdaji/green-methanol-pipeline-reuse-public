@@ -27,7 +27,7 @@ register; proximity or aggregate shares must not be read as proof of a usable
 pipeline connection.
 
 The manuscript and Supplementary Information DOCX files are not redistributed.
-The candidate is bound to the current rev03 data/code pair and SHA-256 values recorded in
+The candidate is bound to the current rev04 public-data/code pair and SHA-256 values recorded in
 [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md). This package contains neither
 third-party raw source payloads nor a DOI claim. See
 [DATA_AVAILABILITY.md](DATA_AVAILABILITY.md) and
@@ -76,7 +76,7 @@ covered by MIT as described in [NOTICE.md](NOTICE.md).
 ## Release metadata
 
 Release candidate version: `v1.0.0` (initial candidate 2026-08-14;
-metadata rebound to the current rev03 data/code manuscript on 2026-08-22).
+metadata rebound to the current rev04 public-data/code manuscript on 2026-08-22).
 The public development repository is
 <https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>.
 The repository is a provisional candidate rather than a frozen archival

@@ -75,8 +75,8 @@ def test_current_candidate_has_no_old_repository_or_manuscript_binding():
     assert "7_27" + ".git" not in texts
     assert "green_methanol_pipeline_reuse_" + "v1.21_en.docx" not in texts
     assert "d6c9cec04888efdcd125ef946edad139990e81fb630afc11c7fe94bb2cca" + "4f6a" not in texts
-    assert "green_methanol_manuscript_references_v02_2026-08-14_rev03_data_code_2026-08-22.docx" in texts
-    assert "green_methanol_supplementary_information_rev03_data_code_2026-08-22.docx" in texts
+    assert "green_methanol_manuscript_references_v02_2026-08-14_rev04_public_data_code_2026-08-22.docx" in texts
+    assert "green_methanol_supplementary_information_rev04_public_data_code_2026-08-22.docx" in texts
 
 
 def test_current_candidate_releases_safe_figure2_aggregates_but_withholds_panel_e():

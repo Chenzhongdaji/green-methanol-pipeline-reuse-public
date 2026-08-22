@@ -5,7 +5,7 @@ Provisional candidate `v1.0.0` (initial candidate 2026-08-14; metadata rebound
 source carriers cover Figures 1 and 3-5 and the safe aggregate subset of Figure
 2 panels a-d and f-h; Figure 2 panel e remains withheld because it depends on
 restricted network/map payloads.
-The candidate is bound to the current rev03 data/code manuscript and Supplementary
+The candidate is bound to the current rev04 public-data/code manuscript and Supplementary
 Information pair recorded in [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md).
 
 The Python package under `src/green_methanol_release/` and the command-line

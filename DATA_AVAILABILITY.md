@@ -6,7 +6,7 @@ selected figure source data, dictionaries, and source metadata needed for the
 offline Level 1 reproduction. Figure source carriers cover Figures 1 and 3-5
 and the safe aggregate subset of Figure 2 panels a-d and f-h. Figure 2 panel e
 is withheld because its restricted network/map payload and formal map review
-are not released. The current rev03 data/code manuscript and
+are not released. The current rev04 public-data/code manuscript and
 Supplementary Information filenames and SHA-256 values are recorded in
 [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md). The public-source register
 identifies the external reports, regulations, articles, and engineering

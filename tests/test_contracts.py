@@ -40,12 +40,12 @@ def test_release_root_refuses_writes_outside_root(tmp_path: Path):
         root.resolve("../outside.txt")
 
 
-def test_release_metadata_binds_current_rev03_manuscript_pair():
+def test_release_metadata_binds_current_rev04_manuscript_pair():
     scope = (Path(__file__).resolve().parents[1] / "MANUSCRIPT_SCOPE.md").read_text(encoding="utf-8")
-    assert "green_methanol_manuscript_references_v02_2026-08-14_rev03_data_code_2026-08-22.docx" in scope
-    assert "green_methanol_supplementary_information_rev03_data_code_2026-08-22.docx" in scope
-    assert "FAB8876EF06DA0A48F7D8B102FA51AD3A8D97515A6BF264635AEC0F387D64D0B" in scope
-    assert "DA53964D3AC2CEB38D266D8EBE62016BADEF7AA23A9FA6DAE58284B42A406A3D" in scope
+    assert "green_methanol_manuscript_references_v02_2026-08-14_rev04_public_data_code_2026-08-22.docx" in scope
+    assert "green_methanol_supplementary_information_rev04_public_data_code_2026-08-22.docx" in scope
+    assert "9A93C3FE87F86426D79466872F910A861B8AF06543AA3C4B4B0BD0A258499458" in scope
+    assert "94379F97A40120353EC70762B2C305774865EEE5CA9281B8C5CFFA213F1C1CF0" in scope
 
 
 def test_ci_manifest_entrypoint_exists():
