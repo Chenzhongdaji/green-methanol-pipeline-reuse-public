@@ -59,6 +59,50 @@ def test_release_has_separate_data_and_code_statements():
     assert (ROOT / "CODE_AVAILABILITY.md").is_file()
 
 
+def test_current_candidate_has_no_old_repository_or_manuscript_binding():
+    texts = "\n".join(
+        (ROOT / name).read_text(encoding="utf-8")
+        for name in (
+            "README.md",
+            "DATA_AVAILABILITY.md",
+            "CODE_AVAILABILITY.md",
+            "MANUSCRIPT_SCOPE.md",
+            "CITATION.cff",
+            "NOTICE.md",
+            "RELEASE_STATUS.md",
+        )
+    )
+    assert "7_27" + ".git" not in texts
+    assert "green_methanol_pipeline_reuse_" + "v1.21_en.docx" not in texts
+    assert "d6c9cec04888efdcd125ef946edad139990e81fb630afc11c7fe94bb2cca" + "4f6a" not in texts
+    assert "green_methanol_manuscript_references_v02_2026-08-14_rev03_data_code_2026-08-22.docx" in texts
+    assert "green_methanol_supplementary_information_rev03_data_code_2026-08-22.docx" in texts
+
+
+def test_current_candidate_releases_safe_figure2_aggregates_but_withholds_panel_e():
+    panel_map = (ROOT / "figures" / "panel_map.csv").read_text(encoding="utf-8")
+    assert 'Figure 2,"a-d,f-h",aggregate-only,data/author_derived/figure2_aggregate_source.csv' in panel_map
+    assert "panel e restricted-map-not-released" in panel_map
+    assert "Figure 1,all,aggregate-only,figures/source_data/figure-01.csv" in panel_map
+    assert "Figure 3,all,aggregate-only,figures/source_data/figure-03.csv" in panel_map
+    assert "Figure 4,c,aggregate-only,figures/source_data/figure-04.csv" in panel_map
+    assert "Figure 5,c,aggregate-only,figures/source_data/figure-05.csv" in panel_map
+    for name in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md", "RELEASE_STATUS.md"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        assert "Figure 2" in text
+        assert "panel e" in text.casefold()
+        assert "restricted" in text.casefold() or "withheld" in text.casefold()
+
+
+def test_controlled_input_register_has_validation_substitute_without_access_promise():
+    metadata = (ROOT / "data" / "controlled_inputs_metadata.csv").read_text(encoding="utf-8")
+    dictionary = (ROOT / "data" / "dictionaries" / "controlled_inputs.md").read_text(encoding="utf-8")
+    assert "validation" in metadata.casefold()
+    assert "validation" in dictionary.casefold()
+    assert "guaranteed" not in metadata.casefold()
+    assert "automatic" not in metadata.casefold()
+
+
 def test_license_data_rejects_controlled_metadata_grant(tmp_path: Path):
     root = _copy_release(tmp_path)
     path = root / "LICENSE-DATA"
@@ -526,7 +570,7 @@ def test_public_release_metadata_requires_version(tmp_path: Path, relative: str)
     assert any(relative in error and "version" in error for error in report["errors"])
 
 
-@pytest.mark.parametrize("field", ["version", "date-released"])
+@pytest.mark.parametrize("field", ["version"])
 def test_cff_requires_active_version_and_release_date_fields(tmp_path: Path, field: str):
     root = _copy_release(tmp_path, field.replace("-", "_"))
     path = root / "CITATION.cff"
@@ -556,7 +600,6 @@ def test_cff_requires_active_title_and_repository_fields(tmp_path: Path, field: 
         ("title", "Wrong title"),
         ("type", "dataset"),
         ("license", "CC-BY-4.0"),
-        ("repository-code", "https://example.invalid/release"),
     ],
 )
 def test_cff_active_target_fields_must_match(tmp_path: Path, field: str, replacement: str):
@@ -572,6 +615,17 @@ def test_cff_active_target_fields_must_match(tmp_path: Path, field: str, replace
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
     assert any("CITATION.cff" in error and field in error for error in report["errors"])
+
+
+@pytest.mark.parametrize("field", ["date-released", "url"])
+def test_cff_rejects_public_release_locator_fields(tmp_path: Path, field: str):
+    root = _copy_release(tmp_path, f"cff-{field.replace('-', '_')}")
+    path = root / "CITATION.cff"
+    value = "2026-08-22" if field == "date-released" else "https://example.invalid/not-assigned"
+    path.write_text(path.read_text(encoding="utf-8") + f"{field}: {value}\n", encoding="utf-8", newline="\n")
+    report = audit_release(root, require_manifest=False)
+    assert report["status"] == "FAIL"
+    assert any("CITATION.cff" in error and "archival release" in error for error in report["errors"])
 
 
 @pytest.mark.parametrize("field", ["email", "affiliation", "orcid", "family-names", "given-names"])

@@ -15,6 +15,7 @@ inputs are not covered by this grant and remain subject to their own rights.
 
 Covered author-generated aggregate carriers are limited to:
 
+- `data/author_derived/figure2_aggregate_source.csv`
 - `data/author_derived/terminal_gap_aggregate.csv`
 - `figures/source_data/figure-01.csv`
 - `figures/source_data/figure-03.csv`

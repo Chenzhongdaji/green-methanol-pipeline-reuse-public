@@ -8,6 +8,8 @@ third-party source payloads.
 from __future__ import annotations
 
 import csv
+import hashlib
+import io
 import re
 from pathlib import Path
 
@@ -37,9 +39,36 @@ CONTROLLED_FIELDS = (
     "restriction_reason",
     "schema_summary",
     "access_route",
+    "validation_substitute",
     "sha256",
     "hash_note",
 )
+
+MANIFEST_FIELDS = (
+    "path",
+    "bytes",
+    "sha256",
+    "purpose",
+    "licence_scope",
+    "data_class",
+)
+
+MANIFEST_FILENAME = "FILE_MANIFEST.csv"
+CHECKSUMS_FILENAME = "CHECKSUMS.sha256"
+
+# These paths are generated or environment-specific and therefore are not
+# release payload.  Keep this rule identical to the audit closure contract;
+# in particular, the manifest and checksum files are excluded from their own
+# payload inventory to avoid a self-reference cycle.
+_INVENTORY_SKIP_PARTS = {
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "src/green_methanol_pipeline_reuse.egg-info",
+}
 
 CONTROLLED_DATASET_IDS = {
     "city-topology-directed-network-v01",
@@ -93,7 +122,132 @@ def _load_csv(path: Path, fields: tuple[str, ...], identifier: str) -> list[dict
             seen.add(value)
             normalized[identifier] = value
             rows.append(normalized)
-        return rows
+    return rows
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _relative_payload_files(root: Path) -> list[tuple[str, Path]]:
+    """Return deterministic repository-relative payload files.
+
+    The generated inventories are deliberately excluded.  Relative POSIX
+    names are emitted regardless of the host platform so that the same tree
+    produces byte-identical records on Windows and Linux.
+    """
+
+    root = Path(root).resolve()
+    if not root.is_dir():
+        raise ValueError(f"release root is not a directory: {root}")
+    payloads: list[tuple[str, Path]] = []
+    excluded = {MANIFEST_FILENAME, CHECKSUMS_FILENAME}
+    for path in root.rglob("*"):
+        if not path.is_file() or path.name in excluded:
+            continue
+        relative_path = path.resolve().relative_to(root)
+        relative = relative_path.as_posix()
+        if any(
+            relative == part
+            or relative.startswith(part + "/")
+            or part in relative_path.parts
+            for part in _INVENTORY_SKIP_PARTS
+        ):
+            continue
+        payloads.append((relative, path))
+    return sorted(payloads, key=lambda item: item[0])
+
+
+_CC_BY_CARRIERS = frozenset(
+    {
+        "data/author_derived/figure2_aggregate_source.csv",
+        "data/author_derived/terminal_gap_aggregate.csv",
+        "figures/source_data/figure-01.csv",
+        "figures/source_data/figure-03.csv",
+        "figures/source_data/figure-04.csv",
+        "figures/source_data/figure-05.csv",
+        "figures/panel_map.csv",
+        "qa/expected/headline_claims.csv",
+    }
+)
+
+
+def _manifest_attributes(relative: str) -> tuple[str, str, str]:
+    """Classify one payload path for the human-auditable manifest."""
+
+    if relative in _CC_BY_CARRIERS:
+        return "author-generated aggregate carrier", "CC BY 4.0", "author-generated aggregate data"
+    if relative == "data/public_sources.csv":
+        return "third-party provenance metadata", "metadata-only; third-party rights retained", "public-source metadata"
+    if relative == "data/controlled_inputs_metadata.csv":
+        return "restricted-input provenance metadata", "metadata-only; controlled rights retained", "controlled-input metadata"
+    if relative.startswith("data/dictionaries/"):
+        return "field dictionary and boundary metadata", "MIT", "documentation"
+    if relative.startswith("data/"):
+        return "reviewed release data or metadata", "MIT", "release metadata"
+    if relative.startswith("figures/"):
+        return "figure carrier metadata or aggregate source", "MIT", "figure metadata"
+    if relative.startswith("qa/"):
+        return "verification fixture and expected result", "MIT", "verification data"
+    if relative.startswith("tests/"):
+        return "automated verification code", "MIT", "test code"
+    if relative.startswith("src/") or relative.startswith("scripts/"):
+        return "release workflow code", "MIT", "code"
+    if relative.startswith("environment/") or relative.startswith(".github/"):
+        return "runtime or continuous-integration configuration", "MIT", "configuration"
+    if relative == "LICENSE":
+        return "software licence boundary", "MIT", "licence text"
+    if relative == "LICENSE-DATA":
+        return "author-generated aggregate data licence boundary", "CC BY 4.0 terms", "licence text"
+    return "release documentation or metadata", "MIT", "documentation"
+
+
+def _render_manifest(root: Path, payloads: list[tuple[str, Path]]) -> str:
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=MANIFEST_FIELDS, lineterminator="\n")
+    writer.writeheader()
+    for relative, path in payloads:
+        purpose, licence_scope, data_class = _manifest_attributes(relative)
+        writer.writerow(
+            {
+                "path": relative,
+                "bytes": str(path.stat().st_size),
+                "sha256": _sha256(path),
+                "purpose": purpose,
+                "licence_scope": licence_scope,
+                "data_class": data_class,
+            }
+        )
+    return output.getvalue()
+
+
+def write_release_inventories(root: Path) -> dict[str, int]:
+    """Write deterministic ``FILE_MANIFEST.csv`` and ``CHECKSUMS.sha256``.
+
+    The manifest covers every release payload except both generated inventory
+    files.  The checksum file covers the same payload plus the manifest itself,
+    but never itself; this explicit exclusion makes regeneration deterministic
+    and avoids an impossible checksum cycle.
+    """
+
+    root = Path(root).resolve()
+    payloads = _relative_payload_files(root)
+    manifest_text = _render_manifest(root, payloads)
+    manifest_path = root / MANIFEST_FILENAME
+    manifest_path.write_text(manifest_text, encoding="utf-8", newline="\n")
+
+    checksum_paths = sorted([relative for relative, _ in payloads] + [MANIFEST_FILENAME])
+    checksum_rows = [
+        f"{_sha256(root / Path(*relative.split('/')))}  {relative}"
+        for relative in checksum_paths
+    ]
+    checksum_path = root / CHECKSUMS_FILENAME
+    checksum_path.write_text("\n".join(checksum_rows) + "\n", encoding="utf-8", newline="\n")
+    return {"manifest_rows": len(payloads), "checksum_rows": len(checksum_rows)}
 
 
 def load_public_sources(path: Path) -> list[dict[str, str]]:
@@ -126,6 +280,18 @@ def _validate_controlled_rows(rows: list[dict[str, str]]) -> int:
             raise ValueError(
                 f"controlled input {row['dataset_id']!r} must have share_status=metadata-only"
             )
+        for field in (
+            "data_class",
+            "owner_or_provenance",
+            "restriction_reason",
+            "schema_summary",
+            "access_route",
+            "validation_substitute",
+        ):
+            if not row[field].strip():
+                raise ValueError(
+                    f"controlled input {row['dataset_id']!r} requires non-empty {field}"
+                )
         digest = row["sha256"].strip()
         hash_note = row["hash_note"].strip()
         if not digest:
@@ -196,10 +362,14 @@ def validate_inventory(root: Path) -> dict[str, int]:
 
 
 __all__ = [
+    "CHECKSUMS_FILENAME",
     "CONTROLLED_DATASET_IDS",
     "CONTROLLED_FIELDS",
+    "MANIFEST_FIELDS",
+    "MANIFEST_FILENAME",
     "PUBLIC_SOURCE_FIELDS",
     "load_controlled_inputs",
     "load_public_sources",
     "validate_inventory",
+    "write_release_inventories",
 ]

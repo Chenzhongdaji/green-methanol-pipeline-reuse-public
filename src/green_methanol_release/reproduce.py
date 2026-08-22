@@ -77,6 +77,18 @@ _ACCOUNT_FIELDS = (
     "scope_note",
 )
 _FIGURE_SPECS: dict[str, tuple[str, ...]] = {
+    "data/author_derived/figure2_aggregate_source.csv": (
+        "panel",
+        "record_type",
+        "scenario",
+        "tier",
+        "year",
+        "metric",
+        "value",
+        "unit",
+        "source_boundary",
+        "variant",
+    ),
     "figures/source_data/figure-01.csv": (
         "element_id",
         "element_type",
@@ -124,6 +136,7 @@ _DICTIONARY_PATHS = (
     "data/dictionaries/public_sources.md",
     "data/dictionaries/controlled_inputs.md",
     "data/dictionaries/figure_01.md",
+    "data/dictionaries/figure2_aggregate_source.md",
     "data/dictionaries/figure_03.md",
     "data/dictionaries/figure_04.md",
     "data/dictionaries/figure_05.md",
@@ -136,6 +149,7 @@ _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
     "data/dictionaries/public_sources.md": PUBLIC_SOURCE_FIELDS,
     "data/dictionaries/controlled_inputs.md": CONTROLLED_FIELDS,
     "data/dictionaries/figure_01.md": _FIGURE_SPECS["figures/source_data/figure-01.csv"],
+    "data/dictionaries/figure2_aggregate_source.md": _FIGURE_SPECS["data/author_derived/figure2_aggregate_source.csv"],
     "data/dictionaries/figure_03.md": _FIGURE_SPECS["figures/source_data/figure-03.csv"],
     "data/dictionaries/figure_04.md": _FIGURE_SPECS["figures/source_data/figure-04.csv"],
     "data/dictionaries/figure_05.md": _FIGURE_SPECS["figures/source_data/figure-05.csv"],
@@ -152,9 +166,7 @@ _REQUIRED_PATHS = (
     *_FIGURE_SPECS.keys(),
     *_DICTIONARY_PATHS,
 )
-_FIGURE2_REASON = (
-    "GS(2023)2767 map source and formal map review are not cleared for public release"
-)
+_FIGURE2_REASON = "safe aggregate carrier; panel e restricted-map-not-released"
 _EXPECTED_PANEL_ROWS = (
     (
         "Figure 1",
@@ -164,7 +176,14 @@ _EXPECTED_PANEL_ROWS = (
         "data/dictionaries/figure_01.md",
         "conceptual aggregate workflow only; no topology or facility identifiers",
     ),
-    ("Figure 2", "all", "not-run", "", "", _FIGURE2_REASON),
+    (
+        "Figure 2",
+        "a-d,f-h",
+        "aggregate-only",
+        "data/author_derived/figure2_aggregate_source.csv",
+        "data/dictionaries/figure2_aggregate_source.md",
+        _FIGURE2_REASON,
+    ),
     (
         "Figure 3",
         "all",
@@ -192,7 +211,7 @@ _EXPECTED_PANEL_ROWS = (
 )
 _WORKFLOW_REASONS = {
     "figure_source_data": (
-        "Only reviewed aggregate carriers are released; topology-bearing and coordinate-bearing panels are withheld."
+        "Reviewed aggregate carriers are released for Figures 1-5; Figure 2 panel e and other topology-bearing or coordinate-bearing payloads are withheld."
     ),
     "manuscript_artifacts": (
         "The manuscript is not redistributed; this release records only metadata and bounded aggregate evidence."
@@ -341,8 +360,10 @@ def _validate_panel_map(root: Path) -> list[dict[str, str]]:
             if not row["reason"].strip():
                 raise ValueError(f"not-run panel needs a reason: {key}")
     figure2 = [row for row in rows if row["figure"].strip() == "Figure 2"]
-    if len(figure2) != 1 or figure2[0]["status"].strip() != "not-run":
-        raise ValueError("Figure 2 must have one not-run panel-map row")
+    if len(figure2) != 1 or figure2[0]["status"].strip() != "aggregate-only":
+        raise ValueError("Figure 2 must have one aggregate-only partial panel-map row")
+    if figure2[0]["panel"].strip() != "a-d,f-h":
+        raise ValueError("Figure 2 released panel subset must be a-d,f-h")
     if figure2[0]["reason"].strip() != _FIGURE2_REASON:
         raise ValueError("Figure 2 withholding reason differs from the release contract")
     expected_sources = set(_FIGURE_SPECS)

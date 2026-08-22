@@ -15,8 +15,11 @@ licence for third-party or restricted inputs.
 | restriction_reason | Reason the payload is excluded from this public release. | text | blank forbidden | restriction review annotation | network_model |
 | schema_summary | Human-readable description of expected fields or objects. | text | blank forbidden | schema metadata transcription | network_model |
 | access_route | Route for a future authorized request. | text | blank forbidden | access-process annotation | network_model |
+| validation_substitute | Non-sensitive aggregate or schema-level artefact retained when the restricted payload is absent. | text | blank forbidden | validation-boundary annotation; not an access route | network_model |
 | sha256 | Checksum when a legitimately available payload was hashed. | 64 lowercase hexadecimal or blank | blank when unavailable; explain in hash_note | checksum transcription or absence annotation | network_model |
 | hash_note | Explanation for an unavailable checksum or checksum provenance note. | text | blank forbidden | checksum audit annotation | network_model |
 
 The current rows intentionally describe restricted inputs without redistributing
-their payloads. A missing checksum is not an all-zero placeholder.
+their payloads. `validation_substitute` names only non-sensitive checks already
+present in this candidate; it does not promise owner access or reconstruct a
+controlled input. A missing checksum is not an all-zero placeholder.

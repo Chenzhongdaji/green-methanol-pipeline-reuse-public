@@ -96,6 +96,7 @@ _RESTRICTED_SCHEMA_FIELDS = {
 
 _CC_BY_ALLOWED_CARRIERS = frozenset(
     {
+        "data/author_derived/figure2_aggregate_source.csv",
         "data/author_derived/terminal_gap_aggregate.csv",
         "figures/source_data/figure-01.csv",
         "figures/source_data/figure-03.csv",
@@ -164,6 +165,7 @@ _REQUIRED_METADATA = (
     "MANUSCRIPT_SCOPE.md",
     "CITATION.cff",
     "NOTICE.md",
+    "RELEASE_STATUS.md",
     "pyproject.toml",
     "LICENSE",
     "LICENSE-DATA",
@@ -312,6 +314,7 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
                 "CITATION.cff",
                 "NOTICE.md",
                 "MANUSCRIPT_SCOPE.md",
+                "RELEASE_STATUS.md",
             }
             if metadata_label or _PERSISTENT_IDENTIFIER_RE.search(text):
                 doi_hits.append(label)
@@ -427,10 +430,12 @@ def _validate_metadata(root: Path) -> list[str]:
         errors.append("DATA_AVAILABILITY.md must be a separate data statement")
     if "Code Availability" not in code or "Data Availability" in code:
         errors.append("CODE_AVAILABILITY.md must be a separate code statement")
-    for relative in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md"):
+    for relative in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md", "RELEASE_STATUS.md"):
         text = _read_text(root, relative)
         if "v1.0.0" not in text:
             errors.append(f"{relative} must identify release version v1.0.0")
+        if "Figures 1 and 3-5" not in text:
+            errors.append(f"{relative} must state that figure source carriers cover Figures 1 and 3-5")
         if (
             "10.5281/zenodo" in text.casefold()
             or "doi:" in text.casefold()
@@ -438,6 +443,27 @@ def _validate_metadata(root: Path) -> list[str]:
             or _BARE_DOI_RE.search(text)
         ):
             errors.append(f"{relative} must not claim a DOI")
+
+    metadata_text = "\n".join(
+        _read_text(root, relative)
+        for relative in (
+            "README.md",
+            "DATA_AVAILABILITY.md",
+            "CODE_AVAILABILITY.md",
+            "MANUSCRIPT_SCOPE.md",
+            "CITATION.cff",
+            "NOTICE.md",
+            "RELEASE_STATUS.md",
+        )
+    )
+    obsolete_repository = "7_27" + ".git"
+    obsolete_remote_suffix = "green-methanol-pipeline-" + "reuse`"
+    if obsolete_repository in metadata_text or obsolete_remote_suffix in metadata_text:
+        errors.append("release metadata must not assert the obsolete active repository")
+    obsolete_manuscript = "green_methanol_pipeline_reuse_" + "v1.21_en.docx"
+    obsolete_digest = "d6c9cec04888efdcd125ef946edad139990e81fb630afc11c7fe94bb2cca" + "4f6a"
+    if obsolete_manuscript in metadata_text or obsolete_digest in metadata_text:
+        errors.append("release metadata must not bind the obsolete manuscript authority")
 
     pyproject = _read_text(root, "pyproject.toml")
     project_block = re.search(r"(?ms)^\[project\]\s*(.*?)(?=^\[|\Z)", pyproject)
@@ -450,22 +476,28 @@ def _validate_metadata(root: Path) -> list[str]:
         errors.append("pyproject.toml project version must be 1.0.0")
 
     scope = _read_text(root, "MANUSCRIPT_SCOPE.md")
-    if "green_methanol_pipeline_reuse_v1.21_en.docx" not in scope:
-        errors.append("MANUSCRIPT_SCOPE.md must record the authority filename")
-    if "d6c9cec04888efdcd125ef946edad139990e81fb630afc11c7fe94bb2cca4f6a" not in scope:
-        errors.append("MANUSCRIPT_SCOPE.md must record the authority SHA-256")
+    for filename in (
+        "green_methanol_manuscript_references_v02_2026-08-14_rev03_data_code_2026-08-22.docx",
+        "green_methanol_supplementary_information_rev03_data_code_2026-08-22.docx",
+    ):
+        if filename not in scope:
+            errors.append(f"MANUSCRIPT_SCOPE.md must record the current authority filename: {filename}")
+    for digest in (
+        "FAB8876EF06DA0A48F7D8B102FA51AD3A8D97515A6BF264635AEC0F387D64D0B",
+        "DA53964D3AC2CEB38D266D8EBE62016BADEF7AA23A9FA6DAE58284B42A406A3D",
+    ):
+        if digest not in scope:
+            errors.append(f"MANUSCRIPT_SCOPE.md must record the current authority SHA-256: {digest}")
     if any(pattern.search(scope) for pattern in (_DRIVE_PATH_RE, _UNC_PATH_RE, _POSIX_HOME_RE)):
         errors.append("MANUSCRIPT_SCOPE.md must not include a local path")
 
     cff = _read_text(root, "CITATION.cff")
-    remote = "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse"
     cff_fields = {
-        "title": "Green methanol pipeline reuse: public data and code release",
+        "title": "Green methanol pipeline reuse: Level-1 release candidate",
         "type": "software",
-        "repository-code": remote,
         "license": "MIT",
         "version": "1.0.0",
-        "date-released": "2026-08-14",
+        "repository-code": "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public",
     }
 
     def active_cff_scalar(field: str) -> str | None:
@@ -490,6 +522,8 @@ def _validate_metadata(root: Path) -> list[str]:
         cff,
     ):
         errors.append("CITATION.cff must not invent personal or ORCID metadata")
+    if re.search(r"(?im)^\s*(?:date-released|url)\s*:", cff):
+        errors.append("CITATION.cff must not imply an archival release through date-released or url")
     if re.search(r"(?im)^\s*doi\s*:", cff) or _DOI_URL_RE.search(cff) or _BARE_DOI_RE.search(cff):
         errors.append("CITATION.cff must not claim a DOI")
     license_text = _read_text(root, "LICENSE")

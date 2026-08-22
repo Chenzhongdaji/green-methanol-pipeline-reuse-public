@@ -6,7 +6,9 @@ import pytest
 
 from green_methanol_release.inventory import (
     CONTROLLED_FIELDS,
+    MANIFEST_FIELDS,
     PUBLIC_SOURCE_FIELDS,
+    write_release_inventories,
     load_public_sources,
     validate_inventory,
 )
@@ -17,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _sandbox_inventory(tmp_path: Path) -> Path:
     data = tmp_path / "data"
-    data.mkdir()
+    data.mkdir(parents=True)
     for name in ("public_sources.csv", "controlled_inputs_metadata.csv"):
         shutil.copy2(ROOT / "data" / name, data / name)
     return tmp_path
@@ -89,6 +91,17 @@ def test_real_digest_requires_empty_hash_note(tmp_path: Path):
         validate_inventory(root)
 
 
+def test_controlled_rows_require_a_non_sensitive_validation_substitute(tmp_path: Path):
+    root = _sandbox_inventory(tmp_path)
+    path = root / "data" / "controlled_inputs_metadata.csv"
+    rows = _read_rows(path)
+    rows[0]["validation_substitute"] = ""
+    _write_rows(path, CONTROLLED_FIELDS, rows)
+
+    with pytest.raises(ValueError, match="validation_substitute"):
+        validate_inventory(root)
+
+
 def test_cc_by_separator_variants_are_rejected_for_third_party_rows(tmp_path: Path):
     root = _sandbox_inventory(tmp_path)
     path = root / "data" / "public_sources.csv"
@@ -151,3 +164,55 @@ def test_inventory_rejects_non_lowercase_digest(tmp_path: Path):
 
     with pytest.raises(ValueError, match="64 lowercase hexadecimal"):
         validate_inventory(root)
+
+
+def test_release_inventories_are_deterministic_and_exclude_self_reference(tmp_path: Path):
+    root = _sandbox_inventory(tmp_path / "release")
+    (root / "README.md").write_text("offline candidate\n", encoding="utf-8", newline="\n")
+    first = write_release_inventories(root)
+    first_manifest = (root / "FILE_MANIFEST.csv").read_bytes()
+    first_checksums = (root / "CHECKSUMS.sha256").read_bytes()
+
+    second = write_release_inventories(root)
+    assert first == second
+    assert first_manifest == (root / "FILE_MANIFEST.csv").read_bytes()
+    assert first_checksums == (root / "CHECKSUMS.sha256").read_bytes()
+
+    manifest_rows = list(csv.DictReader((root / "FILE_MANIFEST.csv").open(encoding="utf-8", newline="")))
+    paths = [row["path"] for row in manifest_rows]
+    assert tuple((root / "FILE_MANIFEST.csv").read_text(encoding="utf-8").splitlines()[0].split(",")) == MANIFEST_FIELDS
+    assert paths == sorted(paths)
+    assert "FILE_MANIFEST.csv" not in paths
+    assert "CHECKSUMS.sha256" not in paths
+    checksum_paths = [line.split("  ", 1)[1] for line in first_checksums.decode("utf-8").splitlines()]
+    assert "FILE_MANIFEST.csv" in checksum_paths
+    assert "CHECKSUMS.sha256" not in checksum_paths
+    assert all(":" not in path and not path.startswith("/") for path in paths)
+
+
+def test_data_licence_file_is_not_classified_as_mit(tmp_path: Path):
+    root = _sandbox_inventory(tmp_path / "release")
+    (root / "LICENSE").write_text("MIT License\n", encoding="utf-8", newline="\n")
+    (root / "LICENSE-DATA").write_text("CC BY 4.0 terms\n", encoding="utf-8", newline="\n")
+    write_release_inventories(root)
+
+    rows = {
+        row["path"]: row
+        for row in csv.DictReader((root / "FILE_MANIFEST.csv").open(encoding="utf-8", newline=""))
+    }
+    assert rows["LICENSE"]["licence_scope"] == "MIT"
+    assert rows["LICENSE-DATA"]["licence_scope"] == "CC BY 4.0 terms"
+
+
+def test_figure2_aggregate_carrier_is_classified_as_cc_by(tmp_path: Path):
+    root = _sandbox_inventory(tmp_path / "release")
+    carrier = root / "data" / "author_derived" / "figure2_aggregate_source.csv"
+    carrier.parent.mkdir(parents=True, exist_ok=True)
+    carrier.write_text("panel,value\na,1\n", encoding="utf-8", newline="\n")
+    write_release_inventories(root)
+
+    rows = {
+        row["path"]: row
+        for row in csv.DictReader((root / "FILE_MANIFEST.csv").open(encoding="utf-8", newline=""))
+    }
+    assert rows["data/author_derived/figure2_aggregate_source.csv"]["licence_scope"] == "CC BY 4.0"

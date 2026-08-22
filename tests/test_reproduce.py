@@ -252,6 +252,7 @@ def test_non_reproduced_workflows_have_explicit_reasons(tmp_path):
     "name",
     [
         "figure_01.md",
+        "figure2_aggregate_source.md",
         "figure_03.md",
         "figure_04.md",
         "figure_05.md",
