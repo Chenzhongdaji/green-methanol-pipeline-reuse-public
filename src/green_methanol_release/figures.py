@@ -961,6 +961,22 @@ def _plot_figure_04(
             raise ValueError(f"Figure 4 pipeline_share_pct does not agree at row {index}")
         records.append({"scenario": scenario, "tier": tier, "year": year, "region": region, **parsed})
 
+    tier_year_combinations = sorted({(str(record["tier"]), int(record["year"])) for record in records})
+    if len(tier_year_combinations) != 1:
+        raise ValueError(
+            "Figure 4 carrier must contain exactly one tier/year combination: "
+            f"{tier_year_combinations}"
+        )
+    region_order = {region: index for index, region in enumerate(FIGURE_04_REGIONS)}
+    records.sort(
+        key=lambda record: (
+            _scenario_key(str(record["scenario"])),
+            str(record["tier"]),
+            int(record["year"]),
+            region_order.get(str(record["region"]), len(region_order)),
+            str(record["region"]),
+        )
+    )
     scenarios = sorted({str(record["scenario"]) for record in records}, key=_scenario_key)
     regions = [region for region in FIGURE_04_REGIONS if region in {str(record["region"]) for record in records}]
     regions.extend(
@@ -981,7 +997,7 @@ def _plot_figure_04(
     ]
     regional_totals = {
         region: {
-            field: sum(
+            field: math.fsum(
                 float(record[field])
                 for record in records
                 if str(record["region"]) == region
@@ -1074,6 +1090,10 @@ def _plot_figure_04(
         },
         scenarios=scenarios,
         regions=regions,
+        tier_year_combinations=[
+            {"tier": tier, "year": year} for tier, year in tier_year_combinations
+        ],
+        regional_totals=regional_totals,
         account_closure_validated=True,
     )
 

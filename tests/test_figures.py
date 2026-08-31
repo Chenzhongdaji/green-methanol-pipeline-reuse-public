@@ -439,3 +439,59 @@ def test_figure_05_rejects_value_that_disagrees_with_explicit_gain_column(tmp_pa
 
     assert completed.returncode != 0
     assert "gain" in completed.stderr.lower()
+
+
+@pytest.mark.parametrize(("field", "value"), [("tier", "high"), ("year", "2061")])
+def test_figure_04_rejects_mixed_tier_or_year_carrier(tmp_path, field, value):
+    source_path = ROOT / "figures" / "source_data" / "figure-04.csv"
+    with source_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    rows[0][field] = value
+    malformed = tmp_path / f"mixed-{field}.csv"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder("build_figure_04.py", str(malformed), tmp_path / f"mixed-{field}.png")
+
+    assert completed.returncode != 0
+    assert "tier/year" in completed.stderr.lower()
+
+
+def test_figure_04_extreme_float_region_totals_are_hash_stable_under_row_permutation(tmp_path):
+    source_path = ROOT / "figures" / "source_data" / "figure-04.csv"
+    with source_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    for row in rows:
+        if row["region"] == "EC":
+            row["demand_methanol_10kt"] = "10000000000000000" if row["scenario"] == "S1" else "1"
+            row["local_direct_methanol_10kt"] = "0"
+            row["pipeline_served_methanol_10kt"] = "0"
+            row["served_methanol_10kt"] = "0"
+            row["unserved_methanol_10kt"] = row["demand_methanol_10kt"]
+            row["demand_met_pct"] = "0"
+            row["pipeline_share_pct"] = "0"
+    ordered = tmp_path / "extreme-ordered.csv"
+    permuted = tmp_path / "extreme-permuted.csv"
+    for path, payload in ((ordered, rows), (permuted, list(reversed(rows)))):
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(payload)
+
+    first = tmp_path / "extreme-first.png"
+    second = tmp_path / "extreme-second.png"
+    one = _run_builder("build_figure_04.py", str(ordered), first)
+    two = _run_builder("build_figure_04.py", str(permuted), second)
+
+    assert one.returncode == 0, one.stderr
+    assert two.returncode == 0, two.stderr
+    one_metadata = json.loads(one.stdout)
+    two_metadata = json.loads(two.stdout)
+    assert one_metadata["regional_totals"] == two_metadata["regional_totals"]
+    assert hashlib.sha256(first.read_bytes()).hexdigest() == hashlib.sha256(
+        second.read_bytes()
+    ).hexdigest()

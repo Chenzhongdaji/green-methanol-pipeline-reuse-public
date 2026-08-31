@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,9 @@ from green_methanol_release.reproduce import run_reproduction
 
 
 ROOT = Path(__file__).resolve().parents[1]
+_ABSOLUTE_PATH_RE = re.compile(
+    r"(?i)(?:\b[A-Z]:[\\/]|(?<![\w])\\\\[^\\/\s\"',$}]+[\\/][^\\/\s\"',$}]+|(?:^|[\s\"'=:(])/(?:home|Users|root)/)"
+)
 
 
 def _write_csv(path: Path, fields: tuple[str, ...], rows: list[dict[str, str]]) -> None:
@@ -139,7 +143,13 @@ def test_full_real_release_executes_all_registered_outputs(tmp_path):
     assert report["executed_output_ids"] == expected_ids
     assert set(report["artifacts"]) == set(expected_ids)
     assert all(len(item["sha256"]) == 64 for item in report["artifacts"].values())
-    assert "NOT_REPRODUCED" not in json.dumps(report, ensure_ascii=False)
+    report_text = (tmp_path / "full_reproduction.json").read_text(encoding="utf-8")
+    log_paths = sorted((tmp_path / "logs").glob("*.log"))
+    log_text = "\n".join(path.read_text(encoding="utf-8") for path in log_paths)
+    combined_text = report_text + "\n" + log_text
+    assert len(log_paths) == len(expected_ids)
+    assert "NOT_REPRODUCED" not in combined_text
+    assert _ABSOLUTE_PATH_RE.search(combined_text) is None
 
 
 def test_full_real_release_repeats_with_identical_artifact_hashes(tmp_path):
