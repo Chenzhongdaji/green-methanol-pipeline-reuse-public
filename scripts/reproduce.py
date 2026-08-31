@@ -32,8 +32,6 @@ def main(argv: list[str] | None = None) -> int:
     print(f"level_2_status={report['level_2_status']}")
     if report["status"] == "PASS":
         return 0
-    if args.mode == "full" and report["status"] == "NOT_REPRODUCED":
-        return 2
     return 1
 
 

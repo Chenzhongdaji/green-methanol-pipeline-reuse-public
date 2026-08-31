@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -8,10 +9,108 @@ import sys
 
 import pytest
 
+from green_methanol_release.inventory import DATASET_REGISTRY_FIELDS, OUTPUT_REGISTRY_FIELDS
 from green_methanol_release.reproduce import run_reproduction
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _write_csv(path: Path, fields: tuple[str, ...], rows: list[dict[str, str]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _minimal_output_row(
+    output_id: str,
+    expected_artifact: str,
+    *,
+    input_path: str = "data/carrier.csv",
+    command: str | None = None,
+) -> dict[str, str]:
+    return {
+        "output_id": output_id,
+        "manuscript_location": output_id,
+        "generation_command": command
+        or (
+            "python scripts/build_output.py --input "
+            f"{input_path} --output {expected_artifact} --label {output_id}"
+        ),
+        "input_dataset_ids": "carrier-1",
+        "expected_artifact": expected_artifact,
+    }
+
+
+def _minimal_release(
+    tmp_path: Path,
+    output_rows: list[dict[str, str]] | None = None,
+    *,
+    carrier_path: str = "data/carrier.csv",
+) -> Path:
+    root = tmp_path / "minimal-release"
+    carrier = root / Path(*carrier_path.split("/"))
+    carrier.parent.mkdir(parents=True, exist_ok=True)
+    carrier.write_text("safe carrier\n", encoding="utf-8", newline="\n")
+    builder = root / "scripts" / "build_output.py"
+    builder.parent.mkdir(parents=True, exist_ok=True)
+    builder.write_text(
+        "import argparse\n"
+        "from pathlib import Path\n"
+        "import sys\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--input', required=True)\n"
+        "parser.add_argument('--output', required=True)\n"
+        "parser.add_argument('--label', required=True)\n"
+        "parser.add_argument('--exit-code', type=int, default=0)\n"
+        "parser.add_argument('--skip', action='store_true')\n"
+        "args = parser.parse_args()\n"
+        "Path(args.input).read_text(encoding='utf-8')\n"
+        "print(args.label, flush=True)\n"
+        "if args.exit_code:\n"
+        "    raise SystemExit(args.exit_code)\n"
+        "if not args.skip:\n"
+        "    output = Path(args.output)\n"
+        "    output.parent.mkdir(parents=True, exist_ok=True)\n"
+        "    output.write_text(args.label + chr(10), encoding='utf-8', newline=chr(10))\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    digest = hashlib.sha256(carrier.read_bytes()).hexdigest()
+    dataset_rows = [
+        {
+            "dataset_id": "carrier-1",
+            "public_path": carrier_path,
+            "role": "terminal source carrier",
+            "origin": "author-generated",
+            "access_route": "repository carrier",
+            "license": "CC BY 4.0",
+            "sha256": digest,
+            "acquisition_command": "",
+            "processing_command": "",
+            "manuscript_uses": "temporary test fixture",
+            "source_relative_path": "",
+            "stage_action": "existing",
+        }
+    ]
+    if output_rows is None:
+        output_rows = [
+            _minimal_output_row("first", "figures/first.png"),
+            _minimal_output_row("second", "figures/second.png"),
+        ]
+    _write_csv(root / "data" / "dataset_registry.csv", DATASET_REGISTRY_FIELDS, dataset_rows)
+    _write_csv(root / "data" / "output_registry.csv", OUTPUT_REGISTRY_FIELDS, output_rows)
+    return root
+
+
+def _rewrite_output_registry(root: Path, rows: list[dict[str, str]]) -> None:
+    _write_csv(root / "data" / "output_registry.csv", OUTPUT_REGISTRY_FIELDS, rows)
+
+
+def _rewrite_dataset_registry(root: Path, rows: list[dict[str, str]]) -> None:
+    _write_csv(root / "data" / "dataset_registry.csv", DATASET_REGISTRY_FIELDS, rows)
 
 
 def test_smoke_reproduces_open_aggregate_scope(tmp_path):
@@ -24,8 +123,204 @@ def test_smoke_reproduces_open_aggregate_scope(tmp_path):
 
 def test_full_stops_without_controlled_inputs(tmp_path):
     report = run_reproduction(ROOT, "full", tmp_path / "run.json")
-    assert report["status"] == "NOT_REPRODUCED"
-    assert "exact directed pipeline topology" in report["level_2_reason"]
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert "build_figure_01.py" in report["error"]
+    assert "NOT_REPRODUCED" not in json.dumps(report, ensure_ascii=False)
+
+
+def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_path):
+    root = _minimal_release(tmp_path)
+    requested = tmp_path / "requested.json"
+
+    report = run_reproduction(root, "full", requested)
+
+    first = root / "figures" / "first.png"
+    second = root / "figures" / "second.png"
+    assert report["status"] == "PASS"
+    assert report["level_1_status"] == "PASS"
+    assert report["level_2_status"] == "PASS"
+    assert report["executed_output_ids"] == ["first", "second"]
+    assert report["command_return_codes"] == {"first": 0, "second": 0}
+    assert report["artifacts"] == {
+        "first": {
+            "path": "figures/first.png",
+            "sha256": hashlib.sha256(first.read_bytes()).hexdigest(),
+        },
+        "second": {
+            "path": "figures/second.png",
+            "sha256": hashlib.sha256(second.read_bytes()).hexdigest(),
+        },
+    }
+    assert json.loads(requested.read_text(encoding="utf-8")) == report
+    assert json.loads(
+        (tmp_path / "full_reproduction.json").read_text(encoding="utf-8")
+    ) == report
+    assert (tmp_path / "logs" / "first.log").is_file()
+    assert (tmp_path / "logs" / "second.log").is_file()
+    assert str(root) not in (tmp_path / "full_reproduction.json").read_text(encoding="utf-8")
+
+
+def test_full_fails_on_nonzero_builder_exit(tmp_path):
+    row = _minimal_output_row(
+        "bad",
+        "figures/bad.png",
+        command=(
+            "python scripts/build_output.py --input data/carrier.csv "
+            "--output figures/bad.png --label bad --exit-code 7"
+        ),
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / "nonzero.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == ["bad"]
+    assert report["command_return_codes"] == {"bad": 7}
+    assert "return code 7" in report["error"]
+
+
+def test_full_fails_before_execution_when_builder_is_missing(tmp_path):
+    row = _minimal_output_row(
+        "missing",
+        "figures/missing.png",
+        command=(
+            "python scripts/not_present.py --input data/carrier.csv "
+            "--output figures/missing.png --label missing"
+        ),
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / "missing-builder.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert report["command_return_codes"] == {}
+    assert "not_present.py" in report["error"]
+
+
+def test_full_fails_when_builder_does_not_create_expected_artifact(tmp_path):
+    row = _minimal_output_row(
+        "no-artifact",
+        "figures/no-artifact.png",
+        command=(
+            "python scripts/build_output.py --input data/carrier.csv "
+            "--output figures/no-artifact.png --label no-artifact --skip"
+        ),
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / "missing-artifact.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == ["no-artifact"]
+    assert report["command_return_codes"] == {"no-artifact": 0}
+    assert "expected artifact" in report["error"]
+
+
+def test_full_checks_carrier_hashes_before_execution(tmp_path):
+    row = _minimal_output_row("should-not-run", "figures/should-not-run.png")
+    root = _minimal_release(tmp_path, [row])
+    (root / "data" / "carrier.csv").write_text("tampered\n", encoding="utf-8", newline="\n")
+
+    report = run_reproduction(root, "full", tmp_path / "hash-mismatch.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert report["command_return_codes"] == {}
+    assert "sha256" in report["error"]
+    assert not (root / "figures" / "should-not-run.png").exists()
+
+
+def test_full_rejects_forbidden_registered_path_without_accessing_it(tmp_path):
+    row = _minimal_output_row(
+        "forbidden",
+        "figures/forbidden.png",
+        input_path="data/管道数据/secret.csv",
+    )
+    root = _minimal_release(tmp_path, [row], carrier_path="data/carrier.csv")
+    datasets = [
+        {
+            "dataset_id": "carrier-1",
+            "public_path": "data/管道数据/secret.csv",
+            "role": "terminal source carrier",
+            "origin": "author-generated",
+            "access_route": "repository carrier",
+            "license": "CC BY 4.0",
+            "sha256": "a" * 64,
+            "acquisition_command": "",
+            "processing_command": "",
+            "manuscript_uses": "temporary test fixture",
+            "source_relative_path": "",
+            "stage_action": "existing",
+        }
+    ]
+    _rewrite_dataset_registry(root, datasets)
+
+    report = run_reproduction(root, "full", tmp_path / "forbidden.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert "path" in report["error"]
+
+
+def test_full_rejects_command_script_outside_scripts(tmp_path):
+    row = _minimal_output_row(
+        "outside",
+        "figures/outside.png",
+        command=(
+            "python build_output.py --input data/carrier.csv "
+            "--output figures/outside.png --label outside"
+        ),
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / "outside-script.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert "scripts/" in report["error"]
+
+
+def test_full_rejects_shell_metacharacters(tmp_path):
+    row = _minimal_output_row(
+        "shell",
+        "figures/shell.png",
+        command=(
+            "python scripts/build_output.py --input data/carrier.csv "
+            "--output figures/shell.png --label shell;"
+        ),
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / "shell.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert "shell metacharacter" in report["error"]
+
+
+def test_full_stops_after_first_builder_failure(tmp_path):
+    rows = [
+        _minimal_output_row(
+            "first-bad",
+            "figures/first-bad.png",
+            command=(
+                "python scripts/build_output.py --input data/carrier.csv "
+                "--output figures/first-bad.png --label first-bad --exit-code 3"
+            ),
+        ),
+        _minimal_output_row("second-good", "figures/second-good.png"),
+    ]
+    root = _minimal_release(tmp_path, rows)
+
+    report = run_reproduction(root, "full", tmp_path / "stop.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == ["first-bad"]
+    assert report["command_return_codes"] == {"first-bad": 3}
+    assert not (root / "figures" / "second-good.png").exists()
 
 
 def test_report_is_external_and_records_commit(tmp_path):

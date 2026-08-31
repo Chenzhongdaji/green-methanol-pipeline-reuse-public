@@ -22,6 +22,7 @@ from typing import Any
 
 from .contracts import ReleaseRoot, validate_status
 from .inventory import CONTROLLED_FIELDS, PUBLIC_SOURCE_FIELDS, validate_inventory
+from .pipeline import run_full
 
 
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -506,7 +507,7 @@ def _base_report(mode: str, root: Path) -> dict[str, Any]:
     for status in workflows.values():
         validate_status(status)
     return {
-        "status": "PASS" if mode == "smoke" else "NOT_REPRODUCED",
+        "status": "PASS",
         "mode": mode,
         "level_1_status": "PASS",
         "level_2_status": "NOT_REPRODUCED",
@@ -542,6 +543,14 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
     if output == root or root in output.parents:
         raise ValueError("reproduction report must be outside the immutable repository")
     output.parent.mkdir(parents=True, exist_ok=True)
+    if mode == "full":
+        report = run_full(root, output.parent)
+        output.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        return report
     report = _base_report(mode, root)
     errors: list[str] = []
     checked_paths: list[Path] = []
@@ -622,8 +631,6 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
     report["output_hashes"] = {
         "recomputed_claims": hashlib.sha256(claims_payload.encode("utf-8")).hexdigest()
     }
-    if mode == "full" and report["level_1_status"] == "PASS":
-        report["status"] = "NOT_REPRODUCED"
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     return report
 
