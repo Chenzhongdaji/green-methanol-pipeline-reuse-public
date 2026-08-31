@@ -30,16 +30,16 @@ demand-weighted cells and effect annotations from `cross_2x2.csv`.
 
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
-| panel | Current Figure 2 panel represented by the row. | a--d, f--h | blank forbidden | panel-contract assignment | Figure 2 |
-| record_type | Aggregate record family. | trajectory, scenario_account, gap_decomposition, counterfactual_relaxation, service_mode_account, scenario_point, strict_pipeline_account, strict_quantity_placement_2x2, strict_quantity_placement_effect | blank forbidden | controlled vocabulary assignment | Figure 2 a--d, f--h |
-| scenario | Scenario or pooled scope. | S1--S8 or S1-S8 | blank forbidden | source-scope transcription | Figure 2 a--d, f--h |
-| tier | Demand tier for quantitative rows. | mid | blank forbidden | source-scope transcription | Figure 2 a--d, f--h |
-| year | Model year. | 2025--2060 or 2060 | blank forbidden | source-scope transcription | Figure 2 a--d, f--h |
-| metric | Quantity represented by `value`. | controlled metric vocabulary below | blank forbidden | metric selection or aggregate transform | Figure 2 a--h |
-| value | Aggregate value. | percent, percentage points, 10 kt/y, or numeric display value | blank forbidden; zero is a modelled zero | source transcription or documented transformation | Figure 2 a--d, f--h |
-| unit | Display unit for `value`. | %, percentage points, or 10 kt/y | blank forbidden | unit assignment | Figure 2 a--d, f--h |
-| source_boundary | Short, repository-safe provenance and interpretation boundary. | text; no machine-local path | blank forbidden | evidence-boundary annotation | Figure 2 a--d, f--h |
-| variant | Display or source variant used to disambiguate repeated metrics. | dynamic_v08, baseline, local_co_location, strict_pipeline, terminal_account, strict_quantity_placement_2x2:<cell>, strict_quantity_placement_effect | blank forbidden | variant assignment | Figure 2 d, f, h |
+| panel | Current Figure 2 panel represented by the row. | a--d, f--h | blank forbidden | panel-contract assignment | a-d,f-h |
+| record_type | Aggregate record family. | trajectory, scenario_account, gap_decomposition, counterfactual_relaxation, service_mode_account, scenario_point, strict_pipeline_account, strict_quantity_placement_2x2, strict_quantity_placement_effect | blank forbidden | controlled vocabulary assignment | a-d,f-h |
+| scenario | Scenario or pooled scope. | S1--S8 or S1-S8 | blank forbidden | source-scope transcription | a-d,f-h |
+| tier | Demand tier for quantitative rows. | mid | blank forbidden | source-scope transcription | a-d,f-h |
+| year | Model year. | 2025--2060 or 2060 | blank forbidden | source-scope transcription | a-d,f-h |
+| metric | Quantity represented by `value`. | controlled metric vocabulary below | blank forbidden | metric selection or aggregate transform | a-d,f-h |
+| value | Aggregate value. | percent, percentage points, 10 kt/y, or numeric display value | blank forbidden; zero is a modelled zero | source transcription or documented transformation | a-d,f-h |
+| unit | Display unit for `value`. | %, percentage points, or 10 kt/y | blank forbidden | unit assignment | a-d,f-h |
+| source_boundary | Short, repository-safe provenance and interpretation boundary. | text; no machine-local path | blank forbidden | evidence-boundary annotation | a-d,f-h |
+| variant | Display or source variant used to disambiguate repeated metrics. | dynamic_v08, baseline, local_co_location, strict_pipeline, terminal_account, strict_quantity_placement_2x2:<cell>, strict_quantity_placement_effect | blank forbidden | variant assignment | a-d,f-h |
 
 ## Metric vocabulary and transforms
 

@@ -55,6 +55,9 @@ def test_ci_manifest_entrypoint_exists():
     assert workflow.count("python scripts/build_manifest.py") >= 2
     assert workflow.count("python scripts/reproduce.py --mode full") >= 2
     assert "cmp" in workflow
+    assert "green-methanol-full-1/full_reproduction.json" in workflow
+    assert "green-methanol-full-2/full_reproduction.json" in workflow
+    assert workflow.count("full_reproduction.json") >= 3
     assert (root / "scripts" / "build_manifest.py").is_file()
 
 

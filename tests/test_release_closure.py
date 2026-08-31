@@ -5,6 +5,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from green_methanol_release.audit import audit_release, verify_manifest_closure
@@ -24,6 +25,9 @@ PUBLIC_BOUNDARY_FILES = (
     "data/author_derived/figure2_aggregate_source.csv",
     "data/dictionaries/figure2_aggregate_source.md",
     "data/dictionaries/figure_02.md",
+    "data/dataset_registry.csv",
+    "data/output_registry.csv",
+    "data/dictionaries/dataset_registry.md",
     "data/dictionaries/output_registry.md",
 )
 LEGACY_BOUNDARY_MARKERS = (
@@ -170,9 +174,20 @@ def test_audit_rejects_manifest_registry_attribute_drift(tmp_path: Path):
 
 
 def test_full_report_has_public_workflow_keys_and_figure2e_outputs(tmp_path: Path):
-    report = run_reproduction(ROOT, "full", tmp_path / "full.json")
+    first_root = tmp_path / "independent-a"
+    second_root = tmp_path / "independent-b"
+    first_report_path = first_root / "full_reproduction.json"
+    second_report_path = second_root / "full_reproduction.json"
+    report = run_reproduction(ROOT, "full", first_report_path)
+    second_report = run_reproduction(ROOT, "full", second_report_path)
 
     assert report["status"] == "PASS"
+    assert second_report == report
+    assert first_report_path.read_bytes() == second_report_path.read_bytes()
+    assert report["artifacts"] == second_report["artifacts"]
+    assert (first_root / "logs").is_dir()
+    assert (second_root / "logs").is_dir()
+    assert first_root != second_root
     assert "level_1_status" not in report
     assert "level_2_status" not in report
     assert set(report["executed_output_ids"]) == {
@@ -191,6 +206,58 @@ def test_full_report_has_public_workflow_keys_and_figure2e_outputs(tmp_path: Pat
     assert (ROOT / "figures" / "figure-02e.png").is_file()
     assert (ROOT / "figures" / "figure-02e.pdf").is_file()
     assert "NOT_REPRODUCED" not in json.dumps(report, ensure_ascii=False)
+
+
+def test_fresh_figure2e_pdf_digest_matches_full_report(tmp_path: Path):
+    report_path = tmp_path / "fresh-full" / "full_reproduction.json"
+    report = run_reproduction(ROOT, "full", report_path)
+    fresh_png = tmp_path / "fresh-figure-02e.png"
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_figure_02.py",
+            "--panel",
+            "e",
+            "--input",
+            "data/figure_source/figure-02.csv",
+            "--output",
+            str(fresh_png),
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    fresh_pdf = fresh_png.with_suffix(".pdf")
+    fresh_digest = hashlib.sha256(fresh_pdf.read_bytes()).hexdigest()
+    report_digest = report["artifacts"]["figure-02e"]["secondary_artifacts"][0]["sha256"]
+    assert report_digest == fresh_digest
+
+
+def test_figure2_panel_map_binds_executable_registry_inputs():
+    with (ROOT / "figures" / "panel_map.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        panel_rows = [row for row in csv.DictReader(handle) if row["figure"] == "Figure 2"]
+    assert {row["panel"] for row in panel_rows} == {"a-d,f-h", "e"}
+    assert all(
+        row["source_data"] == "data/figure_source/figure-02.csv"
+        and row["dictionary"] == "data/dictionaries/figure_02.md"
+        for row in panel_rows
+    )
+    assert "aggregate-derived evidence is supplementary" in next(
+        row["reason"] for row in panel_rows if row["panel"] == "a-d,f-h"
+    )
+
+    with (ROOT / "data" / "output_registry.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        outputs = {row["output_id"]: row for row in csv.DictReader(handle)}
+    for output_id in ("figure-02a-d-f-h", "figure-02e"):
+        output = outputs[output_id]
+        assert output["input_dataset_ids"] == "figure-02-source-real"
+        assert "--input data/figure_source/figure-02.csv" in output["generation_command"]
+
 
 
 def test_public_metadata_binds_registry_and_full_reproduction_contract():

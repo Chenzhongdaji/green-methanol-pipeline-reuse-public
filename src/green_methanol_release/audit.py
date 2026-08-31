@@ -185,6 +185,9 @@ _PUBLIC_BOUNDARY_FILES = (
     "data/author_derived/figure2_aggregate_source.csv",
     "data/dictionaries/figure2_aggregate_source.md",
     "data/dictionaries/figure_02.md",
+    "data/dataset_registry.csv",
+    "data/output_registry.csv",
+    "data/dictionaries/dataset_registry.md",
     "data/dictionaries/output_registry.md",
 )
 _LEGACY_BOUNDARY_MARKERS = (

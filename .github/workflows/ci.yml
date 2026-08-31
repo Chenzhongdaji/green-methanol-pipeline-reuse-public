@@ -27,8 +27,20 @@ jobs:
         run: python -m pytest -q
       - name: Run full public reproduction twice
         run: |
-          python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-1"
-          python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-2"
+          python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-1/full_reproduction.json"
+          python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-2/full_reproduction.json"
+          cmp --silent "$RUNNER_TEMP/green-methanol-full-1/full_reproduction.json" "$RUNNER_TEMP/green-methanol-full-2/full_reproduction.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          temp = Path(os.environ["RUNNER_TEMP"])
+          first = json.loads((temp / "green-methanol-full-1" / "full_reproduction.json").read_text())
+          second = json.loads((temp / "green-methanol-full-2" / "full_reproduction.json").read_text())
+          assert first["artifacts"] == second["artifacts"]
+          assert first["executed_output_ids"] == second["executed_output_ids"]
+          PY
       - name: Verify reproduction leaves the committed payload unchanged
         run: git diff --exit-code
       - name: Regenerate and verify deterministic release inventories

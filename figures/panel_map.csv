@@ -1,6 +1,6 @@
 figure,panel,status,source_data,dictionary,reason
 Figure 1,all,aggregate-only,figures/source_data/figure-01.csv,data/dictionaries/figure_01.md,conceptual aggregate workflow only; no topology or facility identifiers
-Figure 2,"a-d,f-h",aggregate-only,data/author_derived/figure2_aggregate_source.csv,data/dictionaries/figure2_aggregate_source.md,public aggregate carrier for panels a-d and f-h; panel e has a separate public source carrier
+Figure 2,"a-d,f-h",aggregate-only,data/figure_source/figure-02.csv,data/dictionaries/figure_02.md,executable Figure 2 builder carrier for panels a-d and f-h; aggregate-derived evidence is supplementary
 Figure 2,e,aggregate-only,data/figure_source/figure-02.csv,data/dictionaries/figure_02.md,public Figure 2e source carrier used by figure-02-source-real and rebuilt to PNG/PDF
 Figure 3,all,aggregate-only,figures/source_data/figure-03.csv,data/dictionaries/figure_03.md,scenario-level transport aggregates only; task-level routes are excluded
 Figure 4,c,aggregate-only,figures/source_data/figure-04.csv,data/dictionaries/figure_04.md,regional aggregate accounts only; refinery-proxy entities and coordinates are excluded

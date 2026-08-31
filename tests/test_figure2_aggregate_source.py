@@ -92,6 +92,13 @@ def test_figure2_dictionary_and_panel_map_pair_the_carrier():
     assert "not the current Figure 2 source file" in dictionary
     assert "figure-02-source-real" in dictionary
     assert "data/figure_source/figure-02.csv" in dictionary
+    related_panel_values = {
+        line.rsplit("|", 2)[-2].strip()
+        for line in dictionary.splitlines()
+        if line.startswith("|") and line.endswith("|") and line.count("|") == 7
+        and line.rsplit("|", 7)[1].strip() not in {"Column", "---"}
+    }
+    assert related_panel_values == {"a-d,f-h"}
 
     with (ROOT / "figures" / "panel_map.csv").open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -101,9 +108,9 @@ def test_figure2_dictionary_and_panel_map_pair_the_carrier():
             "figure": "Figure 2",
             "panel": "a-d,f-h",
             "status": "aggregate-only",
-            "source_data": "data/author_derived/figure2_aggregate_source.csv",
-            "dictionary": "data/dictionaries/figure2_aggregate_source.md",
-            "reason": "public aggregate carrier for panels a-d and f-h; panel e has a separate public source carrier",
+            "source_data": "data/figure_source/figure-02.csv",
+            "dictionary": "data/dictionaries/figure_02.md",
+            "reason": "executable Figure 2 builder carrier for panels a-d and f-h; aggregate-derived evidence is supplementary",
         },
         {
             "figure": "Figure 2",
