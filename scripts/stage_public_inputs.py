@@ -92,7 +92,7 @@ def _registry_error(exc: ValueError) -> dict[str, object]:
     report = _empty_report()
     report["status"] = "FAIL"
     report["errors"] = [_error(code, message="dataset registry validation failed")]
-    report["totals"] = {**report["totals"], "errors": 1, "failed": 1}
+    report["totals"] = {**report["totals"], "errors": 1}
     return report
 
 
@@ -100,7 +100,7 @@ def _root_error(path: Path, code: str) -> dict[str, object]:
     report = _empty_report()
     report["status"] = "FAIL"
     report["errors"] = [_error(code, message="path enters the excluded directory")]
-    report["totals"] = {**report["totals"], "errors": 1, "failed": 1}
+    report["totals"] = {**report["totals"], "errors": 1}
     return report
 
 
@@ -291,9 +291,16 @@ def stage_inputs(
     return report
 
 
-def _write_report(path: Path, report: dict[str, object]) -> None:
+def _validate_report_path(path: Path) -> None:
     path = Path(path)
     assert_public_path(path)
+    if not path.name or "\x00" in str(path) or path.is_dir():
+        raise ValueError("report path must name a file")
+
+
+def _write_report(path: Path, report: dict[str, object]) -> None:
+    path = Path(path)
+    _validate_report_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     path.write_text(text, encoding="utf-8", newline="\n")
@@ -306,6 +313,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--release-root", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args(argv)
+    try:
+        _validate_report_path(args.report)
+    except (OSError, ValueError):
+        return 2
     report = stage_inputs(args.registry, args.source_root, args.release_root)
     try:
         _write_report(args.report, report)

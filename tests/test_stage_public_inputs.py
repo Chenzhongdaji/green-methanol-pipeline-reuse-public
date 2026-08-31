@@ -11,6 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import stage_public_inputs as stage_module
 from stage_public_inputs import stage_inputs
 from green_methanol_release.inventory import load_dataset_registry
 
@@ -191,6 +192,19 @@ def test_forbidden_source_is_rejected_without_inspecting_excluded_directory(tmp_
     assert report["errors"][0]["code"] == "forbidden_source"
 
 
+def test_early_registry_error_totals_match_empty_dataset_report(tmp_path: Path):
+    row = _row(source_relative_path="safe/管道数据/payload.bin")
+    registry = _write_registry(tmp_path, [row])
+
+    report = stage_inputs(registry, tmp_path / "source", tmp_path / "release")
+
+    assert report["status"] == "FAIL"
+    assert report["datasets"] == []
+    assert report["totals"]["datasets"] == 0
+    assert report["totals"]["failed"] == 0
+    assert report["totals"]["errors"] == len(report["errors"]) == 1
+
+
 def test_forbidden_destination_is_rejected_before_copy(tmp_path: Path):
     row = _row(public_path="data/管道数据/payload.bin")
     registry, source_root, release_root = _prepare_copy(tmp_path, row)
@@ -286,6 +300,64 @@ def test_cli_writes_utf8_lf_json(tmp_path: Path):
     raw = report_path.read_bytes()
     assert b"\r" not in raw
     assert json.loads(raw.decode("utf-8"))["status"] == "PASS"
+
+
+def test_cli_rejects_forbidden_report_before_staging(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    calls: list[tuple[object, ...]] = []
+
+    def forbidden_stage(*args: object, **kwargs: object) -> dict[str, object]:
+        calls.append(args)
+        raise AssertionError("stage_inputs must not run for an unsafe report path")
+
+    monkeypatch.setattr(stage_module, "stage_inputs", forbidden_stage)
+    report_path = tmp_path / "reports" / "管道数据" / "report.json"
+
+    result = stage_module.main(
+        [
+            "--registry",
+            str(tmp_path / "registry.csv"),
+            "--source-root",
+            str(tmp_path / "source"),
+            "--release-root",
+            str(tmp_path / "release"),
+            "--report",
+            str(report_path),
+        ]
+    )
+
+    assert result == 2
+    assert calls == []
+    assert not report_path.exists()
+
+
+def test_cli_rejects_directory_report_before_staging(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    calls: list[tuple[object, ...]] = []
+
+    def forbidden_stage(*args: object, **kwargs: object) -> dict[str, object]:
+        calls.append(args)
+        raise AssertionError("stage_inputs must not run for an invalid report path")
+
+    monkeypatch.setattr(stage_module, "stage_inputs", forbidden_stage)
+
+    result = stage_module.main(
+        [
+            "--registry",
+            str(tmp_path / "registry.csv"),
+            "--source-root",
+            str(tmp_path / "source"),
+            "--release-root",
+            str(tmp_path / "release"),
+            "--report",
+            str(tmp_path),
+        ]
+    )
+
+    assert result == 2
+    assert calls == []
 
 
 def test_extended_registry_loader_returns_stage_columns(tmp_path: Path):
