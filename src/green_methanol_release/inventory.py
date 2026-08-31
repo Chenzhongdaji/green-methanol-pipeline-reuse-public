@@ -11,6 +11,7 @@ import csv
 import hashlib
 import io
 import re
+import shlex
 from pathlib import Path
 
 from .contracts import ALLOWED_WORKFLOW_STATUSES, ReleaseRoot, safe_relative_path
@@ -85,6 +86,10 @@ _DATASET_REQUIRED_FIELDS = tuple(
 )
 _OUTPUT_REQUIRED_FIELDS = OUTPUT_REGISTRY_FIELDS
 _FIGURE2E_FORBIDDEN_MARKERS = ("withheld", "status", "not_reproduced")
+_COMMAND_INPUT_OPTION = "--input"
+_COMMAND_OUTPUT_OPTION = "--output"
+_NON_GENERATING_COMMANDS = {"cat", "echo", "printf", "type", "write-output"}
+_INTERNAL_INPUT_PREFIXES = ("data/", "figures/source_data/")
 
 # These paths are generated or environment-specific and therefore are not
 # release payload.  Keep this rule identical to the audit closure contract;
@@ -313,6 +318,106 @@ def load_output_registry(path: Path) -> list[dict[str, str]]:
     return rows
 
 
+def _command_option_values(
+    tokens: list[str], option: str, output_id: str, line_number: int
+) -> tuple[list[str], set[int]]:
+    values: list[str] = []
+    value_indices: set[int] = set()
+    for index, token in enumerate(tokens):
+        if token == option:
+            if index + 1 >= len(tokens) or tokens[index + 1].startswith("--"):
+                raise ValueError(
+                    f"output {output_id!r} generation_command has no value after {option} at row {line_number}"
+                )
+            values.append(tokens[index + 1])
+            value_indices.add(index + 1)
+        elif token.startswith(option + "="):
+            raise ValueError(
+                f"output {output_id!r} generation_command must use {option} <path> at row {line_number}"
+            )
+    return values, value_indices
+
+
+def _normalize_command_path(value: str, output_id: str, option: str, line_number: int) -> str:
+    try:
+        relative = safe_relative_path(value)
+        if not relative.parts:
+            raise ValueError("path must not be empty")
+        assert_public_path(Path(value))
+    except ValueError as exc:
+        raise ValueError(
+            f"output {output_id!r} generation_command has an unsafe {option} path at row {line_number}"
+        ) from exc
+    return relative.as_posix()
+
+
+def _validate_generation_command(
+    row: dict[str, str],
+    datasets_by_id: dict[str, dict[str, str]],
+    line_number: int,
+) -> None:
+    output_id = row["output_id"]
+    command = row["generation_command"]
+    try:
+        tokens = shlex.split(command, posix=True)
+    except ValueError as exc:
+        raise ValueError(
+            f"output {output_id!r} generation_command is not parseable at row {line_number}"
+        ) from exc
+    if not tokens:
+        raise ValueError(f"output {output_id!r} generation_command is empty at row {line_number}")
+    executable = Path(tokens[0]).name.casefold()
+    if executable in _NON_GENERATING_COMMANDS:
+        raise ValueError(
+            f"output {output_id!r} generation_command is not a generating command at row {line_number}"
+        )
+
+    output_values, output_value_indices = _command_option_values(
+        tokens, _COMMAND_OUTPUT_OPTION, output_id, line_number
+    )
+    if len(output_values) != 1:
+        raise ValueError(
+            f"output {output_id!r} generation_command must have exactly one {_COMMAND_OUTPUT_OPTION} target at row {line_number}"
+        )
+    command_artifact = _normalize_command_path(
+        output_values[0], output_id, _COMMAND_OUTPUT_OPTION, line_number
+    )
+    if command_artifact != row["expected_artifact"]:
+        raise ValueError(
+            f"output {output_id!r} generation_command target {command_artifact!r} does not match expected_artifact {row['expected_artifact']!r}"
+        )
+
+    input_values, input_value_indices = _command_option_values(
+        tokens, _COMMAND_INPUT_OPTION, output_id, line_number
+    )
+    command_inputs = [
+        _normalize_command_path(value, output_id, _COMMAND_INPUT_OPTION, line_number)
+        for value in input_values
+    ]
+    declared_inputs = [
+        datasets_by_id[dataset_id]["public_path"]
+        for dataset_id in row["input_dataset_ids"].split(";")
+    ]
+    if sorted(command_inputs) != sorted(declared_inputs):
+        raise ValueError(
+            f"output {output_id!r} generation_command inputs {command_inputs!r} do not match declared dataset paths {declared_inputs!r}"
+        )
+
+    option_value_indices = output_value_indices | input_value_indices
+    for index, token in enumerate(tokens):
+        if index in option_value_indices:
+            continue
+        normalized_token = token.replace("\\", "/")
+        if normalized_token.startswith(_INTERNAL_INPUT_PREFIXES):
+            candidate = _normalize_command_path(
+                normalized_token, output_id, "repository input", line_number
+            )
+            if candidate not in declared_inputs:
+                raise ValueError(
+                    f"output {output_id!r} generation_command contains undeclared repository input path {candidate!r}"
+                )
+
+
 def validate_release_registry(root: Path) -> dict[str, int]:
     """Validate registry schemas and output-to-dataset referential integrity."""
 
@@ -325,9 +430,10 @@ def validate_release_registry(root: Path) -> dict[str, int]:
     )
 
     dataset_ids = {row["dataset_id"] for row in datasets}
+    datasets_by_id = {row["dataset_id"]: row for row in datasets}
     referenced: set[str] = set()
     artifacts: set[str] = set()
-    for row in outputs:
+    for line_number, row in enumerate(outputs, start=2):
         output_id = row["output_id"]
         references = row["input_dataset_ids"].split(";")
         missing = sorted(set(references) - dataset_ids)
@@ -335,6 +441,7 @@ def validate_release_registry(root: Path) -> dict[str, int]:
             raise ValueError(
                 f"output {output_id!r} references undeclared dataset(s): {', '.join(missing)}"
             )
+        _validate_generation_command(row, datasets_by_id, line_number)
         referenced.update(references)
         artifact = row["expected_artifact"]
         if artifact in artifacts:

@@ -19,7 +19,18 @@ workflow task.
 | processing_command | Command that creates this carrier from its declared upstream inputs. | Blank only for a terminal source-data carrier. |
 | manuscript_uses | Figures, tables or claims that consume the carrier. | Blank forbidden. |
 
-The five seed rows are author-generated aggregate figure-source carriers and
-are covered by the repository's explicit CC BY 4.0 data grant. Their hashes
-are current worktree values; later staging and output checks must verify them
-again before release.
+The five seed rows are author-generated aggregate figure-source carriers. Each
+`license=CC BY 4.0` value is supported only by the matching entry in the
+repository `LICENSE-DATA` allowlist:
+
+| dataset_id | allowlisted carrier |
+| --- | --- |
+| figure-01-source | `figures/source_data/figure-01.csv` |
+| figure-02-aggregate-source | `data/author_derived/figure2_aggregate_source.csv` |
+| figure-03-source | `figures/source_data/figure-03.csv` |
+| figure-04-source | `figures/source_data/figure-04.csv` |
+| figure-05-source | `figures/source_data/figure-05.csv` |
+
+This mapping does not extend the data grant to any other carrier or to
+third-party material. The listed hashes are current worktree values; later
+staging and output checks must verify them again before release.

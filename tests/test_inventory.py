@@ -277,12 +277,16 @@ def _output_row(
     output_id: str = "figure-01",
     input_dataset_ids: str = "dataset-1",
     expected_artifact: str = "figures/figure-01.png",
+    input_path: str = "data/example.csv",
     **overrides: str,
 ) -> dict[str, str]:
     row = {
         "output_id": output_id,
         "manuscript_location": "Figure 1",
-        "generation_command": "python scripts/reproduce.py --mode smoke --output <external-output>/figure-01.json",
+        "generation_command": (
+            "python scripts/build_output.py --input "
+            f"{input_path} --output {expected_artifact}"
+        ),
         "input_dataset_ids": input_dataset_ids,
         "expected_artifact": expected_artifact,
     }
@@ -397,7 +401,11 @@ def test_release_registry_rejects_duplicate_expected_artifacts(tmp_path: Path):
         [_dataset_row(), _dataset_row(dataset_id="dataset-2", public_path="data/other.csv")],
         [
             _output_row(output_id="figure-01"),
-            _output_row(output_id="figure-02", input_dataset_ids="dataset-2"),
+            _output_row(
+                output_id="figure-02",
+                input_dataset_ids="dataset-2",
+                input_path="data/other.csv",
+            ),
         ],
     )
 
@@ -445,4 +453,63 @@ def test_release_registry_rejects_incomplete_figure2e_contract(
     )
 
     with pytest.raises(ValueError, match="figure-02e"):
+        inventory_module.validate_release_registry(root)
+
+
+def test_output_commands_use_declared_inputs_and_exact_artifact_targets():
+    assert inventory_module.validate_release_registry(ROOT) == {
+        "datasets": 5,
+        "outputs": 6,
+        "referenced_datasets": 5,
+    }
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python scripts/build_output.py --input data/example.csv --output figures/other.png",
+        "echo figures/figure-01.png",
+        "python scripts/build_output.py --output figures/figure-01.png",
+        "python scripts/build_output.py --input data/undeclared.csv --output figures/figure-01.png",
+        "python scripts/build_output.py --input data/example.csv --input data/undeclared.csv --output figures/figure-01.png",
+    ],
+)
+def test_release_registry_rejects_invalid_output_command_contract(
+    tmp_path: Path, command: str
+):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row()],
+        [_output_row(generation_command=command)],
+    )
+
+    with pytest.raises(ValueError, match="figure-01|generation_command|input"):
+        inventory_module.validate_release_registry(root)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python scripts/build_figure_02.py --panel e --input data/example.csv --output figures/other.png",
+        "python scripts/build_figure_02.py --panel e --output figures/figure-02e.png",
+        "python scripts/build_figure_02.py --panel e --input data/undeclared.csv --output figures/figure-02e.png",
+    ],
+)
+def test_release_registry_rejects_invalid_figure2e_command_contract(
+    tmp_path: Path, command: str
+):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row(dataset_id="figure-02-aggregate-source")],
+        [
+            _output_row(
+                output_id="figure-02e",
+                input_dataset_ids="figure-02-aggregate-source",
+                expected_artifact="figures/figure-02e.png",
+                generation_command=command,
+            )
+        ],
+    )
+
+    with pytest.raises(ValueError, match="figure-02e|generation_command|input"):
         inventory_module.validate_release_registry(root)
