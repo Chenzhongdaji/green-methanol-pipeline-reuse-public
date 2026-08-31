@@ -189,7 +189,14 @@ def _sha256(path: Path) -> str:
 
 
 def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
-    """Return hash-verified copy/existing carriers eligible for narrow exemptions."""
+    """Return hash-verified deposited carriers eligible for narrow exemptions.
+
+    Copy/existing carriers are eligible after their deposited bytes match the
+    registry hash.  Acquire carriers are eligible only when the registry
+    explicitly describes a metadata-only, third-party, non-relicensed record;
+    this keeps the exemption from covering an official payload or boundary
+    file merely because it happens to have a matching hash.
+    """
 
     registry_path = root / "data" / "dataset_registry.csv"
     if not registry_path.is_file():
@@ -202,8 +209,23 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
     verified: set[str] = set()
     errors: list[str] = []
     for row in rows:
-        if row["stage_action"] not in {"copy", "existing"}:
+        stage_action = row["stage_action"]
+        if stage_action not in {"copy", "existing", "acquire"}:
             continue
+        if stage_action == "acquire":
+            role = row["role"].strip().casefold()
+            processing = row["processing_command"].strip().casefold()
+            license_text = row["license"].strip().casefold()
+            if (
+                "metadata" not in role
+                or "carrier" not in role
+                or "metadata-only" not in processing
+                or license_text != "third-party/not-relicensed"
+            ):
+                errors.append(
+                    "dataset registry acquire metadata carrier validation failed"
+                )
+                continue
         relative = row["public_path"]
         try:
             safe = safe_relative_path(relative)

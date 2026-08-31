@@ -61,7 +61,7 @@ def test_audit_release_fails_when_index_contains_forbidden_component(monkeypatch
         lambda root: ["src/管道数据/secret.csv"],
     )
     monkeypatch.setattr(audit_module, "_validate_metadata", lambda root: [])
-    monkeypatch.setattr(audit_module, "_scan_disclosures", lambda root: {})
+    monkeypatch.setattr(audit_module, "_scan_disclosures", lambda root, *args: {})
     monkeypatch.setattr(audit_module, "_check_licence_scope", lambda root: [])
     monkeypatch.setattr(
         audit_module,
@@ -91,7 +91,7 @@ def test_audit_release_fails_closed_when_index_enumeration_fails(
 
     monkeypatch.setattr(audit_module.subprocess, "run", fail)
     monkeypatch.setattr(audit_module, "_validate_metadata", lambda root: [])
-    monkeypatch.setattr(audit_module, "_scan_disclosures", lambda root: {})
+    monkeypatch.setattr(audit_module, "_scan_disclosures", lambda root, *args: {})
     monkeypatch.setattr(audit_module, "_check_licence_scope", lambda root: [])
     monkeypatch.setattr(
         audit_module,

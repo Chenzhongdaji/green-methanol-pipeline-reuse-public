@@ -91,6 +91,20 @@ def test_registered_carrier_hash_mismatch_is_not_exempt(tmp_path: Path):
     assert "dataset registry carrier hash mismatch" in report["errors"]
 
 
+def test_acquire_metadata_carrier_hash_mismatch_is_not_exempt(tmp_path: Path):
+    root = _copy_release(tmp_path, "mismatched_acquire_metadata")
+    relative = "data/external/maps/standard_map_gs2023_2767.json"
+    path = root / Path(*relative.split("/"))
+    path.write_bytes(path.read_bytes() + b" \r\n")
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert relative in report["lf_hits"]
+    assert any(relative in hit for hit in report["restricted_payload_hits"])
+    assert "dataset registry carrier hash mismatch" in report["errors"]
+
+
 @pytest.mark.parametrize(
     ("payload", "report_key"),
     [
