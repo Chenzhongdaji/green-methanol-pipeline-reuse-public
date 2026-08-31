@@ -9,6 +9,8 @@ import sys
 
 import pytest
 
+from green_methanol_release import pipeline as pipeline_module
+from green_methanol_release import reproduce as reproduce_module
 from green_methanol_release.inventory import DATASET_REGISTRY_FIELDS, OUTPUT_REGISTRY_FIELDS
 from green_methanol_release.reproduce import run_reproduction
 
@@ -321,6 +323,142 @@ def test_full_stops_after_first_builder_failure(tmp_path):
     assert report["executed_output_ids"] == ["first-bad"]
     assert report["command_return_codes"] == {"first-bad": 3}
     assert not (root / "figures" / "second-good.png").exists()
+
+
+def test_full_reproduction_delegates_before_resolving_or_creating_output_parent(
+    tmp_path, monkeypatch
+):
+    root = _minimal_release(tmp_path)
+    requested = tmp_path / "delegated" / "requested.json"
+    events: list[str] = []
+    original_resolve = Path.resolve
+    original_mkdir = Path.mkdir
+
+    def fake_run_full(received_root: Path, received_output_root: Path) -> dict[str, object]:
+        events.append("run_full")
+        assert received_root == root
+        assert received_output_root == requested.parent
+        return {
+            "status": "PASS",
+            "mode": "full",
+            "level_1_status": "PASS",
+            "level_2_status": "PASS",
+        }
+
+    def record_resolve(path: Path, *args, **kwargs) -> Path:
+        events.append("resolve")
+        return original_resolve(path, *args, **kwargs)
+
+    def record_mkdir(path: Path, *args, **kwargs):
+        events.append("mkdir")
+        return original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(reproduce_module, "run_full", fake_run_full)
+    monkeypatch.setattr(Path, "resolve", record_resolve)
+    monkeypatch.setattr(Path, "mkdir", record_mkdir)
+
+    report = run_reproduction(root, "full", requested)
+
+    assert report["status"] == "PASS"
+    assert events[0] == "run_full"
+    assert "mkdir" not in events[: events.index("run_full") + 1]
+    assert requested.is_file()
+
+
+def test_full_invalid_root_returns_fail_report_instead_of_raising(tmp_path):
+    missing_root = tmp_path / "missing-release"
+
+    report = pipeline_module.run_full(missing_root, tmp_path / "output")
+
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+    assert report["level_2_status"] == "FAIL"
+    assert report["error"]
+
+
+def test_full_rejects_output_inside_release_without_touching_report_path(tmp_path):
+    root = _minimal_release(tmp_path)
+    report_path = root / "full_reproduction.json"
+
+    report = pipeline_module.run_full(root, root)
+
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+    assert report["level_2_status"] == "FAIL"
+    assert not report_path.exists()
+
+
+def test_full_rejects_unsafe_report_path_without_touching_it(tmp_path):
+    root = _minimal_release(tmp_path)
+    unsafe_output = tmp_path / "管道数据" / "output"
+
+    report = pipeline_module.run_full(root, unsafe_output)
+
+    assert report["status"] == "FAIL"
+    assert report["level_1_status"] == "FAIL"
+    assert report["level_2_status"] == "FAIL"
+    assert not unsafe_output.exists()
+
+
+@pytest.mark.parametrize("character", ["*", "?", "[", "]", "~", "#"])
+def test_full_rejects_additional_shell_metacharacters(tmp_path, character):
+    row = _minimal_output_row(
+        "shell-extra",
+        "figures/shell-extra.png",
+        command=(
+            "python scripts/build_output.py --input data/carrier.csv "
+            f"--output figures/shell-extra.png --label shell-extra{character}"
+        ),
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / f"shell-{ord(character)}.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert "shell metacharacter" in report["error"]
+
+
+@pytest.mark.parametrize(
+    "input_path",
+    [
+        "C:" + "/outside.csv",
+        "../carrier.csv",
+        "data/unregistered.csv",
+    ],
+)
+def test_full_rejects_absolute_parent_or_unregistered_input(tmp_path, input_path):
+    row = _minimal_output_row(
+        "bad-input",
+        "figures/bad-input.png",
+        input_path=input_path,
+    )
+    root = _minimal_release(tmp_path, [row])
+
+    report = run_reproduction(root, "full", tmp_path / "bad-input.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert report["command_return_codes"] == {}
+    assert report["error"]
+
+
+def test_full_does_not_record_output_when_subprocess_cannot_start(tmp_path, monkeypatch):
+    root = _minimal_release(
+        tmp_path,
+        [_minimal_output_row("cannot-start", "figures/cannot-start.png")],
+    )
+
+    def fail_to_start(*args, **kwargs):
+        raise OSError("cannot start builder")
+
+    monkeypatch.setattr(pipeline_module.subprocess, "run", fail_to_start)
+    report = run_reproduction(root, "full", tmp_path / "cannot-start.json")
+
+    assert report["status"] == "FAIL"
+    assert report["executed_output_ids"] == []
+    assert report["command_return_codes"] == {}
+    assert "cannot start builder" in report["error"]
 
 
 def test_report_is_external_and_records_commit(tmp_path):

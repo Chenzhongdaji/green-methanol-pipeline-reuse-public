@@ -28,7 +28,7 @@ _REGISTRY_PATHS = (
 _CARRIER_ACTIONS = frozenset({"copy", "existing", "acquire"})
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _SHELL_METACHARACTERS = frozenset(
-    ";&|<>$`(){}!'\"" + chr(92) + chr(13) + chr(10)
+    ";&|<>$`(){}!'\"*?[]~#" + chr(92) + chr(13) + chr(10)
 )
 _WINDOWS_ABSOLUTE = re.compile(r"(?i)(?<![a-z0-9_])[a-z]:[^\s,;]+")
 _POSIX_ABSOLUTE = re.compile(r"(?<![a-z0-9_])/(?:[^\s,;]+)")
@@ -80,17 +80,16 @@ def _prepare_boundary(root: Path, output_root: Path) -> tuple[Path, Path]:
 
     assert_public_path(Path(root))
     assert_public_path(Path(output_root))
+    assert_public_path(Path(output_root) / "full_reproduction.json")
     resolved_root = Path(root).resolve()
     resolved_output = Path(output_root).resolve()
     assert_public_path(resolved_root)
     assert_public_path(resolved_output)
+    assert_public_path(resolved_output / "full_reproduction.json")
     if not resolved_root.is_dir():
         raise ValueError("release root is not a directory")
     if resolved_output == resolved_root or resolved_root in resolved_output.parents:
         raise ValueError("full reproduction output must be outside the release root")
-    resolved_output.mkdir(parents=True, exist_ok=True)
-    if not resolved_output.is_dir():
-        raise ValueError("full reproduction output is not a directory")
     return resolved_root, resolved_output
 
 
@@ -128,7 +127,6 @@ def _log_relative_path(output_id: str) -> str:
 def _validate_command(
     root: Path,
     row: dict[str, str],
-    datasets_by_id: dict[str, dict[str, str]],
     dataset_paths: dict[str, str],
 ) -> dict[str, Any]:
     output_id = row["output_id"]
@@ -246,9 +244,18 @@ def _base_report() -> dict[str, Any]:
 def run_full(root: Path, output_root: Path) -> dict[str, object]:
     """Reproduce every registered output in deterministic registry order."""
 
-    resolved_root, resolved_output = _prepare_boundary(Path(root), Path(output_root))
+    raw_root = Path(root)
+    raw_output = Path(output_root)
     report: dict[str, Any] = _base_report()
+    resolved_root: Path | None = None
+    resolved_output: Path | None = None
+    report_destination_ready = False
     try:
+        resolved_root, resolved_output = _prepare_boundary(raw_root, raw_output)
+        resolved_output.mkdir(parents=True, exist_ok=True)
+        if not resolved_output.is_dir():
+            raise ValueError("full reproduction output is not a directory")
+        report_destination_ready = True
         registry_paths = {
             relative: _safe_repo_path(resolved_root, relative, "registry")[1]
             for relative in _REGISTRY_PATHS
@@ -271,7 +278,6 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                     f"dataset {row['dataset_id']!r} has unsupported stage_action {row['stage_action']!r}"
                 )
 
-        datasets_by_id = {row["dataset_id"]: row for row in datasets}
         jobs: list[dict[str, Any]] = []
         logs_dir = resolved_output / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
@@ -288,7 +294,7 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 resolved_output,
             )
         for row in outputs:
-            jobs.append(_validate_command(resolved_root, row, datasets_by_id, dataset_paths))
+            jobs.append(_validate_command(resolved_root, row, dataset_paths))
 
         for row in datasets:
             dataset_id = row["dataset_id"]
@@ -315,7 +321,6 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
         environment["MPLBACKEND"] = "Agg"
         for job in jobs:
             output_id = job["output_id"]
-            report["executed_output_ids"].append(output_id)
             try:
                 completed = subprocess.run(
                     job["argv"],
@@ -340,6 +345,7 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 )
                 break
 
+            report["executed_output_ids"].append(output_id)
             report["command_return_codes"][output_id] = completed.returncode
             stdout = completed.stdout or ""
             stderr = completed.stderr or ""
@@ -405,11 +411,16 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
             report["level_1_status"] = "PASS"
             report["level_2_status"] = "PASS"
     except (OSError, UnicodeError, ValueError, KeyError, subprocess.SubprocessError) as exc:
-        message = _redact_paths(exc, resolved_root, resolved_output)
+        message = _redact_paths(
+            exc,
+            resolved_root or raw_root,
+            resolved_output or raw_output,
+        )
         report["error"] = message
         report["errors"] = [message]
 
-    _write_report(resolved_output, report)
+    if report_destination_ready and resolved_output is not None:
+        _write_report(resolved_output, report)
     return report
 
 

@@ -23,6 +23,7 @@ from typing import Any
 from .contracts import ReleaseRoot, validate_status
 from .inventory import CONTROLLED_FIELDS, PUBLIC_SOURCE_FIELDS, validate_inventory
 from .pipeline import run_full
+from .safety import assert_public_path
 
 
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -496,7 +497,7 @@ def _recompute_claims(
     return expected
 
 
-def _base_report(mode: str, root: Path) -> dict[str, Any]:
+def _base_report(root: Path) -> dict[str, Any]:
     workflows = {
         "source_inventory": "reproduced",
         "headline_aggregates": "reproduced",
@@ -508,7 +509,7 @@ def _base_report(mode: str, root: Path) -> dict[str, Any]:
         validate_status(status)
     return {
         "status": "PASS",
-        "mode": mode,
+        "mode": "smoke",
         "level_1_status": "PASS",
         "level_2_status": "NOT_REPRODUCED",
         "level_2_reason": (
@@ -536,22 +537,34 @@ def _validate_workflow_reasons(report: dict[str, Any]) -> None:
 def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
     """Run the offline smoke/full contract and write the report externally."""
 
-    root = Path(root).resolve()
-    output = Path(output).resolve()
     if mode not in {"smoke", "full"}:
         raise ValueError(f"unsupported reproduction mode: {mode}")
+    if mode == "full":
+        output_path = Path(output)
+        report = run_full(Path(root), output_path.parent)
+        try:
+            assert_public_path(output_path)
+            resolved_root = Path(root).resolve()
+            resolved_output = output_path.resolve()
+            if resolved_output == resolved_root or resolved_root in resolved_output.parents:
+                return report
+            output_path = resolved_output
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+        except (OSError, ValueError):
+            return report
+        return report
+
+    root = Path(root).resolve()
+    output = Path(output).resolve()
     if output == root or root in output.parents:
         raise ValueError("reproduction report must be outside the immutable repository")
     output.parent.mkdir(parents=True, exist_ok=True)
-    if mode == "full":
-        report = run_full(root, output.parent)
-        output.write_text(
-            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-            newline="\n",
-        )
-        return report
-    report = _base_report(mode, root)
+    report = _base_report(root)
     errors: list[str] = []
     checked_paths: list[Path] = []
     try:
