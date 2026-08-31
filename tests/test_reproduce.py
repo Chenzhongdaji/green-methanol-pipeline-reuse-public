@@ -123,13 +123,33 @@ def test_smoke_reproduces_open_aggregate_scope(tmp_path):
     assert report["workflows"]["figure_source_data"] == "aggregate-only"
 
 
-def test_full_stops_without_controlled_inputs(tmp_path):
+def test_full_real_release_executes_all_registered_outputs(tmp_path):
     report = run_reproduction(ROOT, "full", tmp_path / "run.json")
-    assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
-    assert report["executed_output_ids"] == []
-    assert "build_figure_01.py" in report["error"]
+    expected_ids = [
+        "figure-01",
+        "figure-02a-d-f-h",
+        "figure-02e",
+        "figure-03",
+        "figure-04",
+        "figure-05",
+    ]
+    assert report["status"] == "PASS"
+    assert report["level_1_status"] == "PASS"
+    assert report["level_2_status"] == "PASS"
+    assert report["executed_output_ids"] == expected_ids
+    assert set(report["artifacts"]) == set(expected_ids)
+    assert all(len(item["sha256"]) == 64 for item in report["artifacts"].values())
     assert "NOT_REPRODUCED" not in json.dumps(report, ensure_ascii=False)
+
+
+def test_full_real_release_repeats_with_identical_artifact_hashes(tmp_path):
+    first = run_reproduction(ROOT, "full", tmp_path / "first.json")
+    second = run_reproduction(ROOT, "full", tmp_path / "second.json")
+
+    assert first["status"] == "PASS"
+    assert second["status"] == "PASS"
+    assert first["executed_output_ids"] == second["executed_output_ids"]
+    assert first["artifacts"] == second["artifacts"]
 
 
 def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_path):

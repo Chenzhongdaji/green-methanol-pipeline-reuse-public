@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -288,3 +290,152 @@ def test_all_registry_builders_exist_and_figure_02_uses_real_carrier():
         assert (ROOT / script_token).is_file()
         assert "data/figure_source/figure-02.csv" in row["generation_command"]
         assert row["input_dataset_ids"] == "figure-02-source-real"
+
+
+@pytest.mark.parametrize(
+    ("script", "source", "output_name", "expected_rows"),
+    [
+        ("build_figure_01.py", "figure-01.csv", "figure-01.png", 35),
+        ("build_figure_03.py", "figure-03.csv", "figure-03.png", 8),
+        ("build_figure_04.py", "figure-04.csv", "figure-04.png", 56),
+        ("build_figure_05.py", "figure-05.csv", "figure-05.png", 16),
+    ],
+)
+def test_remaining_builders_accept_exact_public_schema_and_emit_metadata(
+    tmp_path, script, source, output_name, expected_rows
+):
+    output = tmp_path / output_name
+
+    completed = _run_builder(script, f"figures/source_data/{source}", output)
+
+    assert completed.returncode == 0, completed.stderr
+    metadata = json.loads(completed.stdout)
+    assert metadata["input_row_count"] == expected_rows
+    assert metadata["output_path"] == str(output)
+    assert metadata["output_sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
+    assert metadata["plotted_records"] > 0
+    assert output.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    assert output.stat().st_size > 1_000
+
+
+@pytest.mark.parametrize(
+    ("script", "source"),
+    [
+        ("build_figure_01.py", "figure-01.csv"),
+        ("build_figure_03.py", "figure-03.csv"),
+        ("build_figure_04.py", "figure-04.csv"),
+        ("build_figure_05.py", "figure-05.csv"),
+    ],
+)
+def test_remaining_builders_have_deterministic_hashes_under_row_permutation(
+    tmp_path, script, source
+):
+    original = ROOT / "figures" / "source_data" / source
+    permuted = tmp_path / source
+    with original.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    with permuted.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(reversed(rows))
+
+    first = tmp_path / f"first-{source[:-4]}.png"
+    second = tmp_path / f"second-{source[:-4]}.png"
+    one = _run_builder(script, f"figures/source_data/{source}", first)
+    two = _run_builder(script, str(permuted), second)
+
+    assert one.returncode == 0, one.stderr
+    assert two.returncode == 0, two.stderr
+    assert hashlib.sha256(first.read_bytes()).hexdigest() == hashlib.sha256(
+        second.read_bytes()
+    ).hexdigest()
+
+
+@pytest.mark.parametrize(
+    ("script", "source"),
+    [
+        ("build_figure_01.py", "figure-01.csv"),
+        ("build_figure_03.py", "figure-03.csv"),
+        ("build_figure_04.py", "figure-04.csv"),
+        ("build_figure_05.py", "figure-05.csv"),
+    ],
+)
+def test_remaining_builders_reject_empty_input(tmp_path, script, source):
+    source_path = ROOT / "figures" / "source_data" / source
+    header = source_path.read_text(encoding="utf-8-sig").splitlines()[0]
+    empty = tmp_path / f"empty-{source}"
+    empty.write_text(header + "\n", encoding="utf-8", newline="\n")
+    output = tmp_path / f"empty-{source[:-4]}.png"
+
+    completed = _run_builder(script, str(empty), output)
+
+    assert completed.returncode != 0
+    assert "empty" in completed.stderr.lower()
+    assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    ("script", "source", "field"),
+    [
+        ("build_figure_03.py", "figure-03.csv", "distance_km"),
+        ("build_figure_04.py", "figure-04.csv", "served_methanol_10kt"),
+        ("build_figure_05.py", "figure-05.csv", "value"),
+    ],
+)
+def test_remaining_builders_reject_nonfinite_numeric_fields(
+    tmp_path, script, source, field
+):
+    source_path = ROOT / "figures" / "source_data" / source
+    with source_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    rows[0][field] = "nan"
+    malformed = tmp_path / f"nonfinite-{source}"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    output = tmp_path / f"nonfinite-{source[:-4]}.png"
+    completed = _run_builder(script, str(malformed), output)
+
+    assert completed.returncode != 0
+    assert "non-finite" in completed.stderr.lower()
+    assert not output.exists()
+
+
+def test_figure_01_rejects_unknown_target(tmp_path):
+    source_path = ROOT / "figures" / "source_data" / "figure-01.csv"
+    with source_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    rows[0]["target"] = "not-a-conceptual-stage"
+    malformed = tmp_path / "unknown-target.csv"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder("build_figure_01.py", str(malformed), tmp_path / "unknown-target.png")
+
+    assert completed.returncode != 0
+    assert "target" in completed.stderr.lower()
+
+
+def test_figure_05_rejects_value_that_disagrees_with_explicit_gain_column(tmp_path):
+    source_path = ROOT / "figures" / "source_data" / "figure-05.csv"
+    with source_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    rows[0]["value"] = "999"
+    malformed = tmp_path / "gain-mismatch.csv"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder("build_figure_05.py", str(malformed), tmp_path / "gain-mismatch.png")
+
+    assert completed.returncode != 0
+    assert "gain" in completed.stderr.lower()
