@@ -1,16 +1,23 @@
 # Notice
 
-This tree is an offline Level-1 release candidate, not a public archive. No
-remote, release tag, DOI or accession number is asserted here; the manuscript
-and Supplementary Information remain outside the package.
+This is version `1.0.0` of the public reproducibility package for the
+green-methanol pipeline-reuse study. The repository contains the code,
+author-generated input carriers, figure-source data, provenance metadata,
+tests, and release inventories needed by the registered workflow, including
+Figure 2e.
 
-The MIT grant in `LICENSE` applies to the candidate's code and documentation.
-The candidate's CC BY 4.0 terms in `LICENSE-DATA` apply only to rows and aggregate
-carriers explicitly labelled **author-generated aggregate data**. Attribution
-must retain the release citation and the relevant source metadata.
+The MIT notice in `LICENSE` covers code and documentation. The CC BY 4.0 notice
+in `LICENSE-DATA` covers only its explicit author-generated aggregate allowlist.
+Third-party reports, source tables, and map references retain their
+source-specific terms. `data/public_sources.csv` and the GS(2023)2767
+metadata-only acquisition record are provenance and access records; they do
+not relicense a source payload.
 
-Public-source payloads, third-party reports and raw tables, the controlled
-topology and facility/mapping inputs, candidate-link geometry, official map
-files, and controlled metadata are excluded from both scopes. An
-open URL in `data/public_sources.csv` is a provenance locator, not a statement
-that the source payload may be redistributed or relicensed.
+The only exclusion is material under a directory whose path component is
+exactly `管道数据`. It is user-private material, is not included or disclosed,
+and the full workflow does not depend on it. All other repository paths named
+by the dataset registry are part of the checked package boundary.
+
+Repository: <https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>
+
+Checked package version: `1.0.0`.

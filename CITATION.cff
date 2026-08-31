@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "Citation metadata are provisional and require author confirmation before public release."
-title: "Green methanol pipeline reuse: Level-1 release candidate"
+message: "If you use this public reproducibility package, cite the repository and checked package version."
+title: "Green methanol pipeline reuse: full public reproducibility release"
 type: software
 version: 1.0.0
 license: MIT

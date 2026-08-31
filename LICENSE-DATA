@@ -1,8 +1,8 @@
 Creative Commons Attribution 4.0 International (CC BY 4.0)
 
-The CC BY 4.0 licence applies only to the author-generated aggregate data
-explicitly labelled as such in this repository. The legal code is available at
-https://creativecommons.org/licenses/by/4.0/.
+This file applies only to the author-generated aggregate carriers listed below
+and does not change the terms of any source material. The legal code is
+available at https://creativecommons.org/licenses/by/4.0/.
 
 You are free to share and adapt the covered aggregate material for any purpose,
 including commercially, provided that you give appropriate credit, provide a
@@ -10,8 +10,10 @@ link to the licence, and indicate if changes were made. You may not apply legal
 terms or technological measures that legally restrict others from doing
 anything the licence permits. No endorsement is granted.
 
-Public-source and third-party payloads, controlled metadata and restricted
-inputs are not covered by this grant and remain subject to their own rights.
+Public-source metadata, third-party materials, and all other non-aggregate
+carriers are not covered by this grant. They retain the source or author terms
+recorded in `data/dataset_registry.csv` and `data/public_sources.csv`; this file
+does not add a permission or relicense those materials.
 
 Covered author-generated aggregate carriers are limited to:
 
@@ -24,5 +26,5 @@ Covered author-generated aggregate carriers are limited to:
 - `qa/expected/headline_claims.csv`
 - `figures/panel_map.csv`
 
-The matching aggregate dictionaries describe those carriers but do not grant
-rights over public-source or controlled metadata.
+Repository: https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public
+Checked package version: `1.0.0`.

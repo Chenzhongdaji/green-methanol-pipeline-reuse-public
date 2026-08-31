@@ -1,36 +1,43 @@
 # Data Availability
 
-This provisional v1.0.0 offline candidate (initial candidate 2026-08-14;
-metadata rebound 2026-08-22) contains the reviewed aggregate CSV carriers,
-selected figure source data, dictionaries, and source metadata needed for the
-offline Level 1 reproduction. Figure source carriers cover Figures 1 and 3-5
-and the safe aggregate subset of Figure 2 panels a-d and f-h. Figure 2 panel e
-is withheld because its restricted network/map payload and formal map review
-are not released. The current rev04 public-data/code manuscript and
-Supplementary Information filenames and SHA-256 values are recorded in
-[MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md). The public-source register
-identifies the external reports, regulations, articles, and engineering
-references; their raw payloads are not redistributed and remain subject to the
-source-specific rights stated in the register.
+Package version `1.0.0` contains the author-generated raw, cleaned, processed,
+model-ready, and figure-source carriers used by the registered reproduction
+workflow, subject to one path-based private-directory boundary. The deposited
+carriers include the directed network and node-coordinate tables, city and
+activity inputs, demand and supply inputs, topology and flow tables, dynamic
+analysis tables, and source data for Figures 1-5. Figure 2e is reproduced from
+the public carrier at `data/figure_source/figure-02.csv`.
 
-The four controlled families in `data/controlled_inputs_metadata.csv` are
-metadata-only. Exact directed topology, facility mappings, candidate-link
-geometry, and GS(2023)2767 map files require owner/legal review and have no
-public download route in this candidate. Their hashes are `hash_unavailable`
-with a reason because the restricted payloads are absent. The
-`validation_substitute` column records only non-sensitive aggregate checks,
-withheld-panel status, or schema-level validation artefacts; it is not a route
-to the missing payloads and does not promise access.
+`data/dataset_registry.csv` is the authoritative dataset-to-location register;
+it records 39 dataset records, including 38 deposited byte carriers and one
+metadata-only acquisition record. Each record states its origin, access route,
+source terms, SHA-256 value, processing information, and manuscript use.
+`data/output_registry.csv` maps each registered figure output to its input
+dataset IDs and generating command. `FILE_MANIFEST.csv` and
+`CHECKSUMS.sha256` provide the final-tree inventory and byte checks.
 
-Author-generated aggregate values are explicitly labelled in the registers and
-aggregate dictionaries. Those aggregate carriers are the only data covered by
-the candidate's CC BY 4.0 terms, with attribution; this grant does not extend
-to public-source payloads, controlled metadata, or any third-party material.
-The public development repository is
-<https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>.
-It is a provisional candidate, not yet a frozen archival release; no DOI,
-accession number, or release tag has been assigned.
+The public source register at `data/public_sources.csv` records stable source
+locators, versions, access dates, evidence boundaries, and source-specific
+redistribution terms. A third-party payload that cannot be redistributed is
+represented by metadata and an official acquisition route, with a lawful
+derived carrier where the workflow uses one. The GS(2023)2767 record is the
+metadata-only file at
+`data/external/maps/standard_map_gs2023_2767.json`; no official map payload is
+needed by the Figure 2e builder. Its carrier uses analytical coordinates and
+does not claim to be an official basemap.
 
-The manuscript and Supplementary Information authorities and their digests are
-recorded in [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md), but the DOCX files are
-not included.
+The only exclusion is material under a directory whose path component is
+exactly `管道数据`. It is user-private material, is not included or disclosed,
+and the full reproduction workflow does not depend on this directory. No other
+directory is treated as a private data boundary by this release. The manuscript and
+Supplementary Information DOCX authority files remain represented by metadata
+and SHA-256 values in `MANUSCRIPT_SCOPE.md`; the binaries are not deposited.
+
+The aggregate carriers explicitly listed in `LICENSE-DATA` are available under
+CC BY 4.0. Other deposited data and metadata retain the source or author terms
+identified in `data/dataset_registry.csv` and `data/public_sources.csv`; this
+statement does not add a licence or permission to material outside that scope.
+
+Repository: <https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>
+
+Checked package version: `1.0.0`.

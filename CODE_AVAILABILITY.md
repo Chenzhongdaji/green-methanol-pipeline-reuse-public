@@ -1,26 +1,50 @@
 # Code Availability
 
-Provisional candidate `v1.0.0` (initial candidate 2026-08-14; metadata rebound
-2026-08-22) contains the following code and verification contract. Figure
-source carriers cover Figures 1 and 3-5 and the safe aggregate subset of Figure
-2 panels a-d and f-h; Figure 2 panel e remains withheld because it depends on
-restricted network/map payloads.
-The candidate is bound to the current rev04 public-data/code manuscript and Supplementary
-Information pair recorded in [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md).
+Package version `1.0.0` provides the Python package under
+`src/green_methanol_release/`, the command-line builders and audit tools under
+`scripts/`, the pinned environment in `environment/`, configuration and
+registries, tests, and the expected release inventories. The code reproduces
+the registered manuscript outputs, including Figure 2e. Figure 2e is
+reproduced from its deposited public carrier.
 
-The Python package under `src/green_methanol_release/` and the command-line
-scripts under `scripts/` are provided under the MIT License for this candidate.
-The declared
-runtime is Python 3.12 with the pinned dependencies in
-`environment/requirements.txt`; no repository-local virtual environment is
-needed. The test suite is run with `pytest` and the smoke reproduction writes
-its JSON report to a caller-selected external path.
+From a clean checkout, install Python 3.12 and the pinned requirements, then
+run:
 
-The code implements the bounded Level 1 aggregate workflow, deterministic file
-manifest/checksum generation, and the fail-closed release audit. It does not
-contain an implementation route to the absent Level 2 topology, facility
-mappings, candidate geometry, or map payloads. The public development
-repository is
-<https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>.
-It has no frozen release tag, DOI or accession number; archival publication
-remains blocked pending author confirmation and rights review.
+```text
+python -m pip install -r environment/requirements.txt
+python -m pip install -e .
+python -m pytest -q
+python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full
+python scripts/build_manifest.py
+python scripts/audit_release.py --output <external-output>/green-methanol-audit.json
+```
+
+The full command consumes the dataset and output registries, validates every
+registered carrier and its hash, executes the registered builders in registry
+order, checks the expected artifacts, and writes sanitized logs plus
+`full_reproduction.json` to the external output directory. Figure 2e is
+explicitly bound to:
+
+```text
+python scripts/build_figure_02.py --panel e --input data/figure_source/figure-02.csv --output figures/figure-02e.png
+```
+
+The builder emits both the PNG and PDF outputs. Its network panel uses the
+public analytical-coordinate carrier and is therefore reproducible without an
+official basemap or network download. The other figure commands and their
+input mappings are maintained in `data/output_registry.csv`.
+
+Repository-local tests cover path safety, registry schemas, carrier hashes,
+figure-source contracts, numerical checks, deterministic figures, the full
+orchestrator, and release audits. Generated reports should be written outside
+the repository so that frozen inputs are not overwritten.
+
+Code and documentation are covered by the MIT notice in `LICENSE`. Data terms
+are separate: `LICENSE-DATA` names its exact CC BY 4.0 aggregate allowlist,
+while all other data and third-party materials retain the terms recorded in
+the registries. The only private-directory exclusion is a path component
+exactly equal to `管道数据`; the code does not require or inspect it.
+
+Repository: <https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>
+
+Checked package version: `1.0.0`.

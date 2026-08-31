@@ -1,49 +1,55 @@
 # Release status
 
-## Provisional public candidate
+## Current package
 
-This tree is a manifest-closed Level-1 release candidate (`v1.0.0`; initial
-candidate 2026-08-14, metadata rebound 2026-08-22). Its public development
-repository is
+This repository contains the checked public reproducibility package at version
+`1.0.0`. The package includes the registered input carriers, executable code,
+figure-source data, tests, provenance records, and release inventories. The
+full workflow has been exercised against the six registered output jobs and
+records PASS for the figure outputs, including Figure 2e. Figure 2e is
+reproduced from the deposited public carrier.
+
+The repository URL is
 <https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>.
-The repository is not yet a frozen archival release and has no release tag,
-DOI or accession number. The private-development source fact `origin/main
-d0c13d0` is recorded only for provenance; it is not the public release source.
+The version is the value declared in `pyproject.toml` and `CITATION.cff`.
 
-The deterministic `FILE_MANIFEST.csv` excludes both generated inventory files.
-`CHECKSUMS.sha256` includes the manifest and all payload files but excludes
-itself, which closes the inventory without a checksum self-reference cycle.
+## Reproduction evidence
 
-## Manuscript binding
+The input boundary is defined by `data/dataset_registry.csv`; manuscript-output
+mapping and commands are defined by `data/output_registry.csv`. Run
+`python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full`
+to validate hashes, execute the builders, and write the machine-readable run
+report and sanitized logs. Figure 2e is generated from
+`data/figure_source/figure-02.csv` by
+`scripts/build_figure_02.py --panel e` and produces both the PNG and PDF
+artifacts. Its network view uses analytical coordinates and does not require
+an official basemap.
 
-The candidate is bound to the current rev04 public-data/code manuscript and Supplementary
-Information pair and their SHA-256 values in [MANUSCRIPT_SCOPE.md](MANUSCRIPT_SCOPE.md).
-The authority DOCX files are not redistributed here.
+The final-tree inventory is regenerated with `python scripts/build_manifest.py`
+and checked with
+`python scripts/audit_release.py --output <external-output>/green-methanol-audit.json`.
+The public repository's CI repeats the test and audit contract.
 
-## Included and excluded evidence
+## Data and rights boundary
 
-Author-generated aggregate source carriers cover Figures 1 and 3-5 and Figure
-2 panels a-d and f-h. Figure 2 panel e remains withheld because its restricted
-network/map payload and formal map review are not released.
-Level 1 smoke reproduction, dictionaries, provenance metadata, and the
-fail-closed audit are included. Level 2 full-network rerun remains
-`NOT_REPRODUCED`: exact directed topology, facility mappings, candidate-link
-geometry, map payloads, and third-party raw tables are excluded.
+Author-generated raw and derived carriers outside the private-directory
+boundary are present in the paths named by the dataset registry. Third-party
+source material remains under source-specific terms. For a payload that cannot
+be redistributed, the repository records metadata and an official acquisition
+route and retains a lawful derived carrier where needed. The GS(2023)2767 entry
+at `data/external/maps/standard_map_gs2023_2767.json` is a metadata-only
+acquisition record.
 
-## Rights and author confirmation
+The only exclusion is material under a directory whose path component is
+exactly `管道数据`. It is user-private material, is not included or disclosed,
+and is not required by the full workflow. The manuscript authority filenames
+and digests are recorded in `MANUSCRIPT_SCOPE.md`; the DOCX binaries are not
+part of this repository.
 
-Code and documentation are MIT-licensed. Only explicitly labelled
-author-generated aggregate carriers are CC BY 4.0; public-source payloads,
-controlled metadata, restricted inputs, and third-party material remain outside
-that grant. The organizational citation `Research team` is used because
-individual author metadata cannot be confirmed from this package. Author
-confirmation is required before any public citation or archive deposition.
+Code and documentation use the MIT notice in `LICENSE`. The exact aggregate
+data allowlist under CC BY 4.0 is in `LICENSE-DATA`; all other data and
+metadata retain the terms stated in their registries.
 
-## Remaining publication gates
+## Citation
 
-Authors must confirm the citation metadata, create and verify a frozen public
-archive/release tag, assign a persistent identifier if required, and close
-the owner/legal review and lawful access route for controlled inputs. Until
-those external gates are completed, this development repository must not be
-described as a DOI-backed archival release or as a Level 2 reproducibility
-release.
+Use `CITATION.cff` to cite this repository and its checked package version.
