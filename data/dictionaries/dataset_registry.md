@@ -18,6 +18,8 @@ workflow task.
 | acquisition_command | Reproducible acquisition command for data not already deposited. | Blank only for author-generated data already deposited in the repository. |
 | processing_command | Command that creates this carrier from its declared upstream inputs. | Blank only for a terminal source-data carrier. |
 | manuscript_uses | Figures, tables or claims that consume the carrier. | Blank forbidden. |
+| source_relative_path | Path under the staging source root for a copy action. | Blank required for existing and acquire actions; otherwise repository-relative and safe. |
+| stage_action | Staging disposition for this carrier. | Exactly `copy`, `existing` or `acquire`. |
 
 The five seed rows are author-generated aggregate figure-source carriers. Each
 `license=CC BY 4.0` value is supported only by the matching entry in the

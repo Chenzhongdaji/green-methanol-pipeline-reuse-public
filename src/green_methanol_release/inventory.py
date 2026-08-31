@@ -69,6 +69,8 @@ DATASET_REGISTRY_FIELDS = (
     "acquisition_command",
     "processing_command",
     "manuscript_uses",
+    "source_relative_path",
+    "stage_action",
 )
 
 OUTPUT_REGISTRY_FIELDS = (
@@ -82,7 +84,12 @@ OUTPUT_REGISTRY_FIELDS = (
 _DATASET_REQUIRED_FIELDS = tuple(
     field
     for field in DATASET_REGISTRY_FIELDS
-    if field not in {"sha256", "acquisition_command", "processing_command"}
+    if field not in {
+        "sha256",
+        "acquisition_command",
+        "processing_command",
+        "source_relative_path",
+    }
 )
 _OUTPUT_REQUIRED_FIELDS = OUTPUT_REGISTRY_FIELDS
 _FIGURE2E_FORBIDDEN_MARKERS = ("withheld", "status", "not_reproduced")
@@ -253,6 +260,10 @@ def load_dataset_registry(path: Path) -> list[dict[str, str]]:
         row["public_path"] = _normalize_registry_path(
             row["public_path"], "public_path", line_number
         )
+        if row["source_relative_path"]:
+            row["source_relative_path"] = _normalize_registry_path(
+                row["source_relative_path"], "source_relative_path", line_number
+            )
         _validate_sha256(row["sha256"], row["dataset_id"], line_number)
 
         if not row["acquisition_command"] and not _is_author_generated_deposited(row):

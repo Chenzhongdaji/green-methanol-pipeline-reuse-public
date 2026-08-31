@@ -7,6 +7,7 @@ import pytest
 import green_methanol_release.inventory as inventory_module
 from green_methanol_release.inventory import (
     CONTROLLED_FIELDS,
+    DATASET_REGISTRY_FIELDS,
     MANIFEST_FIELDS,
     PUBLIC_SOURCE_FIELDS,
     write_release_inventories,
@@ -219,18 +220,6 @@ def test_figure2_aggregate_carrier_is_classified_as_cc_by(tmp_path: Path):
     assert rows["data/author_derived/figure2_aggregate_source.csv"]["licence_scope"] == "CC BY 4.0"
 
 
-DATASET_REGISTRY_FIELDS = (
-    "dataset_id",
-    "public_path",
-    "role",
-    "origin",
-    "access_route",
-    "license",
-    "sha256",
-    "acquisition_command",
-    "processing_command",
-    "manuscript_uses",
-)
 OUTPUT_REGISTRY_FIELDS = (
     "output_id",
     "manuscript_location",
@@ -268,6 +257,8 @@ def _dataset_row(
         "acquisition_command": "",
         "processing_command": "terminal source-data carrier",
         "manuscript_uses": "Figure 1",
+        "source_relative_path": "",
+        "stage_action": "existing",
     }
     row.update(overrides)
     return row
@@ -310,6 +301,8 @@ def test_registry_loads_and_validates_seed_counts():
     outputs = inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
 
     assert len(datasets) == 5
+    assert all(row["stage_action"] == "existing" for row in datasets)
+    assert all(row["source_relative_path"] == "" for row in datasets)
     assert len(outputs) == 6
     assert inventory_module.validate_release_registry(ROOT) == {
         "datasets": 5,
