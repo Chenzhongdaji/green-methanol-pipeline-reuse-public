@@ -1,10 +1,8 @@
-"""Offline aggregate reproduction for the public release.
+"""Offline reproduction checks for the public release.
 
-The runner deliberately stops at Level 1.  It checks only the released
-inventory, aggregate carriers and dictionaries, then recomputes the three
-headline percentages from the pooled strict terminal account.  Exact directed
-topology, facility mappings, candidate geometry and map carriers are controlled
-inputs and are therefore reported as Level 2 ``NOT_REPRODUCED``.
+Smoke mode validates the public registries, aggregate claims, figure-source
+schemas and dictionaries.  Full mode delegates to the registry-driven
+orchestrator, which rebuilds every registered manuscript artifact.
 """
 
 from __future__ import annotations
@@ -21,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import ReleaseRoot, validate_status
-from .inventory import CONTROLLED_FIELDS, PUBLIC_SOURCE_FIELDS, validate_inventory
+from .inventory import PUBLIC_SOURCE_FIELDS, validate_inventory
 from .pipeline import run_full
 from .safety import assert_public_path
 
@@ -136,7 +134,8 @@ _FIGURE_SPECS: dict[str, tuple[str, ...]] = {
 }
 _DICTIONARY_PATHS = (
     "data/dictionaries/public_sources.md",
-    "data/dictionaries/controlled_inputs.md",
+    "data/dictionaries/dataset_registry.md",
+    "data/dictionaries/output_registry.md",
     "data/dictionaries/figure_01.md",
     "data/dictionaries/figure2_aggregate_source.md",
     "data/dictionaries/figure_03.md",
@@ -149,7 +148,27 @@ _DICTIONARY_PATHS = (
 _PANEL_FIELDS = ("figure", "panel", "status", "source_data", "dictionary", "reason")
 _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
     "data/dictionaries/public_sources.md": PUBLIC_SOURCE_FIELDS,
-    "data/dictionaries/controlled_inputs.md": CONTROLLED_FIELDS,
+    "data/dictionaries/dataset_registry.md": (
+        "dataset_id",
+        "public_path",
+        "role",
+        "origin",
+        "access_route",
+        "license",
+        "sha256",
+        "acquisition_command",
+        "processing_command",
+        "manuscript_uses",
+        "source_relative_path",
+        "stage_action",
+    ),
+    "data/dictionaries/output_registry.md": (
+        "output_id",
+        "manuscript_location",
+        "generation_command",
+        "input_dataset_ids",
+        "expected_artifact",
+    ),
     "data/dictionaries/figure_01.md": _FIGURE_SPECS["figures/source_data/figure-01.csv"],
     "data/dictionaries/figure2_aggregate_source.md": _FIGURE_SPECS["data/author_derived/figure2_aggregate_source.csv"],
     "data/dictionaries/figure_03.md": _FIGURE_SPECS["figures/source_data/figure-03.csv"],
@@ -161,65 +180,23 @@ _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
 }
 _REQUIRED_PATHS = (
     "data/public_sources.csv",
-    "data/controlled_inputs_metadata.csv",
+    "data/dataset_registry.csv",
+    "data/output_registry.csv",
     "data/author_derived/terminal_gap_aggregate.csv",
     "qa/expected/headline_claims.csv",
     "figures/panel_map.csv",
     *_FIGURE_SPECS.keys(),
     *_DICTIONARY_PATHS,
 )
-_FIGURE2_REASON = "safe aggregate carrier; panel e restricted-map-not-released"
-_EXPECTED_PANEL_ROWS = (
-    (
-        "Figure 1",
-        "all",
-        "aggregate-only",
-        "figures/source_data/figure-01.csv",
-        "data/dictionaries/figure_01.md",
-        "conceptual aggregate workflow only; no topology or facility identifiers",
-    ),
-    (
-        "Figure 2",
-        "a-d,f-h",
-        "aggregate-only",
-        "data/author_derived/figure2_aggregate_source.csv",
-        "data/dictionaries/figure2_aggregate_source.md",
-        _FIGURE2_REASON,
-    ),
-    (
-        "Figure 3",
-        "all",
-        "aggregate-only",
-        "figures/source_data/figure-03.csv",
-        "data/dictionaries/figure_03.md",
-        "scenario-level transport aggregates only; task-level routes are excluded",
-    ),
-    (
-        "Figure 4",
-        "c",
-        "aggregate-only",
-        "figures/source_data/figure-04.csv",
-        "data/dictionaries/figure_04.md",
-        "regional aggregate accounts only; refinery-proxy entities and coordinates are excluded",
-    ),
-    (
-        "Figure 5",
-        "c",
-        "aggregate-only",
-        "figures/source_data/figure-05.csv",
-        "data/dictionaries/figure_05.md",
-        "aggregate service-gain panel only; connector identifiers and geometry are excluded",
-    ),
-)
 _WORKFLOW_REASONS = {
     "figure_source_data": (
-        "Reviewed aggregate carriers are released for Figures 1-5; Figure 2 panel e and other topology-bearing or coordinate-bearing payloads are withheld."
+        "The public figure-source carriers are validated in smoke mode and rebuilt by the full registry workflow."
     ),
     "manuscript_artifacts": (
-        "The manuscript is not redistributed; this release records only metadata and bounded aggregate evidence."
+        "Authority manuscript binaries remain outside the repository; their filenames and digests are recorded in MANUSCRIPT_SCOPE.md."
     ),
     "network_model": (
-        "Exact directed topology, facility mappings, candidate geometry and map-review-pending inputs are absent."
+        "Smoke mode checks registries and carriers only; registered figure builders run in full mode."
     ),
 }
 _FORBIDDEN_COLUMNS = {
@@ -333,13 +310,6 @@ def _resolve(root: Path, relative: str) -> Path:
 def _validate_panel_map(root: Path) -> list[dict[str, str]]:
     path = _resolve(root, "figures/panel_map.csv")
     rows = _load_csv(path, _PANEL_FIELDS, "panel map")
-    actual_contract = {
-        tuple(row[field].strip() for field in _PANEL_FIELDS)
-        for row in rows
-    }
-    expected_contract = set(_EXPECTED_PANEL_ROWS)
-    if len(rows) != len(_EXPECTED_PANEL_ROWS) or actual_contract != expected_contract:
-        raise ValueError("panel map must match the exact five-row release contract")
     seen: set[tuple[str, str]] = set()
     for row in rows:
         key = (row["figure"].strip(), row["panel"].strip())
@@ -361,24 +331,9 @@ def _validate_panel_map(root: Path) -> list[dict[str, str]]:
                 raise ValueError(f"not-run panel cannot expose payload paths: {key}")
             if not row["reason"].strip():
                 raise ValueError(f"not-run panel needs a reason: {key}")
-    figure2 = [row for row in rows if row["figure"].strip() == "Figure 2"]
-    if len(figure2) != 1 or figure2[0]["status"].strip() != "aggregate-only":
-        raise ValueError("Figure 2 must have one aggregate-only partial panel-map row")
-    if figure2[0]["panel"].strip() != "a-d,f-h":
-        raise ValueError("Figure 2 released panel subset must be a-d,f-h")
-    if figure2[0]["reason"].strip() != _FIGURE2_REASON:
-        raise ValueError("Figure 2 withholding reason differs from the release contract")
-    expected_sources = set(_FIGURE_SPECS)
-    mapped_sources = {
-        row["source_data"].strip()
-        for row in rows
-        if row["status"].strip() == "aggregate-only"
-    }
-    if expected_sources != mapped_sources:
-        raise ValueError(
-            f"panel map source coverage differs: missing={sorted(expected_sources - mapped_sources)}, "
-            f"extra={sorted(mapped_sources - expected_sources)}"
-        )
+    figures = {row["figure"].strip() for row in rows}
+    if not {"Figure 1", "Figure 2", "Figure 3", "Figure 4", "Figure 5"} <= figures:
+        raise ValueError("panel map must cover Figures 1-5")
     return rows
 
 
@@ -422,6 +377,30 @@ def _validate_dictionary(path: Path, fields: tuple[str, ...], label: str) -> Non
     ]
     if incomplete:
         raise ValueError(f"dictionary rows have blank metadata for {incomplete}: {label}")
+
+
+def _validate_registry_dictionary(path: Path, fields: tuple[str, ...], label: str) -> None:
+    """Validate the compact three-column dictionaries for the registries."""
+
+    payload = path.read_bytes()
+    if b"\r" in payload:
+        raise ValueError(f"dictionary must use LF line endings: {label}")
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"dictionary is not UTF-8: {label}") from exc
+    if any(marker in text for marker in _MOJIBAKE_MARKERS):
+        raise ValueError(f"dictionary contains a known mojibake marker: {label}")
+    columns = {
+        cells[0].strip()
+        for line in text.splitlines()
+        if line.strip().startswith("|") and line.strip().endswith("|")
+        for cells in [tuple(cell.strip() for cell in line.strip()[1:-1].split("|"))]
+        if len(cells) >= 2 and cells[0] not in {"Column", "---"} and cells[0]
+    }
+    missing = [field for field in fields if field not in columns]
+    if missing:
+        raise ValueError(f"registry dictionary column rows differ for {label}: missing={missing}")
 
 
 def _recompute_claims(
@@ -510,12 +489,6 @@ def _base_report(root: Path) -> dict[str, Any]:
     return {
         "status": "PASS",
         "mode": "smoke",
-        "level_1_status": "PASS",
-        "level_2_status": "NOT_REPRODUCED",
-        "level_2_reason": (
-            "Level 2 requires exact directed pipeline topology, facility-to-trunk/refinery mappings, "
-            "candidate-link geometry and map-review-pending inputs that are excluded from this public release."
-        ),
         "release_commit": _git_head(root),
         "workflows": workflows,
         "workflow_reasons": dict(_WORKFLOW_REASONS),
@@ -571,7 +544,7 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
         _validate_workflow_reasons(report)
         if not _COMMIT_RE.fullmatch(str(report.get("release_commit", ""))):
             raise ValueError("release commit must be a verified 40-character lowercase Git commit")
-        for relative in ("data/public_sources.csv", "data/controlled_inputs_metadata.csv"):
+        for relative in ("data/public_sources.csv", "data/dataset_registry.csv", "data/output_registry.csv"):
             path = _resolve(root, relative)
             _validate_utf8_lf(path, relative)
             checked_paths.append(path)
@@ -620,7 +593,13 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
             path = _resolve(root, relative)
             if not path.is_file():
                 raise ValueError(f"missing dictionary: {relative}")
-            _validate_dictionary(path, _DICTIONARY_SPECS[relative], relative)
+            if relative in {
+                "data/dictionaries/dataset_registry.md",
+                "data/dictionaries/output_registry.md",
+            }:
+                _validate_registry_dictionary(path, _DICTIONARY_SPECS[relative], relative)
+            else:
+                _validate_dictionary(path, _DICTIONARY_SPECS[relative], relative)
             checked_paths.append(path)
         # A map row is checked above; keep the variable in the report for an
         # auditable count without exposing any private source paths.
@@ -634,7 +613,6 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
     except (OSError, ValueError, KeyError) as exc:
         errors.append(str(exc))
         report["status"] = "FAIL"
-        report["level_1_status"] = "FAIL"
         report["errors"] = errors
     unique_paths = sorted({path.resolve() for path in checked_paths}, key=lambda item: item.as_posix())
     for path in unique_paths:

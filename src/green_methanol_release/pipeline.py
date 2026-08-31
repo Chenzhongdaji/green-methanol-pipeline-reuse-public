@@ -230,8 +230,11 @@ def _base_report() -> dict[str, Any]:
     return {
         "status": "FAIL",
         "mode": "full",
-        "level_1_status": "FAIL",
-        "level_2_status": "FAIL",
+        "workflow_status": {
+            "registry_validation": "not-run",
+            "carrier_validation": "not-run",
+            "manuscript_outputs": "not-run",
+        },
         "executed_output_ids": [],
         "command_return_codes": {},
         "artifacts": {},
@@ -264,6 +267,7 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
         datasets = load_dataset_registry(registry_paths[_REGISTRY_PATHS[0]])
         outputs = load_output_registry(registry_paths[_REGISTRY_PATHS[1]])
         report["registry"] = dict(registry_counts)
+        report["workflow_status"]["registry_validation"] = "reproduced"
 
         dataset_paths: dict[str, str] = {}
         dataset_files: dict[str, Path] = {}
@@ -309,6 +313,7 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 raise ValueError(
                     f"dataset {dataset_id!r} carrier sha256 mismatch for {dataset_paths[dataset_id]}"
                 )
+        report["workflow_status"]["carrier_validation"] = "reproduced"
 
         for job in jobs:
             if not job["script_path"].is_file():
@@ -408,8 +413,7 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
             )
         else:
             report["status"] = "PASS"
-            report["level_1_status"] = "PASS"
-            report["level_2_status"] = "PASS"
+            report["workflow_status"]["manuscript_outputs"] = "reproduced"
     except (OSError, UnicodeError, ValueError, KeyError, subprocess.SubprocessError) as exc:
         message = _redact_paths(
             exc,

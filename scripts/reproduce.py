@@ -28,8 +28,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error={exc}", file=sys.stderr)
         return 1
     print(f"status={report['status']}")
-    print(f"level_1_status={report['level_1_status']}")
-    print(f"level_2_status={report['level_2_status']}")
+    workflow_status = report.get("workflow_status", report.get("workflows", {}))
+    for name, status in sorted(workflow_status.items()):
+        print(f"workflow_{name}={status}")
     if report["status"] == "PASS":
         return 0
     return 1

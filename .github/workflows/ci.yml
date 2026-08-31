@@ -21,11 +21,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r environment/requirements.txt
           python -m pip install -e .
+      - name: Run release safety audit before inventory closure
+        run: python scripts/audit_release.py --pre-manifest --output "$RUNNER_TEMP/green-methanol-pre-manifest-audit.json"
       - name: Run full public test suite
         run: python -m pytest -q
-      - name: Run Level 1 smoke reproduction
-        run: python scripts/reproduce.py --mode smoke --output "$RUNNER_TEMP/green-methanol-smoke.json"
-      - name: Generate manifest and run final audit
+      - name: Run full public reproduction
+        run: python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full"
+      - name: Verify reproduction leaves the committed payload unchanged
+        run: git diff --exit-code
+      - name: Regenerate and verify deterministic release inventories
         run: |
           python scripts/build_manifest.py
-          python scripts/audit_release.py --output "$RUNNER_TEMP/green-methanol-release-audit.json"
+          git diff --check
+          git diff --exit-code -- FILE_MANIFEST.csv CHECKSUMS.sha256
+      - name: Run final safety and manifest audit
+        run: python scripts/audit_release.py --output "$RUNNER_TEMP/green-methanol-release-audit.json"

@@ -6,7 +6,6 @@ import pytest
 
 import green_methanol_release.inventory as inventory_module
 from green_methanol_release.inventory import (
-    CONTROLLED_FIELDS,
     DATASET_REGISTRY_FIELDS,
     MANIFEST_FIELDS,
     PUBLIC_SOURCE_FIELDS,
@@ -22,7 +21,11 @@ ROOT = Path(__file__).resolve().parents[1]
 def _sandbox_inventory(tmp_path: Path) -> Path:
     data = tmp_path / "data"
     data.mkdir(parents=True)
-    for name in ("public_sources.csv", "controlled_inputs_metadata.csv"):
+    for name in (
+        "public_sources.csv",
+        "dataset_registry.csv",
+        "output_registry.csv",
+    ):
         shutil.copy2(ROOT / "data" / name, data / name)
     return tmp_path
 
@@ -45,10 +48,11 @@ def test_public_source_register_is_complete_and_non_redistributive():
     assert result["engineering_source_rows"] == 8
 
 
-def test_controlled_register_has_exact_approved_families():
+def test_public_registry_exposes_current_dataset_and_output_counts():
     result = validate_inventory(ROOT)
-    assert result["controlled_rows"] == 4
-    assert result["zero_hash_rows"] == 0
+    assert result["dataset_rows"] == 39
+    assert result["output_rows"] == 6
+    assert result["referenced_dataset_rows"] == 5
 
 
 def test_third_party_sources_are_not_cc_by_relicensed():
@@ -66,42 +70,6 @@ def test_connector_scenario_base_locator_matches_reviewed_source():
         "https://sthjt.shaanxi.gov.cn/xxgk/fdnr/zcwj/shpf/"
         "202602/t20260224_3614544.html"
     )
-
-
-@pytest.mark.parametrize("hash_note", ["reason without marker", "hash_unavailable", "hash_unavailable:   "])
-def test_empty_hash_requires_marker_and_non_empty_reason(tmp_path: Path, hash_note: str):
-    root = _sandbox_inventory(tmp_path)
-    path = root / "data" / "controlled_inputs_metadata.csv"
-    rows = _read_rows(path)
-    rows[0]["sha256"] = ""
-    rows[0]["hash_note"] = hash_note
-    _write_rows(path, CONTROLLED_FIELDS, rows)
-
-    with pytest.raises(ValueError, match="hash_unavailable"):
-        validate_inventory(root)
-
-
-def test_real_digest_requires_empty_hash_note(tmp_path: Path):
-    root = _sandbox_inventory(tmp_path)
-    path = root / "data" / "controlled_inputs_metadata.csv"
-    rows = _read_rows(path)
-    rows[0]["sha256"] = "a" * 64
-    rows[0]["hash_note"] = "retained note"
-    _write_rows(path, CONTROLLED_FIELDS, rows)
-
-    with pytest.raises(ValueError, match="hash_note"):
-        validate_inventory(root)
-
-
-def test_controlled_rows_require_a_non_sensitive_validation_substitute(tmp_path: Path):
-    root = _sandbox_inventory(tmp_path)
-    path = root / "data" / "controlled_inputs_metadata.csv"
-    rows = _read_rows(path)
-    rows[0]["validation_substitute"] = ""
-    _write_rows(path, CONTROLLED_FIELDS, rows)
-
-    with pytest.raises(ValueError, match="validation_substitute"):
-        validate_inventory(root)
 
 
 def test_cc_by_separator_variants_are_rejected_for_third_party_rows(tmp_path: Path):
@@ -158,14 +126,13 @@ def test_inventory_rejects_duplicate_identifiers(tmp_path: Path):
 
 def test_inventory_rejects_non_lowercase_digest(tmp_path: Path):
     root = _sandbox_inventory(tmp_path)
-    path = root / "data" / "controlled_inputs_metadata.csv"
+    path = root / "data" / "dataset_registry.csv"
     rows = _read_rows(path)
     rows[0]["sha256"] = "A" * 64
-    rows[0]["hash_note"] = ""
-    _write_rows(path, CONTROLLED_FIELDS, rows)
+    _write_rows(path, DATASET_REGISTRY_FIELDS, rows)
 
     with pytest.raises(ValueError, match="64 lowercase hexadecimal"):
-        validate_inventory(root)
+        inventory_module.load_dataset_registry(path)
 
 
 def test_release_inventories_are_deterministic_and_exclude_self_reference(tmp_path: Path):

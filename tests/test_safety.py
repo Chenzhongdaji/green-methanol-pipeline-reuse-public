@@ -66,7 +66,7 @@ def test_audit_release_fails_when_index_contains_forbidden_component(monkeypatch
     monkeypatch.setattr(
         audit_module,
         "run_reproduction",
-        lambda root, mode, output: {"status": "PASS", "level_2_status": "NOT_REPRODUCED"},
+        lambda root, mode, output: {"status": "PASS", "workflows": {}},
     )
 
     report = audit_release(Path.cwd(), require_manifest=False)
@@ -96,7 +96,7 @@ def test_audit_release_fails_closed_when_index_enumeration_fails(
     monkeypatch.setattr(
         audit_module,
         "run_reproduction",
-        lambda root, mode, output: {"status": "PASS", "level_2_status": "NOT_REPRODUCED"},
+        lambda root, mode, output: {"status": "PASS", "workflows": {}},
     )
 
     report = audit_release(Path.cwd(), require_manifest=False)

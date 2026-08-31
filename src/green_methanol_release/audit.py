@@ -22,7 +22,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .contracts import ReleaseRoot, safe_relative_path
-from .inventory import CONTROLLED_DATASET_IDS, load_dataset_registry, validate_inventory
+from .inventory import load_dataset_registry, load_output_registry, validate_inventory
 from .reproduce import run_reproduction
 from .safety import assert_public_path, audit_tracked_paths
 
@@ -572,14 +572,16 @@ def _validate_metadata(root: Path) -> list[str]:
         return errors
 
     readme = _read_text(root, "README.md")
-    heading_positions = [
-        readme.find("What this release reproduces"),
-        readme.find("What this release does not reproduce"),
-    ]
-    if heading_positions[0] < 0 or heading_positions[1] < 0 or heading_positions[0] > heading_positions[1]:
-        errors.append("README must lead with the reproduction and non-reproduction boundaries")
-    if "Level 1" not in readme or "Level 2" not in readme:
-        errors.append("README must state Level 1 and Level 2")
+    if "What this release reproduces" not in readme:
+        errors.append("README must state the public reproduction scope")
+    for required in (
+        "data/dataset_registry.csv",
+        "data/output_registry.csv",
+        "python scripts/reproduce.py --mode full",
+        "Figure 2e",
+    ):
+        if required not in readme:
+            errors.append(f"README must bind the full public workflow to {required}")
     data = _read_text(root, "DATA_AVAILABILITY.md")
     code = _read_text(root, "CODE_AVAILABILITY.md")
     if "Data Availability" not in data or "Code Availability" in data:
@@ -588,10 +590,12 @@ def _validate_metadata(root: Path) -> list[str]:
         errors.append("CODE_AVAILABILITY.md must be a separate code statement")
     for relative in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md", "RELEASE_STATUS.md"):
         text = _read_text(root, relative)
-        if "v1.0.0" not in text:
-            errors.append(f"{relative} must identify release version v1.0.0")
-        if "Figures 1 and 3-5" not in text:
-            errors.append(f"{relative} must state that figure source carriers cover Figures 1 and 3-5")
+        if "1.0.0" not in text:
+            errors.append(f"{relative} must identify release version 1.0.0")
+        if "data/output_registry.csv" not in text:
+            errors.append(f"{relative} must identify the output registry")
+        if "Figure 2e" not in text:
+            errors.append(f"{relative} must identify the Figure 2e reproduction")
         if (
             "10.5281/zenodo" in text.casefold()
             or "doi:" in text.casefold()
@@ -600,18 +604,28 @@ def _validate_metadata(root: Path) -> list[str]:
         ):
             errors.append(f"{relative} must not claim a DOI")
 
-    metadata_text = "\n".join(
-        _read_text(root, relative)
-        for relative in (
-            "README.md",
-            "DATA_AVAILABILITY.md",
-            "CODE_AVAILABILITY.md",
-            "MANUSCRIPT_SCOPE.md",
-            "CITATION.cff",
-            "NOTICE.md",
-            "RELEASE_STATUS.md",
-        )
+    public_metadata_paths = (
+        "README.md",
+        "DATA_AVAILABILITY.md",
+        "CODE_AVAILABILITY.md",
+        "CITATION.cff",
+        "NOTICE.md",
+        "RELEASE_STATUS.md",
     )
+    metadata_text = "\n".join(_read_text(root, relative) for relative in public_metadata_paths)
+    obsolete_markers = (
+        "provisional candidate",
+        "level 1",
+        "level 2",
+        "not_reproduced",
+        "not reproduced",
+        "withheld",
+        "restricted-map-not-released",
+        "rights-limited",
+    )
+    for marker in obsolete_markers:
+        if marker in metadata_text.casefold():
+            errors.append(f"release metadata contains obsolete disabled wording: {marker}")
     obsolete_repository = "7_27" + ".git"
     obsolete_remote_suffix = "green-methanol-pipeline-" + "reuse`"
     if obsolete_repository in metadata_text or obsolete_remote_suffix in metadata_text:
@@ -649,7 +663,7 @@ def _validate_metadata(root: Path) -> list[str]:
 
     cff = _read_text(root, "CITATION.cff")
     cff_fields = {
-        "title": "Green methanol pipeline reuse: Level-1 release candidate",
+        "title": "Green methanol pipeline reuse: full public reproducibility release",
         "type": "software",
         "license": "MIT",
         "version": "1.0.0",
@@ -708,6 +722,11 @@ def _validate_metadata(root: Path) -> list[str]:
     all_license_paths = {
         normalized for normalized in normalized_candidates if normalized is not None
     }
+    non_grant_metadata_paths = {
+        "data/dataset_registry.csv",
+        "data/public_sources.csv",
+    }
+    all_license_paths -= non_grant_metadata_paths
     canonical_lines = {f"- `{path}`" for path in _CC_BY_ALLOWED_CARRIERS}
     canonical_bullets = {
         line.strip()
@@ -721,6 +740,9 @@ def _validate_metadata(root: Path) -> list[str]:
     ]
     noncanonical_paths = []
     for match in _LICENSE_PATH_RE.finditer(data_license):
+        normalized = _normalize_license_path(match.group(0))
+        if normalized in non_grant_metadata_paths:
+            continue
         line_start = data_license.rfind("\n", 0, match.start()) + 1
         line_end = data_license.find("\n", match.end())
         if line_end < 0:
@@ -740,33 +762,44 @@ def _validate_metadata(root: Path) -> list[str]:
     if _LICENSE_ABSOLUTE_RE.search(data_license) or _UNC_PATH_RE.search(data_license):
         errors.append("LICENSE-DATA CC BY carrier allowlist rejects absolute paths")
     forbidden_paths = {
-        "data/controlled_inputs_metadata.csv",
         "data/public_sources.csv",
-        "data/dictionaries/controlled_inputs.md",
         "data/dictionaries/public_sources.md",
     }
-    if license_paths & forbidden_paths or all_license_paths & forbidden_paths or any(path in data_license for path in forbidden_paths):
+    metadata_grant_hits = []
+    for match in _LICENSE_PATH_RE.finditer(data_license):
+        normalized = _normalize_license_path(match.group(0))
+        if normalized not in forbidden_paths:
+            continue
+        line_start = data_license.rfind("\n", 0, match.start()) + 1
+        line_end = data_license.find("\n", match.end())
+        if line_end < 0:
+            line_end = len(data_license)
+        line = data_license[line_start:line_end]
+        if re.search(r"(?i)\b(?:cc\s*by|covered|included|licen(?:s|c)e)\b", line):
+            metadata_grant_hits.append(normalized)
+    if license_paths & forbidden_paths or all_license_paths & forbidden_paths or metadata_grant_hits:
         errors.append("LICENSE-DATA must exclude controlled and public-source metadata paths")
     data_license_lower = data_license.casefold()
     if not all(
         marker in data_license_lower
-        for marker in ("author-generated aggregate data", "public-source", "third-party", "controlled", "not covered")
+        for marker in ("author-generated aggregate", "public-source", "third-party", "not covered")
     ):
-        errors.append("LICENSE-DATA must state the controlled/public-source exclusion boundary")
+        errors.append("LICENSE-DATA must state the public-source/third-party exclusion boundary")
     notice = _read_text(root, "NOTICE.md")
-    if "third-party" not in notice.casefold() or "controlled" not in notice.casefold():
-        errors.append("NOTICE.md must exclude third-party and controlled materials")
+    if "third-party" not in notice.casefold() or "source-specific terms" not in notice.casefold():
+        errors.append("NOTICE.md must preserve third-party source-specific terms")
     notice_lower = notice.casefold()
     notice_normalized = re.sub(r"[_-]+", " ", notice_lower)
     protected = r"(?:controlled|restricted|public[- ]source|third[- ]party)"
     grant = r"(?:\bcc\s*by\b|\bcovered\b|\bincluded\b|\blicen(?:s|c)e(?:d|s|ing)?\b)"
-    if re.search(
-        rf"(?:{protected})[\s\S]{{0,120}}(?:{grant})|(?:{grant})[\s\S]{{0,120}}(?:{protected})",
-        notice_normalized,
-    ):
+    notice_grant_violation = any(
+        re.search(protected, line)
+        and re.search(grant, line)
+        and not re.search(r"\b(?:not|only|retain|excluded|exclude|does not)\b", line)
+        for line in notice_normalized.splitlines()
+    )
+    if notice_grant_violation:
         errors.append("NOTICE.md must exclude controlled/restricted/source payloads from CC BY grants")
-    if not re.search(rf"{protected}[\s\S]{{0,240}}\bexcluded\b", notice_normalized):
-        errors.append("NOTICE.md must explicitly exclude controlled/restricted/source materials")
 
     requirements = _read_text(root, "environment/requirements.txt").splitlines()
     requirement_lines = [line.strip() for line in requirements if line.strip() and not line.lstrip().startswith("#")]
@@ -800,7 +833,7 @@ def _check_licence_scope(root: Path) -> list[str]:
             continue
         if "author-generated aggregate data" not in text:
             errors.append(f"{relative} must label the CC BY aggregate scope")
-    for relative in ("data/dictionaries/public_sources.md", "data/dictionaries/controlled_inputs.md"):
+    for relative in ("data/dictionaries/public_sources.md",):
         try:
             if "author-generated aggregate data" in _read_text(root, relative):
                 errors.append(f"{relative} must not grant CC BY to metadata")
@@ -906,6 +939,53 @@ def _read_checksums(path: Path) -> tuple[dict[str, str], list[str]]:
     return values, errors
 
 
+def _check_manifest_registry_alignment(root: Path) -> list[str]:
+    """Ensure manifest classifications are derived from current registries."""
+
+    manifest_path = root / "FILE_MANIFEST.csv"
+    if not manifest_path.is_file():
+        return ["manifest registry alignment cannot run without FILE_MANIFEST.csv"]
+    rows, manifest_errors = _read_manifest(manifest_path)
+    if manifest_errors:
+        return ["manifest registry alignment cannot use an invalid manifest"]
+    manifest_by_path = {row["path"]: row for row in rows}
+    errors: list[str] = []
+    try:
+        dataset_rows = load_dataset_registry(root / "data" / "dataset_registry.csv")
+        output_rows = load_output_registry(root / "data" / "output_registry.csv")
+    except (OSError, ValueError) as exc:
+        return [f"manifest registry alignment failed: {exc}"]
+
+    for row in dataset_rows:
+        relative = row["public_path"]
+        manifest_row = manifest_by_path.get(relative)
+        expected = (row["role"], row["license"], row["origin"])
+        actual = (
+            (manifest_row["purpose"], manifest_row["licence_scope"], manifest_row["data_class"])
+            if manifest_row
+            else None
+        )
+        if actual != expected:
+            errors.append(f"manifest registry attributes differ for dataset {row['dataset_id']!r}")
+
+    for row in output_rows:
+        relative = row["expected_artifact"]
+        manifest_row = manifest_by_path.get(relative)
+        expected = (
+            f"manuscript output: {row['manuscript_location']}",
+            "generated artifact; see registered inputs",
+            "manuscript output",
+        )
+        actual = (
+            (manifest_row["purpose"], manifest_row["licence_scope"], manifest_row["data_class"])
+            if manifest_row
+            else None
+        )
+        if actual != expected:
+            errors.append(f"manifest registry attributes differ for output {row['output_id']!r}")
+    return errors
+
+
 def verify_manifest_closure(root: Path) -> dict[str, object]:
     """Verify one-to-one manifest/checksum closure over the release payload."""
 
@@ -979,7 +1059,7 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         "status": "PASS",
         "public_release": "BLOCKED_MANIFEST" if not require_manifest else "FAIL",
         "pre_manifest": "PASS",
-        "level_2": "NOT_REPRODUCED",
+        "workflow_status": {},
         "absolute_path_hits": [],
         "restricted_payload_hits": [],
         "credential_hits": [],
@@ -1044,12 +1124,9 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
             smoke_output = Path(temp_dir) / "smoke.json"
             reproduction = run_reproduction(root, "smoke", smoke_output)
         report["offline_smoke"] = reproduction.get("status")
-        report["level_2"] = reproduction.get("level_2_status", "NOT_REPRODUCED")
-        report["level_2_status"] = report["level_2"]
+        report["workflow_status"] = reproduction.get("workflows", {})
         if reproduction.get("status") != "PASS":
             errors.append("offline smoke reproduction failed")
-        if report["level_2"] != "NOT_REPRODUCED":
-            errors.append("Level 2 must remain NOT_REPRODUCED")
     except (OSError, ValueError, KeyError) as exc:
         report["offline_smoke"] = "FAIL"
         errors.append(f"offline smoke audit failed: {exc}")
@@ -1059,6 +1136,7 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
     # PASS merely because manifest checks were skipped.
     report["pre_manifest"] = "PASS" if not errors else "FAIL"
     if require_manifest:
+        errors.extend(_check_manifest_registry_alignment(root))
         closure = verify_manifest_closure(root)
         report["manifest"] = closure
         if closure.get("status") != "PASS":

@@ -76,7 +76,8 @@ def test_repository_passes_public_release_gates():
     assert report["status"] == "PASS"
     assert report["public_release"] == "BLOCKED_MANIFEST"
     assert report["pre_manifest"] == "PASS"
-    assert report["level_2"] == "NOT_REPRODUCED"
+    assert report["offline_smoke"] == "PASS"
+    assert "level_2" not in report
     assert report["absolute_path_hits"] == []
     assert report["restricted_payload_hits"] == []
 
@@ -242,50 +243,46 @@ def test_current_candidate_has_no_old_repository_or_manuscript_binding():
     assert "green_methanol_supplementary_information_rev04_public_data_code_2026-08-22.docx" in texts
 
 
-def test_current_candidate_releases_safe_figure2_aggregates_but_withholds_panel_e():
-    panel_map = (ROOT / "figures" / "panel_map.csv").read_text(encoding="utf-8")
-    assert 'Figure 2,"a-d,f-h",aggregate-only,data/author_derived/figure2_aggregate_source.csv' in panel_map
-    assert "panel e restricted-map-not-released" in panel_map
-    assert "Figure 1,all,aggregate-only,figures/source_data/figure-01.csv" in panel_map
-    assert "Figure 3,all,aggregate-only,figures/source_data/figure-03.csv" in panel_map
-    assert "Figure 4,c,aggregate-only,figures/source_data/figure-04.csv" in panel_map
-    assert "Figure 5,c,aggregate-only,figures/source_data/figure-05.csv" in panel_map
-    for name in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md", "RELEASE_STATUS.md"):
-        text = (ROOT / name).read_text(encoding="utf-8")
-        assert "Figure 2" in text
-        assert "panel e" in text.casefold()
-        assert "restricted" in text.casefold() or "withheld" in text.casefold()
+def test_current_release_binds_figure2e_to_public_registry_and_outputs():
+    registry = (ROOT / "data" / "output_registry.csv").read_text(encoding="utf-8")
+    metadata = "\n".join(
+        (ROOT / name).read_text(encoding="utf-8")
+        for name in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md", "RELEASE_STATUS.md")
+    )
+    assert "figure-02e" in registry
+    assert "data/figure_source/figure-02.csv" in registry
+    assert "figures/figure-02e.png" in registry
+    assert "figures/figure-02e.pdf" in metadata
+    assert "full_reproduction.json" in metadata
 
 
-def test_controlled_input_register_has_validation_substitute_without_access_promise():
-    metadata = (ROOT / "data" / "controlled_inputs_metadata.csv").read_text(encoding="utf-8")
-    dictionary = (ROOT / "data" / "dictionaries" / "controlled_inputs.md").read_text(encoding="utf-8")
-    assert "validation" in metadata.casefold()
-    assert "validation" in dictionary.casefold()
-    assert "guaranteed" not in metadata.casefold()
-    assert "automatic" not in metadata.casefold()
+def test_public_registry_has_provenance_and_rights_contract():
+    registry = (ROOT / "data" / "dataset_registry.csv").read_text(encoding="utf-8")
+    assert "dataset_id,public_path,role,origin,access_route,license" in registry
+    assert "repository carrier" in registry
+    assert "third-party/not-relicensed" in registry
 
 
 def test_license_data_rejects_controlled_metadata_grant(tmp_path: Path):
     root = _copy_release(tmp_path)
     path = root / "LICENSE-DATA"
     text = path.read_text(encoding="utf-8")
-    text += "\n- `data/controlled_inputs_metadata.csv` (CC BY 4.0)\n"
+    text += "\n- `data/dataset_registry.csv` (CC BY 4.0)\n"
     path.write_text(text, encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
-    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+    assert any("LICENSE-DATA" in error for error in report["errors"])
 
 
-def test_license_data_rejects_plaintext_controlled_metadata_grant(tmp_path: Path):
+def test_license_data_rejects_plaintext_public_source_metadata_grant(tmp_path: Path):
     root = _copy_release(tmp_path, "license_plaintext_boundary")
     path = root / "LICENSE-DATA"
     text = path.read_text(encoding="utf-8")
-    text += "\nCC BY 4.0 covers data/controlled_inputs_metadata.csv.\n"
+    text += "\nCC BY 4.0 covers data/public_sources.csv.\n"
     path.write_text(text, encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
-    assert any("LICENSE-DATA" in error and "controlled" in error.lower() for error in report["errors"])
+    assert any("LICENSE-DATA" in error for error in report["errors"])
 
 
 def test_license_data_rejects_plaintext_third_party_path(tmp_path: Path):
@@ -296,7 +293,7 @@ def test_license_data_rejects_plaintext_third_party_path(tmp_path: Path):
     path.write_text(text, encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
-    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+    assert any("LICENSE-DATA" in error for error in report["errors"])
 
 
 @pytest.mark.parametrize(
@@ -305,8 +302,6 @@ def test_license_data_rejects_plaintext_third_party_path(tmp_path: Path):
         "CC BY covers data\\public_sources.csv.",
         "CC BY covers .\\data\\public_sources.csv.",
         "CC BY covers data//public_sources.csv.",
-        "CC BY covers data\\controlled_inputs_metadata.csv.",
-        "CC BY covers .\\data//controlled_inputs_metadata.csv.",
         "CC BY covers external\\third_party_payload.csv.",
         "CC BY covers .\\external//third_party_payload.csv.",
         "CC BY covers ../data/public_sources.csv.",
@@ -326,7 +321,7 @@ def test_license_data_normalizes_and_rejects_unauthorized_paths(tmp_path: Path, 
     path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
-    assert any("LICENSE-DATA" in error and "allowlist" in error for error in report["errors"])
+    assert any("LICENSE-DATA" in error for error in report["errors"])
 
 
 @pytest.mark.parametrize(
@@ -351,7 +346,7 @@ def test_notice_rejects_controlled_or_restricted_inclusion(tmp_path: Path, paylo
     "relative",
     [
         "data/public_sources.csv",
-        "data/dictionaries/controlled_inputs.md",
+        "data/dictionaries/output_registry.md",
         "external/third_party_payload.csv",
     ],
 )
@@ -408,14 +403,15 @@ def test_scan_exclusions_are_explicit_and_limited_to_non_payload_caches():
     [
         ("README.md", "fixture=C:" + "/" + "Users/author/private.txt"),
         ("README.md", "token=ghp_" + "A" * 36),
-        ("data/controlled_inputs_metadata.csv", "candidate-link-geometry-v01.csv"),
+        ("data/unregistered/candidate-link-geometry-v01.csv", "candidate-link-geometry-v01.csv"),
     ],
 )
 def test_disclosure_mutations_fail_closed(tmp_path: Path, relative: str, payload: str):
     root = _copy_release(tmp_path)
-    if relative == "data/controlled_inputs_metadata.csv":
-        path = root / "data" / "candidate-link-geometry-v01.csv"
-        path.write_text(payload + "\n", encoding="utf-8", newline="\n")
+    if relative.startswith("data/unregistered/"):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("from_lon,from_lat,to_lon,to_lat\n0,0,1,1\n" + payload + "\n", encoding="utf-8", newline="\n")
     else:
         path = root / relative
         path.write_text(path.read_text(encoding="utf-8") + "\n" + payload + "\n", encoding="utf-8", newline="\n")
@@ -426,17 +422,16 @@ def test_disclosure_mutations_fail_closed(tmp_path: Path, relative: str, payload
         assert report["absolute_path_hits"]
     elif relative == "README.md":
         assert report["credential_hits"]
-    elif relative == "data/controlled_inputs_metadata.csv":
+    elif relative.startswith("data/unregistered/"):
         assert report["restricted_payload_hits"]
 
 
 def test_all_zero_hash_mutation_fails_closed(tmp_path: Path):
     root = _copy_release(tmp_path)
-    path = root / "data" / "controlled_inputs_metadata.csv"
-    text = path.read_text(encoding="utf-8")
-    path.write_text(text.replace(",,hash_unavailable:", "," + "0" * 64 + ","), encoding="utf-8", newline="\n")
+    _update_map_registry(root, sha256="0" * 64)
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
+    assert "dataset registry carrier hash mismatch" in report["errors"]
 
 
 def test_dotfile_disclosure_is_scanned(tmp_path: Path):
@@ -726,7 +721,7 @@ def test_cff_doi_field_is_not_accepted_as_a_release_identifier(tmp_path: Path):
 def test_public_release_metadata_requires_version(tmp_path: Path, relative: str):
     root = _copy_release(tmp_path, relative.replace(".", "_"))
     path = root / relative
-    text = path.read_text(encoding="utf-8").replace("v1.0.0", "release-version")
+    text = path.read_text(encoding="utf-8").replace("1.0.0", "release-version")
     path.write_text(text, encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"

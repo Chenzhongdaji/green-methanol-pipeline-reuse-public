@@ -60,7 +60,7 @@ def test_release_status_requires_external_publication_gates_and_author_confirmat
     assert status_path.is_file()
     status = status_path.read_text(encoding="utf-8")
     assert "https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public" in status
-    assert "release candidate" in status.casefold()
-    assert "NOT_REPRODUCED" in status
-    assert "author confirmation" in status.casefold()
-    assert "doi" in status.casefold()
+    assert "full workflow" in status.casefold()
+    assert "NOT_REPRODUCED" not in status
+    assert "Figure 2e" in status
+    assert "data/output_registry.csv" in status

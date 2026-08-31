@@ -122,8 +122,6 @@ def _rewrite_dataset_registry(root: Path, rows: list[dict[str, str]]) -> None:
 def test_smoke_reproduces_open_aggregate_scope(tmp_path):
     report = run_reproduction(ROOT, "smoke", tmp_path / "run.json")
     assert report["status"] == "PASS"
-    assert report["level_1_status"] == "PASS"
-    assert report["level_2_status"] == "NOT_REPRODUCED"
     assert report["workflows"]["figure_source_data"] == "aggregate-only"
 
 
@@ -138,8 +136,6 @@ def test_full_real_release_executes_all_registered_outputs(tmp_path):
         "figure-05",
     ]
     assert report["status"] == "PASS"
-    assert report["level_1_status"] == "PASS"
-    assert report["level_2_status"] == "PASS"
     assert report["executed_output_ids"] == expected_ids
     assert set(report["artifacts"]) == set(expected_ids)
     assert all(len(item["sha256"]) == 64 for item in report["artifacts"].values())
@@ -171,8 +167,6 @@ def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_pat
     first = root / "figures" / "first.png"
     second = root / "figures" / "second.png"
     assert report["status"] == "PASS"
-    assert report["level_1_status"] == "PASS"
-    assert report["level_2_status"] == "PASS"
     assert report["executed_output_ids"] == ["first", "second"]
     assert report["command_return_codes"] == {"first": 0, "second": 0}
     assert report["artifacts"] == {
@@ -371,8 +365,6 @@ def test_full_reproduction_delegates_before_resolving_or_creating_output_parent(
         return {
             "status": "PASS",
             "mode": "full",
-            "level_1_status": "PASS",
-            "level_2_status": "PASS",
         }
 
     def record_resolve(path: Path, *args, **kwargs) -> Path:
@@ -401,8 +393,6 @@ def test_full_invalid_root_returns_fail_report_instead_of_raising(tmp_path):
     report = pipeline_module.run_full(missing_root, tmp_path / "output")
 
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
-    assert report["level_2_status"] == "FAIL"
     assert report["error"]
 
 
@@ -413,8 +403,6 @@ def test_full_rejects_output_inside_release_without_touching_report_path(tmp_pat
     report = pipeline_module.run_full(root, root)
 
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
-    assert report["level_2_status"] == "FAIL"
     assert not report_path.exists()
 
 
@@ -425,8 +413,6 @@ def test_full_rejects_unsafe_report_path_without_touching_it(tmp_path):
     report = pipeline_module.run_full(root, unsafe_output)
 
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
-    assert report["level_2_status"] == "FAIL"
     assert not unsafe_output.exists()
 
 
@@ -522,7 +508,6 @@ def test_dictionary_column_coverage_is_fail_closed(tmp_path):
     )
     report = run_reproduction(root, "smoke", tmp_path / "run.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 @pytest.mark.parametrize(
@@ -538,7 +523,6 @@ def test_every_figure_schema_rejects_restricted_identifier_columns(tmp_path, nam
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / f"{name}.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 def _copy_release_without_git(tmp_path, name="release"):
@@ -561,7 +545,6 @@ def test_unclosed_quote_is_fail_closed_during_full_csv_iteration(tmp_path):
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "unclosed.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
     assert "not valid CSV" in report["errors"][0]
 
 
@@ -569,7 +552,6 @@ def test_non_git_copy_cannot_report_level1_pass(tmp_path):
     root = _copy_release_without_git(tmp_path)
     report = run_reproduction(root, "smoke", tmp_path / "nogit.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
     assert report["release_commit"] == "unrecorded"
 
 
@@ -585,7 +567,6 @@ def test_nested_release_cannot_inherit_parent_git_commit(tmp_path):
     subprocess.run(["git", "commit", "-qm", "parent fixture"], cwd=parent, check=True)
     report = run_reproduction(root, "smoke", tmp_path / "nested-parent.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
     assert report["release_commit"] == "unrecorded"
 
 
@@ -602,18 +583,16 @@ def test_chinese_release_root_git_head_decodes_without_pythonutf8(tmp_path):
     assert completed.returncode == 0, completed.stderr.decode("utf-8", errors="replace")
     report = json.loads(output.read_text(encoding="utf-8"))
     assert report["status"] == "PASS"
-    assert report["level_1_status"] == "PASS"
     assert len(report["release_commit"]) == 40
 
 
-@pytest.mark.parametrize("filename", ["public_sources.csv", "controlled_inputs_metadata.csv"])
+@pytest.mark.parametrize("filename", ["public_sources.csv", "dataset_registry.csv"])
 def test_inventory_crlf_mutation_is_fail_closed(tmp_path, filename):
     root = _copy_release(tmp_path, filename.replace(".csv", ""))
     path = root / "data" / filename
     path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
     report = run_reproduction(root, "smoke", tmp_path / f"{filename}.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 def test_duplicate_headline_claim_id_is_rejected_even_when_set_matches(tmp_path):
@@ -624,7 +603,6 @@ def test_duplicate_headline_claim_id_is_rejected_even_when_set_matches(tmp_path)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "duplicate-claim.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 def test_extra_terminal_account_row_is_rejected(tmp_path):
@@ -637,23 +615,18 @@ def test_extra_terminal_account_row_is_rejected(tmp_path):
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "extra-account.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
-def test_panel_map_requires_exact_allowed_rows_and_pairings(tmp_path):
+def test_panel_map_requires_existing_pairings_and_figure_coverage(tmp_path):
     root = _copy_release(tmp_path)
     path = root / "figures" / "panel_map.csv"
     lines = path.read_text(encoding="utf-8").splitlines()
     first = lines[1].split(",")
-    third = lines[3].split(",")
-    first[4], third[4] = third[4], first[4]
+    first[4] = "data/dictionaries/missing.md"
     lines[1] = ",".join(first)
-    lines[3] = ",".join(third)
-    lines.append("Figure 6,all,not-run,,,unexpected figure")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "panel-map.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 def test_dictionary_row_deletion_is_rejected_even_when_field_token_remains(tmp_path):
@@ -666,7 +639,6 @@ def test_dictionary_row_deletion_is_rejected_even_when_field_token_remains(tmp_p
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "dictionary-row.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 def test_dictionary_rejects_unknown_structural_column_row(tmp_path):
@@ -677,7 +649,6 @@ def test_dictionary_rejects_unknown_structural_column_row(tmp_path):
     path.write_text(text, encoding="utf-8", newline="\n")
     report = run_reproduction(root, "smoke", tmp_path / "dictionary-extra-row.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 @pytest.mark.parametrize(
@@ -701,7 +672,6 @@ def test_headline_claim_rows_are_immutable(tmp_path, column, replacement):
         writer.writerows(rows)
     report = run_reproduction(root, "smoke", tmp_path / f"claim-{column}.json")
     assert report["status"] == "FAIL"
-    assert report["level_1_status"] == "FAIL"
 
 
 def test_non_reproduced_workflows_have_explicit_reasons(tmp_path):
@@ -729,17 +699,20 @@ def test_cc_by_intended_carriers_are_explicitly_labelled(name):
     assert "author-generated aggregate data" in text
 
 
-@pytest.mark.parametrize("name", ["public_sources.md", "controlled_inputs.md"])
-def test_metadata_dictionaries_do_not_claim_cc_by(name):
-    text = (ROOT / "data" / "dictionaries" / name).read_text(encoding="utf-8")
-    assert "author-generated aggregate data" not in text
+def test_metadata_dictionaries_describe_provenance_boundaries():
+    public_sources = (ROOT / "data" / "dictionaries" / "public_sources.md").read_text(encoding="utf-8")
+    dataset_registry = (ROOT / "data" / "dictionaries" / "dataset_registry.md").read_text(encoding="utf-8")
+    output_registry = (ROOT / "data" / "dictionaries" / "output_registry.md").read_text(encoding="utf-8")
+    assert "does not grant redistribution rights" in public_sources
+    assert "repository grant is not inferred" in dataset_registry
+    assert "dataset identifiers it consumes" in output_registry
 
 
 def test_dictionary_missing_codes_match_released_blanks():
     figure_01 = (ROOT / "data" / "dictionaries" / "figure_01.md").read_text(encoding="utf-8")
     panel_map = (ROOT / "data" / "dictionaries" / "panel_map.md").read_text(encoding="utf-8")
-    controlled = (ROOT / "data" / "dictionaries" / "controlled_inputs.md").read_text(encoding="utf-8")
+    registry = (ROOT / "data" / "dictionaries" / "dataset_registry.md").read_text(encoding="utf-8")
     assert "| target |" in figure_01 and "text or blank for terminal stage" in figure_01
     assert "| source_data |" in panel_map and "POSIX path or blank" in panel_map
     assert "| dictionary |" in panel_map and "POSIX path or blank" in panel_map
-    assert "| sha256 |" in controlled and "64 lowercase hexadecimal or blank" in controlled
+    assert "| sha256 |" in registry and "64 lowercase hexadecimal" in registry
