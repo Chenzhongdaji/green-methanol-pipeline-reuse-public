@@ -13,7 +13,9 @@ import csv
 import hashlib
 import io
 import json
+import os
 import re
+import subprocess
 import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -22,6 +24,7 @@ from typing import Any, Iterable
 from .contracts import ReleaseRoot, safe_relative_path
 from .inventory import CONTROLLED_DATASET_IDS, validate_inventory
 from .reproduce import run_reproduction
+from .safety import assert_public_path, audit_tracked_paths
 
 
 _MANIFEST_FIELDS = ("path", "bytes", "sha256", "purpose", "licence_scope", "data_class")
@@ -155,7 +158,9 @@ _SKIP_PARTS = {
     ".pytest_cache",
     ".mypy_cache",
     ".ruff_cache",
+    ".superpowers",
     "src/green_methanol_pipeline_reuse.egg-info",
+    "管道数据",
 }
 
 _REQUIRED_METADATA = (
@@ -196,9 +201,38 @@ def _is_skipped(path: Path, root: Path) -> bool:
 
 
 def _iter_payload_files(root: Path) -> Iterable[Path]:
-    for path in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
-        if path.is_file() and not _is_skipped(path, root):
-            yield path
+    # ``Path.rglob`` cannot prune a directory before descending into it.  Walk
+    # top-down so the excluded directory is never traversed or opened.
+    for directory, dirnames, filenames in os.walk(root, topdown=True):
+        directory_path = Path(directory)
+        dirnames[:] = sorted(
+            name
+            for name in dirnames
+            if not _is_skipped(directory_path / name, root)
+        )
+        for filename in sorted(filenames):
+            path = directory_path / filename
+            if not _is_skipped(path, root):
+                yield path
+
+
+def _git_tracked_paths(root: Path) -> list[str]:
+    """Enumerate tracked names from the Git index without touching payloads."""
+
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--cached", "-z", "--"],
+            check=True,
+            capture_output=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return []
+    payload = result.stdout or b""
+    if isinstance(payload, bytes):
+        text = payload.decode("utf-8", errors="surrogateescape")
+    else:
+        text = str(payload)
+    return [path for path in text.split("\0") if path]
 
 
 def _text_payload(path: Path) -> str | None:
@@ -689,6 +723,12 @@ def _read_manifest(path: Path) -> tuple[list[dict[str, str]], list[str]]:
         except ValueError:
             errors.append(f"unsafe manifest path at row {line_number}")
             unsafe_path = True
+        if not unsafe_path:
+            try:
+                assert_public_path(Path(normalized["path"]))
+            except ValueError:
+                errors.append(f"forbidden manifest path at row {line_number}")
+                unsafe_path = True
         if unsafe_path:
             # Do not retain an unsafe row: verify_manifest_closure must never
             # construct or read a path before the root-relative contract passes.
@@ -732,6 +772,11 @@ def _read_checksums(path: Path) -> tuple[dict[str, str], list[str]]:
             safe_relative_path(relative)
         except ValueError:
             errors.append(f"unsafe checksum path at row {line_number}")
+            continue
+        try:
+            assert_public_path(Path(relative))
+        except ValueError:
+            errors.append(f"forbidden checksum path at row {line_number}")
             continue
         if relative in values:
             errors.append(f"duplicate checksum path at row {line_number}")
@@ -823,9 +868,25 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         "utf8_hits": [],
         "size_hits": [],
         "scan_exclusions": [],
+        "tracked_forbidden_paths": [],
         "errors": [],
     }
     errors: list[str] = []
+    try:
+        assert_public_path(root)
+    except ValueError as exc:
+        report["status"] = "FAIL"
+        report["public_release"] = "FAIL" if require_manifest else "BLOCKED_MANIFEST"
+        report["pre_manifest"] = "FAIL"
+        report["errors"] = [str(exc)]
+        return report
+
+    tracked_forbidden_paths = audit_tracked_paths(_git_tracked_paths(root))
+    report["tracked_forbidden_paths"] = tracked_forbidden_paths
+    if tracked_forbidden_paths:
+        errors.append(
+            "tracked forbidden path detected: " + ", ".join(tracked_forbidden_paths)
+        )
     try:
         required_errors = _validate_metadata(root)
         errors.extend(required_errors)
