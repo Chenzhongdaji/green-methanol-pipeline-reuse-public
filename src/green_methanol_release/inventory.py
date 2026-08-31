@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 
 from .contracts import ALLOWED_WORKFLOW_STATUSES, ReleaseRoot, safe_relative_path
+from .safety import assert_public_path
 
 
 PUBLIC_SOURCE_FIELDS = (
@@ -55,6 +56,35 @@ MANIFEST_FIELDS = (
 
 MANIFEST_FILENAME = "FILE_MANIFEST.csv"
 CHECKSUMS_FILENAME = "CHECKSUMS.sha256"
+
+DATASET_REGISTRY_FIELDS = (
+    "dataset_id",
+    "public_path",
+    "role",
+    "origin",
+    "access_route",
+    "license",
+    "sha256",
+    "acquisition_command",
+    "processing_command",
+    "manuscript_uses",
+)
+
+OUTPUT_REGISTRY_FIELDS = (
+    "output_id",
+    "manuscript_location",
+    "generation_command",
+    "input_dataset_ids",
+    "expected_artifact",
+)
+
+_DATASET_REQUIRED_FIELDS = tuple(
+    field
+    for field in DATASET_REGISTRY_FIELDS
+    if field not in {"sha256", "acquisition_command", "processing_command"}
+)
+_OUTPUT_REQUIRED_FIELDS = OUTPUT_REGISTRY_FIELDS
+_FIGURE2E_FORBIDDEN_MARKERS = ("withheld", "status", "not_reproduced")
 
 # These paths are generated or environment-specific and therefore are not
 # release payload.  Keep this rule identical to the audit closure contract;
@@ -131,6 +161,191 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _load_registry_csv(
+    path: Path,
+    fields: tuple[str, ...],
+    identifier: str,
+) -> list[dict[str, str]]:
+    """Load a registry with an exact header and normalized text fields."""
+
+    path = Path(path)
+    try:
+        handle = path.open("r", encoding="utf-8", newline="")
+    except OSError as exc:
+        raise ValueError(f"cannot read registry: {path}") from exc
+
+    with handle:
+        reader = csv.DictReader(handle)
+        actual = tuple(reader.fieldnames or ())
+        if actual != fields:
+            raise ValueError(
+                f"invalid registry columns: expected {list(fields)}, got {list(actual)}"
+            )
+
+        rows: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for line_number, row in enumerate(reader, start=2):
+            if not row or None in row or any(row.get(field) is None for field in fields):
+                raise ValueError(f"malformed registry row {line_number}: {path}")
+            normalized = {field: row[field].strip() for field in fields}
+            value = normalized[identifier]
+            if not value:
+                raise ValueError(f"blank {identifier} at row {line_number}: {path}")
+            if value in seen:
+                raise ValueError(f"duplicate {identifier} {value!r}: {path}")
+            seen.add(value)
+            rows.append(normalized)
+    return rows
+
+
+def _normalize_registry_path(value: str, field: str, line_number: int) -> str:
+    """Validate and normalize one repository-relative public path."""
+
+    try:
+        relative = safe_relative_path(value)
+        if not relative.parts:
+            raise ValueError("path must not be empty")
+        # Task 1's guard is deliberately invoked separately from the lexical
+        # relative-path contract so the exact excluded component remains a
+        # fail-closed boundary for every registry path.
+        assert_public_path(Path(value))
+    except ValueError as exc:
+        raise ValueError(f"invalid {field} path at row {line_number}: {value!r}") from exc
+    return relative.as_posix()
+
+
+def _validate_sha256(value: str, dataset_id: str, line_number: int) -> None:
+    if value and not _SHA256_RE.fullmatch(value):
+        raise ValueError(
+            f"sha256 for dataset {dataset_id!r} at row {line_number} must be 64 lowercase hexadecimal characters"
+        )
+
+
+def _is_author_generated_deposited(row: dict[str, str]) -> bool:
+    origin = row["origin"].casefold()
+    route = row["access_route"].casefold()
+    return "author-generated" in origin and (
+        "repository" in route or "deposited" in route or "deposit" in route
+    )
+
+
+def _is_terminal_source_carrier(row: dict[str, str]) -> bool:
+    role = row["role"].casefold()
+    return "terminal" in role and "source" in role and "carrier" in role
+
+
+def load_dataset_registry(path: Path) -> list[dict[str, str]]:
+    """Load and validate the dataset-to-carrier registry."""
+
+    rows = _load_registry_csv(Path(path), DATASET_REGISTRY_FIELDS, "dataset_id")
+    for line_number, row in enumerate(rows, start=2):
+        for field in _DATASET_REQUIRED_FIELDS:
+            if not row[field]:
+                raise ValueError(f"dataset {row['dataset_id']!r} missing {field} at row {line_number}")
+
+        row["public_path"] = _normalize_registry_path(
+            row["public_path"], "public_path", line_number
+        )
+        _validate_sha256(row["sha256"], row["dataset_id"], line_number)
+
+        if not row["acquisition_command"] and not _is_author_generated_deposited(row):
+            raise ValueError(
+                f"dataset {row['dataset_id']!r} requires acquisition_command unless author-generated and deposited"
+            )
+        if not row["processing_command"] and not _is_terminal_source_carrier(row):
+            raise ValueError(
+                f"dataset {row['dataset_id']!r} requires processing_command unless terminal source-data carrier"
+            )
+        if row["origin"].casefold().find("third-party") >= 0 and row["license"].casefold() == "cc by 4.0":
+            raise ValueError(
+                f"dataset {row['dataset_id']!r} cannot assign repository CC BY 4.0 to third-party data"
+            )
+    return rows
+
+
+def _split_dataset_references(value: str, output_id: str, line_number: int) -> list[str]:
+    references = [part.strip() for part in value.split(";")]
+    if not value or any(not reference for reference in references):
+        raise ValueError(
+            f"output {output_id!r} requires a non-empty semicolon-delimited input_dataset_ids list at row {line_number}"
+        )
+    if len(references) != len(set(references)):
+        raise ValueError(f"output {output_id!r} repeats an input dataset ID at row {line_number}")
+    return references
+
+
+def _validate_figure2e_contract(row: dict[str, str], line_number: int) -> None:
+    output_id = row["output_id"]
+    if output_id != "figure-02e":
+        return
+    command = row["generation_command"]
+    command_casefold = command.casefold()
+    if not command or any(marker in command_casefold for marker in _FIGURE2E_FORBIDDEN_MARKERS):
+        raise ValueError(f"figure-02e requires a concrete generation command at row {line_number}")
+    if "--output" not in command_casefold:
+        raise ValueError(f"figure-02e generation command must target an output at row {line_number}")
+    references = _split_dataset_references(row["input_dataset_ids"], output_id, line_number)
+    if "figure-02-aggregate-source" not in references:
+        raise ValueError(
+            "figure-02e must include figure-02-aggregate-source as an interim input"
+        )
+    if not row["expected_artifact"].endswith(".png"):
+        raise ValueError(f"figure-02e expected_artifact must be a PNG target at row {line_number}")
+
+
+def load_output_registry(path: Path) -> list[dict[str, str]]:
+    """Load and validate the manuscript-output registry."""
+
+    rows = _load_registry_csv(Path(path), OUTPUT_REGISTRY_FIELDS, "output_id")
+    for line_number, row in enumerate(rows, start=2):
+        _validate_figure2e_contract(row, line_number)
+        for field in _OUTPUT_REQUIRED_FIELDS:
+            if not row[field]:
+                raise ValueError(f"output {row['output_id']!r} missing {field} at row {line_number}")
+        row["input_dataset_ids"] = ";".join(
+            _split_dataset_references(row["input_dataset_ids"], row["output_id"], line_number)
+        )
+        row["expected_artifact"] = _normalize_registry_path(
+            row["expected_artifact"], "expected_artifact", line_number
+        )
+    return rows
+
+
+def validate_release_registry(root: Path) -> dict[str, int]:
+    """Validate registry schemas and output-to-dataset referential integrity."""
+
+    release_root = ReleaseRoot(Path(root))
+    datasets = load_dataset_registry(
+        release_root.resolve("data/dataset_registry.csv")
+    )
+    outputs = load_output_registry(
+        release_root.resolve("data/output_registry.csv")
+    )
+
+    dataset_ids = {row["dataset_id"] for row in datasets}
+    referenced: set[str] = set()
+    artifacts: set[str] = set()
+    for row in outputs:
+        output_id = row["output_id"]
+        references = row["input_dataset_ids"].split(";")
+        missing = sorted(set(references) - dataset_ids)
+        if missing:
+            raise ValueError(
+                f"output {output_id!r} references undeclared dataset(s): {', '.join(missing)}"
+            )
+        referenced.update(references)
+        artifact = row["expected_artifact"]
+        if artifact in artifacts:
+            raise ValueError(f"duplicate expected_artifact {artifact!r}")
+        artifacts.add(artifact)
+
+    return {
+        "datasets": len(datasets),
+        "outputs": len(outputs),
+        "referenced_datasets": len(referenced),
+    }
 
 
 def _relative_payload_files(root: Path) -> list[tuple[str, Path]]:
@@ -365,11 +580,16 @@ __all__ = [
     "CHECKSUMS_FILENAME",
     "CONTROLLED_DATASET_IDS",
     "CONTROLLED_FIELDS",
+    "DATASET_REGISTRY_FIELDS",
     "MANIFEST_FIELDS",
     "MANIFEST_FILENAME",
+    "OUTPUT_REGISTRY_FIELDS",
     "PUBLIC_SOURCE_FIELDS",
     "load_controlled_inputs",
+    "load_dataset_registry",
+    "load_output_registry",
     "load_public_sources",
+    "validate_release_registry",
     "validate_inventory",
     "write_release_inventories",
 ]

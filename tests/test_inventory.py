@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import green_methanol_release.inventory as inventory_module
 from green_methanol_release.inventory import (
     CONTROLLED_FIELDS,
     MANIFEST_FIELDS,
@@ -216,3 +217,232 @@ def test_figure2_aggregate_carrier_is_classified_as_cc_by(tmp_path: Path):
         for row in csv.DictReader((root / "FILE_MANIFEST.csv").open(encoding="utf-8", newline=""))
     }
     assert rows["data/author_derived/figure2_aggregate_source.csv"]["licence_scope"] == "CC BY 4.0"
+
+
+DATASET_REGISTRY_FIELDS = (
+    "dataset_id",
+    "public_path",
+    "role",
+    "origin",
+    "access_route",
+    "license",
+    "sha256",
+    "acquisition_command",
+    "processing_command",
+    "manuscript_uses",
+)
+OUTPUT_REGISTRY_FIELDS = (
+    "output_id",
+    "manuscript_location",
+    "generation_command",
+    "input_dataset_ids",
+    "expected_artifact",
+)
+
+
+def _write_registry(
+    root: Path,
+    dataset_rows: list[dict[str, str]],
+    output_rows: list[dict[str, str]],
+) -> Path:
+    data = root / "data"
+    data.mkdir(parents=True, exist_ok=True)
+    _write_rows(data / "dataset_registry.csv", DATASET_REGISTRY_FIELDS, dataset_rows)
+    _write_rows(data / "output_registry.csv", OUTPUT_REGISTRY_FIELDS, output_rows)
+    return root
+
+
+def _dataset_row(
+    dataset_id: str = "dataset-1",
+    public_path: str = "data/example.csv",
+    **overrides: str,
+) -> dict[str, str]:
+    row = {
+        "dataset_id": dataset_id,
+        "public_path": public_path,
+        "role": "figure source",
+        "origin": "author-generated",
+        "access_route": "repository carrier",
+        "license": "CC BY 4.0",
+        "sha256": "a" * 64,
+        "acquisition_command": "",
+        "processing_command": "terminal source-data carrier",
+        "manuscript_uses": "Figure 1",
+    }
+    row.update(overrides)
+    return row
+
+
+def _output_row(
+    output_id: str = "figure-01",
+    input_dataset_ids: str = "dataset-1",
+    expected_artifact: str = "figures/figure-01.png",
+    **overrides: str,
+) -> dict[str, str]:
+    row = {
+        "output_id": output_id,
+        "manuscript_location": "Figure 1",
+        "generation_command": "python scripts/reproduce.py --mode smoke --output <external-output>/figure-01.json",
+        "input_dataset_ids": input_dataset_ids,
+        "expected_artifact": expected_artifact,
+    }
+    row.update(overrides)
+    return row
+
+
+def test_registry_headers_are_exact_and_utf8_lf():
+    expected = {
+        "data/dataset_registry.csv": DATASET_REGISTRY_FIELDS,
+        "data/output_registry.csv": OUTPUT_REGISTRY_FIELDS,
+    }
+    for relative, fields in expected.items():
+        raw = (ROOT / relative).read_bytes()
+        assert b"\r" not in raw
+        assert raw.splitlines()[0].decode("utf-8") == ",".join(fields)
+
+
+def test_registry_loads_and_validates_seed_counts():
+    datasets = inventory_module.load_dataset_registry(ROOT / "data" / "dataset_registry.csv")
+    outputs = inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
+
+    assert len(datasets) == 5
+    assert len(outputs) == 6
+    assert inventory_module.validate_release_registry(ROOT) == {
+        "datasets": 5,
+        "outputs": 6,
+        "referenced_datasets": 5,
+    }
+
+
+def test_dataset_registry_rejects_duplicate_ids(tmp_path: Path):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row(), _dataset_row(dataset_id="dataset-1", public_path="data/other.csv")],
+        [_output_row()],
+    )
+
+    with pytest.raises(ValueError, match="duplicate dataset_id"):
+        inventory_module.load_dataset_registry(root / "data" / "dataset_registry.csv")
+
+
+def test_output_registry_rejects_duplicate_ids(tmp_path: Path):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row()],
+        [_output_row(), _output_row(output_id="figure-01", expected_artifact="figures/other.png")],
+    )
+
+    with pytest.raises(ValueError, match="duplicate output_id"):
+        inventory_module.load_output_registry(root / "data" / "output_registry.csv")
+
+
+@pytest.mark.parametrize(
+    "public_path",
+    [
+        "../outside.csv",
+        "C:" + "/outside.csv",
+        "/" + "outside.csv",
+        "\\\\" + "server/share/outside.csv",
+        "data/管道数据/secret.csv",
+    ],
+)
+def test_dataset_registry_rejects_malformed_or_forbidden_paths(
+    tmp_path: Path, public_path: str
+):
+    root = _write_registry(tmp_path, [_dataset_row(public_path=public_path)], [_output_row()])
+
+    with pytest.raises(ValueError, match="path"):
+        inventory_module.load_dataset_registry(root / "data" / "dataset_registry.csv")
+
+
+def test_output_registry_rejects_malformed_expected_artifact_path(tmp_path: Path):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row()],
+        [_output_row(expected_artifact="../outside.png")],
+    )
+
+    with pytest.raises(ValueError, match="path"):
+        inventory_module.load_output_registry(root / "data" / "output_registry.csv")
+
+
+def test_dataset_registry_rejects_invalid_hash(tmp_path: Path):
+    root = _write_registry(tmp_path, [_dataset_row(sha256="A" * 64)], [_output_row()])
+
+    with pytest.raises(ValueError, match="64 lowercase hexadecimal"):
+        inventory_module.load_dataset_registry(root / "data" / "dataset_registry.csv")
+
+
+def test_dataset_registry_rejects_missing_required_field(tmp_path: Path):
+    root = _write_registry(tmp_path, [_dataset_row(role="   ")], [_output_row()])
+
+    with pytest.raises(ValueError, match="role"):
+        inventory_module.load_dataset_registry(root / "data" / "dataset_registry.csv")
+
+
+def test_release_registry_rejects_missing_dataset_reference(tmp_path: Path):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row()],
+        [_output_row(input_dataset_ids="dataset-missing")],
+    )
+
+    with pytest.raises(ValueError, match="dataset-missing"):
+        inventory_module.validate_release_registry(root)
+
+
+def test_release_registry_rejects_duplicate_expected_artifacts(tmp_path: Path):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row(), _dataset_row(dataset_id="dataset-2", public_path="data/other.csv")],
+        [
+            _output_row(output_id="figure-01"),
+            _output_row(output_id="figure-02", input_dataset_ids="dataset-2"),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="duplicate expected_artifact"):
+        inventory_module.validate_release_registry(root)
+
+
+def test_figure2e_has_concrete_generation_contract():
+    row = next(
+        row
+        for row in inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
+        if row["output_id"] == "figure-02e"
+    )
+    assert "figure-02-aggregate-source" in row["input_dataset_ids"].split(";")
+    assert row["generation_command"].strip()
+    assert "--output" in row["generation_command"]
+    assert row["expected_artifact"].endswith(".png")
+    assert not any(
+        marker in row["generation_command"].casefold()
+        for marker in ("withheld", "status", "not_reproduced")
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"generation_command": ""},
+        {"generation_command": "withheld"},
+        {"generation_command": "status=NOT_REPRODUCED"},
+        {"input_dataset_ids": "dataset-1"},
+    ],
+)
+def test_release_registry_rejects_incomplete_figure2e_contract(
+    tmp_path: Path, mutation: dict[str, str]
+):
+    output = _output_row(
+        output_id="figure-02e",
+        input_dataset_ids="figure-02-aggregate-source",
+    )
+    output.update(mutation)
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row(dataset_id="figure-02-aggregate-source")],
+        [output],
+    )
+
+    with pytest.raises(ValueError, match="figure-02e"):
+        inventory_module.validate_release_registry(root)
