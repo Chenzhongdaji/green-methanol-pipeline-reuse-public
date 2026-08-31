@@ -5,6 +5,7 @@ env/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.worktrees/
 .mypy_cache/
 .ruff_cache/
 
