@@ -203,6 +203,7 @@ def _is_skipped(path: Path, root: Path) -> bool:
 def _iter_payload_files(root: Path) -> Iterable[Path]:
     # ``Path.rglob`` cannot prune a directory before descending into it.  Walk
     # top-down so the excluded directory is never traversed or opened.
+    payload_files: list[Path] = []
     for directory, dirnames, filenames in os.walk(root, topdown=True):
         directory_path = Path(directory)
         dirnames[:] = sorted(
@@ -213,7 +214,8 @@ def _iter_payload_files(root: Path) -> Iterable[Path]:
         for filename in sorted(filenames):
             path = directory_path / filename
             if not _is_skipped(path, root):
-                yield path
+                payload_files.append(path)
+    yield from sorted(payload_files, key=lambda item: item.as_posix())
 
 
 def _git_tracked_paths(root: Path) -> list[str]:
@@ -225,8 +227,8 @@ def _git_tracked_paths(root: Path) -> list[str]:
             check=True,
             capture_output=True,
         )
-    except (OSError, subprocess.CalledProcessError):
-        return []
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f"git index enumeration failed: {exc}") from exc
     payload = result.stdout or b""
     if isinstance(payload, bytes):
         text = payload.decode("utf-8", errors="surrogateescape")
@@ -881,7 +883,11 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         report["errors"] = [str(exc)]
         return report
 
-    tracked_forbidden_paths = audit_tracked_paths(_git_tracked_paths(root))
+    try:
+        tracked_forbidden_paths = audit_tracked_paths(_git_tracked_paths(root))
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as exc:
+        tracked_forbidden_paths = []
+        errors.append(f"tracked path audit failed: {exc}")
     report["tracked_forbidden_paths"] = tracked_forbidden_paths
     if tracked_forbidden_paths:
         errors.append(

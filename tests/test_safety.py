@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -73,3 +74,45 @@ def test_audit_release_fails_when_index_contains_forbidden_component(monkeypatch
     assert report["status"] == "FAIL"
     assert report["tracked_forbidden_paths"] == ["src/管道数据/secret.csv"]
     assert any("tracked forbidden path" in error for error in report["errors"])
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        OSError("git is unavailable"),
+        subprocess.CalledProcessError(1, ["git", "ls-files"]),
+    ],
+)
+def test_audit_release_fails_closed_when_index_enumeration_fails(
+    monkeypatch: pytest.MonkeyPatch, failure: BaseException
+):
+    def fail(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    monkeypatch.setattr(audit_module.subprocess, "run", fail)
+    monkeypatch.setattr(audit_module, "_validate_metadata", lambda root: [])
+    monkeypatch.setattr(audit_module, "_scan_disclosures", lambda root: {})
+    monkeypatch.setattr(audit_module, "_check_licence_scope", lambda root: [])
+    monkeypatch.setattr(
+        audit_module,
+        "run_reproduction",
+        lambda root, mode, output: {"status": "PASS", "level_2_status": "NOT_REPRODUCED"},
+    )
+
+    report = audit_release(Path.cwd(), require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert report["tracked_forbidden_paths"] == []
+    assert any("tracked path audit failed" in error for error in report["errors"])
+
+
+def test_payload_walk_is_globally_sorted(tmp_path: Path):
+    (tmp_path / "a.txt").write_text("a", encoding="utf-8")
+    nested = tmp_path / "a"
+    nested.mkdir()
+    (nested / "nested.txt").write_text("nested", encoding="utf-8")
+    (tmp_path / "b.txt").write_text("b", encoding="utf-8")
+
+    paths = [path.relative_to(tmp_path).as_posix() for path in audit_module._iter_payload_files(tmp_path)]
+
+    assert paths == sorted(paths)
