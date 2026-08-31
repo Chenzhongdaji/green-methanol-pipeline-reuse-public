@@ -59,6 +59,25 @@ def test_figure_02_panel_e_uses_exact_public_row_contract_and_writes_sibling_pdf
     assert output.with_suffix(".pdf").stat().st_size > 1_000
 
 
+def test_figure_02_panel_e_reports_sorted_coverage_label_value_pairs(tmp_path):
+    output = tmp_path / "figure-02e.png"
+
+    completed = _run_builder(
+        "build_figure_02.py",
+        "data/figure_source/figure-02.csv",
+        output,
+        "--panel",
+        "e",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    metadata = json.loads(completed.stdout)
+    coverage = metadata["coverage_summary"]
+    assert [item["label"] for item in coverage] == sorted(item["label"] for item in coverage)
+    assert coverage[0] == {"label": "上海", "value": 0.0}
+    assert coverage[1] == {"label": "云南", "value": 87.7668176392895}
+
+
 def test_figure_02_panel_e_png_hash_is_deterministic(tmp_path):
     first = tmp_path / "first.png"
     second = tmp_path / "second.png"
@@ -83,6 +102,90 @@ def test_figure_02_panel_e_png_hash_is_deterministic(tmp_path):
     assert hashlib.sha256(first.read_bytes()).hexdigest() == hashlib.sha256(second.read_bytes()).hexdigest()
 
 
+def test_figure_02_panel_e_rejects_nonfinite_coordinates(tmp_path):
+    source = ROOT / "data" / "figure_source" / "figure-02.csv"
+    malformed = tmp_path / "nonfinite.csv"
+    with source.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    network = next(
+        row for row in rows if row["panel"] == "e" and row["case"] == "complete_existing_network"
+    )
+    network["x"] = "nan,100"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder("build_figure_02.py", str(malformed), tmp_path / "nonfinite.png", "--panel", "e")
+
+    assert completed.returncode != 0
+    assert "non-finite" in completed.stderr.lower()
+
+
+def test_figure_02_panel_e_requires_model_tasks_to_be_existing_edges(tmp_path):
+    source = ROOT / "data" / "figure_source" / "figure-02.csv"
+    malformed = tmp_path / "orphan-task.csv"
+    with source.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    task = next(row for row in rows if row["panel"] == "e" and row["case"] == "model_called_task")
+    task["note"] = "N999->N998; assigned task only"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder("build_figure_02.py", str(malformed), tmp_path / "orphan-task.png", "--panel", "e")
+
+    assert completed.returncode != 0
+    assert "task edge" in completed.stderr.lower()
+
+
+def test_figure_02_panel_e_rejects_network_note_carrier_throughput_mismatch(tmp_path):
+    source = ROOT / "data" / "figure_source" / "figure-02.csv"
+    malformed = tmp_path / "throughput-mismatch.csv"
+    with source.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    network = next(
+        row for row in rows if row["panel"] == "e" and row["case"] == "complete_existing_network"
+    )
+    network["note"] = network["note"].replace("design throughput=1000", "design throughput=999", 1)
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder(
+        "build_figure_02.py", str(malformed), tmp_path / "throughput-mismatch.png", "--panel", "e"
+    )
+
+    assert completed.returncode != 0
+    assert "throughput" in completed.stderr.lower()
+
+
+def test_figure_02_panel_e_is_deterministic_under_carrier_row_permutation(tmp_path):
+    source = ROOT / "data" / "figure_source" / "figure-02.csv"
+    permuted = tmp_path / "permuted.csv"
+    with source.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    with permuted.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(list(reversed(rows)))
+
+    first = tmp_path / "first.png"
+    second = tmp_path / "second.png"
+    one = _run_builder("build_figure_02.py", "data/figure_source/figure-02.csv", first, "--panel", "e")
+    two = _run_builder("build_figure_02.py", str(permuted), second, "--panel", "e")
+
+    assert one.returncode == 0, one.stderr
+    assert two.returncode == 0, two.stderr
+    assert hashlib.sha256(first.read_bytes()).hexdigest() == hashlib.sha256(second.read_bytes()).hexdigest()
+
+
 def test_figure_02_rejects_empty_input(tmp_path):
     empty = tmp_path / "empty.csv"
     empty.write_text(
@@ -97,6 +200,31 @@ def test_figure_02_rejects_empty_input(tmp_path):
     assert completed.returncode != 0
     assert "empty" in completed.stderr.lower()
     assert not output.exists()
+
+
+def test_figure_02_summary_rejects_panel_with_no_rendered_records(tmp_path):
+    source = ROOT / "data" / "figure_source" / "figure-02.csv"
+    malformed = tmp_path / "empty-render.csv"
+    with source.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+        fields = list(rows[0])
+    for row in rows:
+        if row["panel"] == "a":
+            row["style"] = "trajectory"
+            row["value"] = ""
+            row["y"] = ""
+            row["note"] = "N.A. test row"
+    with malformed.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    completed = _run_builder(
+        "build_figure_02.py", str(malformed), tmp_path / "empty-render.png", "--panels", "a-d,f-h"
+    )
+
+    assert completed.returncode != 0
+    assert "rendered" in completed.stderr.lower()
 
 
 def test_figure_02_supports_both_panel_modes(tmp_path):

@@ -303,9 +303,9 @@ def _validate_figure2e_contract(row: dict[str, str], line_number: int) -> None:
     if "--output" not in command_casefold:
         raise ValueError(f"figure-02e generation command must target an output at row {line_number}")
     references = _split_dataset_references(row["input_dataset_ids"], output_id, line_number)
-    if "figure-02-aggregate-source" not in references:
+    if "figure-02-source-real" not in references:
         raise ValueError(
-            "figure-02e must include figure-02-aggregate-source as an interim input"
+            "figure-02e must include figure-02-source-real as the carrier input"
         )
     if not row["expected_artifact"].endswith(".png"):
         raise ValueError(f"figure-02e expected_artifact must be a PNG target at row {line_number}")

@@ -172,6 +172,14 @@ _STYLE_PALETTE = (
     "#BE123C",
     "#475569",
 )
+_EDGE_ID_RE = re.compile(
+    r"^\s*([A-Za-z0-9_.-]+->[A-Za-z0-9_.-]+)(?:\s*;|\s*$)"
+)
+_THROUGHPUT_RE = re.compile(
+    r"design\s+throughput\s*=\s*"
+    r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)",
+    re.IGNORECASE,
+)
 
 
 def _line_widths(values: list[float], minimum: float = 0.65, maximum: float = 2.9) -> list[float]:
@@ -184,6 +192,46 @@ def _line_widths(values: list[float], minimum: float = 0.65, maximum: float = 2.
 
 def _figure2_rows(input_path: Path) -> list[dict[str, str]]:
     return _read_rows(Path(input_path), FIGURE_02_COLUMNS)
+
+
+def _edge_id(note: str, *, row_index: int, kind: str) -> str:
+    match = _EDGE_ID_RE.match(note)
+    if not match:
+        raise ValueError(f"malformed {kind} edge identifier at row {row_index}")
+    return match.group(1)
+
+
+def _note_throughput(note: str, *, row_index: int) -> float | None:
+    match = _THROUGHPUT_RE.search(note)
+    if match:
+        value = _number(match.group(1), field="design throughput", row_index=row_index)
+        if value < 0:
+            raise ValueError("Figure 2e design throughput must be non-negative")
+        return value
+    if "design throughput unknown" in note.casefold():
+        return None
+    raise ValueError(f"missing design throughput annotation at row {row_index}")
+
+
+def _same_numeric_multiset(left: list[float], right: list[float]) -> bool:
+    if len(left) != len(right):
+        return False
+    return all(math.isclose(a, b, rel_tol=0.0, abs_tol=1e-9) for a, b in zip(sorted(left), sorted(right)))
+
+
+def _coverage_points(rows: list[dict[str, str]], *, row_offset: int = 2) -> list[tuple[str, float]]:
+    points = [
+        (
+            row["x"].strip(),
+            _number(row["value"], field="value", row_index=index),
+        )
+        for index, row in enumerate(rows, start=row_offset)
+    ]
+    if any(not label for label, _ in points):
+        raise ValueError("Figure 2e coverage label must not be empty")
+    if any(value < 0 or value > 100 for _, value in points):
+        raise ValueError("Figure 2e province coverage must be between 0 and 100")
+    return sorted(points, key=lambda point: (point[0], point[1]))
 
 
 def _plot_figure_02e(
@@ -204,14 +252,40 @@ def _plot_figure_02e(
     task_rows = [row for row in panel_rows if row["case"] == "model_called_task"]
     coverage_rows = [row for row in panel_rows if row["case"] == "province_demand_coverage"]
 
-    network_coordinates = [
-        _coordinate_pair(row["x"], row["y"], row_index=index)
-        for index, row in enumerate(network_rows, start=2)
-    ]
-    task_coordinates = [
-        _coordinate_pair(row["x"], row["y"], row_index=index)
-        for index, row in enumerate(task_rows, start=2)
-    ]
+    network_records: list[tuple[str, tuple[float, float, float, float], float | None, str]] = []
+    for index, row in enumerate(network_rows, start=2):
+        network_records.append(
+            (
+                _edge_id(row["note"], row_index=index, kind="network"),
+                _coordinate_pair(row["x"], row["y"], row_index=index),
+                _note_throughput(row["note"], row_index=index),
+                row["note"],
+            )
+        )
+    network_records.sort(key=lambda record: (record[0], record[1], record[3]))
+    network_coordinates = [record[1] for record in network_records]
+    note_throughput_values = [record[2] for record in network_records]
+
+    task_records: list[tuple[str, tuple[float, float, float, float], float, str]] = []
+    for index, row in enumerate(task_rows, start=2):
+        task_records.append(
+            (
+                _edge_id(row["note"], row_index=index, kind="task"),
+                _coordinate_pair(row["x"], row["y"], row_index=index),
+                _number(row["value"], field="value", row_index=index),
+                row["note"],
+            )
+        )
+    task_records.sort(key=lambda record: (record[0], record[1], record[3]))
+    task_coordinates = [record[1] for record in task_records]
+    task_values = [record[2] for record in task_records]
+    network_edges: dict[str, list[tuple[float, float, float, float]]] = {}
+    for edge_id, coordinate, _, _ in network_records:
+        network_edges.setdefault(edge_id, []).append(coordinate)
+    for edge_id, coordinate, _, _ in task_records:
+        if edge_id not in network_edges or coordinate not in network_edges[edge_id]:
+            raise ValueError(f"model task edge is not an existing network edge: {edge_id}")
+
     throughput_values: list[float | None] = []
     for index, row in enumerate(sorted(throughput_rows, key=lambda item: item["x"]), start=2):
         throughput_values.append(
@@ -219,14 +293,15 @@ def _plot_figure_02e(
             if not row["value"].strip()
             else _number(row["value"], field="value", row_index=index)
         )
-    coverage_values = [
-        _number(row["value"], field="value", row_index=index)
-        for index, row in enumerate(coverage_rows, start=2)
-    ]
-    if any(value is not None and value < 0 for value in throughput_values):
-        raise ValueError("Figure 2e design throughput must be non-negative")
-    if any(value < 0 or value > 100 for value in coverage_values):
-        raise ValueError("Figure 2e province coverage must be between 0 and 100")
+    note_known = [value for value in note_throughput_values if value is not None]
+    carrier_known = [value for value in throughput_values if value is not None]
+    if len(note_known) != len(carrier_known) or not _same_numeric_multiset(note_known, carrier_known):
+        raise ValueError("Figure 2e design throughput note/carrier mismatch")
+    if note_throughput_values.count(None) != throughput_values.count(None):
+        raise ValueError("Figure 2e unknown design throughput count mismatch")
+    coverage_points = _coverage_points(coverage_rows)
+    coverage_names = [point[0] for point in coverage_points]
+    coverage_values = [point[1] for point in coverage_points]
     if len(throughput_values) != len(network_coordinates):
         raise ValueError("Figure 2e network and throughput rows cannot be matched")
 
@@ -235,11 +310,11 @@ def _plot_figure_02e(
     map_axis = fig.add_axes((0.06, 0.17, 0.67, 0.70))
     coverage_axis = fig.add_axes((0.79, 0.17, 0.18, 0.70))
 
-    available_throughput = [value for value in throughput_values if value is not None]
+    available_throughput = [value for value in note_throughput_values if value is not None]
     available_widths = _line_widths(available_throughput)
     widths_by_value = dict(zip(available_throughput, available_widths))
     network_widths = [
-        widths_by_value[value] if value is not None else 0.65 for value in throughput_values
+        widths_by_value[value] if value is not None else 0.65 for value in note_throughput_values
     ]
     for (x1, x2, y1, y2), linewidth in zip(network_coordinates, network_widths):
         map_axis.plot(
@@ -252,10 +327,6 @@ def _plot_figure_02e(
             zorder=1,
         )
 
-    task_values = [
-        _number(row["value"], field="value", row_index=index)
-        for index, row in enumerate(task_rows, start=2)
-    ]
     task_widths = _line_widths(task_values, minimum=1.5, maximum=3.7)
     for (x1, x2, y1, y2), linewidth in zip(task_coordinates, task_widths):
         map_axis.plot(
@@ -281,16 +352,14 @@ def _plot_figure_02e(
     map_axis.set_title("Coordinate-based network rendering", loc="left", weight="bold")
     map_axis.grid(False)
 
-    ordered_coverage = sorted(coverage_rows, key=lambda row: row["x"])
-    coverage_names = [row["x"].strip() for row in ordered_coverage]
     coverage_axis.barh(
-        list(range(len(ordered_coverage))),
+        list(range(len(coverage_points))),
         coverage_values,
         color="#93C5FD",
         edgecolor="#1D4ED8",
         linewidth=0.35,
     )
-    coverage_axis.set_yticks(list(range(len(ordered_coverage))))
+    coverage_axis.set_yticks(list(range(len(coverage_points))))
     coverage_axis.set_yticklabels(coverage_names, fontsize=6)
     coverage_axis.invert_yaxis()
     coverage_axis.set_xlim(0, 100)
@@ -333,6 +402,7 @@ def _plot_figure_02e(
         sibling_pdf_path=str(sibling_pdf),
         sibling_pdf_sha256=_sha256(sibling_pdf),
         coordinate_note="Analytical coordinates; no official basemap",
+        coverage_summary=[{"label": label, "value": value} for label, value in coverage_points],
     )
 
 
@@ -360,11 +430,14 @@ def _plot_figure_02_summary(
     _configure_plot()
     fig, axes = plt.subplots(4, 2, figsize=(14.4, 11.0), squeeze=False)
     axes_flat = list(axes.flat)
+    rendered_counts: dict[str, int] = {}
     for axis, panel in zip(axes_flat, FIGURE_02_SUMMARY_PANELS):
         current = [row for row in panel_rows if row["panel"] == panel]
         styles = sorted({row["style"] for row in current})
         style_colors = {style: _STYLE_PALETTE[index % len(_STYLE_PALETTE)] for index, style in enumerate(styles)}
+        rendered_count = 0
         if panel == "a":
+            trajectory_count = 0
             for scenario in sorted({row["scenario"] for row in current}):
                 trajectory = [
                     row
@@ -387,14 +460,21 @@ def _plot_figure_02_summary(
                         alpha=0.82,
                         label=scenario,
                     )
-            for row in current:
+                    trajectory_count += len(trajectory)
+            callouts = sorted(
+                (row for row in current if row["style"] != "trajectory"),
+                key=lambda row: (row["scenario"], row["x"], row["metric"], row["style"], row["note"]),
+            )
+            for row in callouts:
                 if row["style"] != "trajectory":
                     x_value = _number(row["x"], field="x", row_index=2)
                     y_value = _number(row["y"], field="y", row_index=2)
                     axis.scatter((x_value,), (y_value,), color=style_colors[row["style"]], s=30, marker="D")
+            rendered_count = trajectory_count + len(callouts)
             axis.set_xlabel("Year")
             axis.set_ylabel("Value (%)")
-            axis.legend(frameon=False, fontsize=7, ncol=2)
+            if trajectory_count:
+                axis.legend(frameon=False, fontsize=7, ncol=2)
         else:
             ordered = sorted(
                 enumerate(current),
@@ -410,12 +490,17 @@ def _plot_figure_02_summary(
             values = [_number(row["value"], field="value", row_index=2) for _, row in ordered]
             colors = [style_colors[row["style"]] for _, row in ordered]
             axis.bar(list(range(len(values))), values, color=colors, width=0.82)
+            rendered_count = len(values)
             axis.set_xticks(list(range(len(labels))))
             axis.set_xticklabels(labels, rotation=90 if len(labels) > 12 else 0, fontsize=6 if len(labels) > 12 else 7)
             axis.set_ylabel(str(current[0]["unit"]).strip() or "value")
             if len(styles) > 1:
                 handles = [Patch(facecolor=style_colors[style], label=style) for style in styles]
                 axis.legend(handles=handles, frameon=False, fontsize=6, loc="best")
+        if rendered_count <= 0:
+            plt.close(fig)
+            raise ValueError(f"Figure 2 summary panel {panel} has no rendered records")
+        rendered_counts[f"panel_{panel}"] = rendered_count
         axis.set_title(f"Panel {panel}", loc="left", weight="bold")
         axis.grid(axis="y", color="#E5E7EB", linewidth=0.5)
         axis.set_axisbelow(True)
@@ -431,6 +516,7 @@ def _plot_figure_02_summary(
         rows,
         {f"panel_{panel}": count for panel, count in panel_counts.items()},
         selected_panels=list(FIGURE_02_SUMMARY_PANELS),
+        rendered_record_counts=rendered_counts,
     )
 
 

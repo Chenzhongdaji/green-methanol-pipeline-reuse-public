@@ -426,7 +426,8 @@ def test_figure2e_has_concrete_generation_contract():
         for row in inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
         if row["output_id"] == "figure-02e"
     )
-    assert "figure-02-aggregate-source" in row["input_dataset_ids"].split(";")
+    assert row["input_dataset_ids"] == "figure-02-source-real"
+    assert "data/figure_source/figure-02.csv" in row["generation_command"]
     assert row["generation_command"].strip()
     assert "--output" in row["generation_command"]
     assert row["expected_artifact"].endswith(".png")
@@ -450,12 +451,12 @@ def test_release_registry_rejects_incomplete_figure2e_contract(
 ):
     output = _output_row(
         output_id="figure-02e",
-        input_dataset_ids="figure-02-aggregate-source",
+        input_dataset_ids="figure-02-source-real",
     )
     output.update(mutation)
     root = _write_registry(
         tmp_path,
-        [_dataset_row(dataset_id="figure-02-aggregate-source")],
+        [_dataset_row(dataset_id="figure-02-source-real")],
         [output],
     )
 
@@ -507,11 +508,11 @@ def test_release_registry_rejects_invalid_figure2e_command_contract(
 ):
     root = _write_registry(
         tmp_path,
-        [_dataset_row(dataset_id="figure-02-aggregate-source")],
+        [_dataset_row(dataset_id="figure-02-source-real")],
         [
             _output_row(
                 output_id="figure-02e",
-                input_dataset_ids="figure-02-aggregate-source",
+                input_dataset_ids="figure-02-source-real",
                 expected_artifact="figures/figure-02e.png",
                 generation_command=command,
             )
