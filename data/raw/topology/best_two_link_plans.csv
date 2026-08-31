@@ -1,0 +1,10 @@
+﻿scenario,first_candidate_id,first_link,first_distance_km,second_candidate_id,second_link,second_distance_km,optimized_anchor_mean_demand_met_pct,anchor_mean_demand_met_gain_pp,search_method
+S1,C0695,衡阳->南沙,424.294,C0723,呼和浩特->南疆(天津,506.973,50.1398219571148,14.373952861952858,greedy_single_seed_then_exhaustive_second_link
+S2,C0695,衡阳->南沙,424.294,C0325,娄底->衡阳,105.916,57.48170394083124,6.156291666666668,greedy_single_seed_then_exhaustive_second_link
+S4,C0695,衡阳->南沙,424.294,C0713,宿州->桐庐,486.43,80.49431870311518,12.002944444444438,greedy_single_seed_then_exhaustive_second_link
+S5,C0695,衡阳->南沙,424.294,C0325,娄底->衡阳,105.916,62.983449255286,7.355808812024634,greedy_single_seed_then_exhaustive_second_link
+S6,C0695,衡阳->南沙,424.294,C0713,宿州->桐庐,486.43,64.14236343160567,7.321005609502464,greedy_single_seed_then_exhaustive_second_link
+S7,C0777,衡阳->湛江,664.631,C0713,宿州->桐庐,486.43,67.03546228460532,10.658480253576634,greedy_single_seed_then_exhaustive_second_link
+S8,C0777,衡阳->湛江,664.631,C0713,宿州->桐庐,486.43,69.2715222284135,11.382468045977006,greedy_single_seed_then_exhaustive_second_link
+S3,C0695,衡阳->南沙,424.294,C0013,南沙->黄埔,1.0,75.86682719848005,10.537016460905347,greedy_single_seed_then_exhaustive_second_link
+ALL,C0698,武汉->上饶,424.655,C0788,上饶->惠州,691.109,65.15282385212181,9.1993862465716,exhaustive_all_unordered_pairs

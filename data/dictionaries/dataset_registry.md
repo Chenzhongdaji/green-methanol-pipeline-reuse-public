@@ -36,3 +36,17 @@ repository `LICENSE-DATA` allowlist:
 This mapping does not extend the data grant to any other carrier or to
 third-party material. The listed hashes are current worktree values; later
 staging and output checks must verify them again before release.
+
+## Task 3B staged carrier extension
+
+Task 3B adds 33 explicit author-generated/author-controlled reproduction
+carriers with `stage_action=copy`. Their `sha256` values are computed from the
+named source files before registration and are checked again at the destination
+by the staging engine. These carriers are not added to the seed `CC BY 4.0`
+allowlist; `author-controlled; no additional licence` preserves the verified
+repository-rights boundary.
+
+The `standard-map-gs2023-2767` row uses `stage_action=acquire` for the official
+catalogue metadata record only. The copied JSON retains third-party and
+not-relicensed terms. Official JPG/EPS payloads and any research-boundary SHP
+are not deposited because redistribution permission is not confirmed.

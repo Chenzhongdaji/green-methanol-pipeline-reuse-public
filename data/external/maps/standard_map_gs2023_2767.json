@@ -1,0 +1,25 @@
+{
+  "review_number": "GS(2023)2767",
+  "scale": "1:7400000",
+  "publisher": "Ministry of Natural Resources of the People's Republic of China",
+  "service_operator": "Map Technical Review Center, Ministry of Natural Resources",
+  "source_url": "http://bzdt.ch.mnr.gov.cn/download.html?searchText=GS(2023)2767",
+  "accessed_date": "2026-07-27",
+  "official_formats": [
+    "JPG",
+    "EPS"
+  ],
+  "download_status": "blocked",
+  "download_note": "The official catalogue front end was reachable, but its search/download API timed out in the current environment. No substitute boundary file is accepted as an official reference.",
+  "local_reference_files": [],
+  "sha256": {},
+  "boundary_must_remain_unmodified": true,
+  "formal_review_required_for_thematic_derivative": true,
+  "map_note_zh": "底图参考自然资源部标准地图 GS(2023)2767；专题叠加稿公开使用前须依法履行地图审核程序。",
+  "map_note_en": "Boundary reference: Standard Map GS(2023)2767, Ministry of Natural Resources. The thematic derivative requires formal map review before public release.",
+  "projection_note": "The untouched official JPG/EPS is the boundary-expression reference. Analytical overlays must record their coordinate reference system separately and must not be presented as an unmodified standard map.",
+  "forbidden_substitutes": [
+    "../china_SHP/china_SHP/省界_Project.shp (unverified 2008 Beijing 1954 dataset)",
+    "third-party reconstructed SHP advertised under GS(2023)2767"
+  ]
+}

@@ -1,0 +1,366 @@
+{
+  "datasets": [
+    {
+      "bytes": 480456,
+      "dataset_id": "aviation-nodes-v08",
+      "public_path": "data/processed/dynamic_analyses_v08/aviation_nodes.csv",
+      "sha256": "ebb439d24b9140f34e7cec46ec2345c7ec1f06af9376c1c54a111388bd78d979",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/derived/dynamic_analyses_v08/aviation_nodes.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 7224,
+      "dataset_id": "aviation-refinery-city-activity-v01",
+      "public_path": "data/raw/city_topology_v01/aviation_refinery_city_activity.csv",
+      "sha256": "a34539eb46c5662e920905bcc234dc5bbcb683e9321d8034667a2cb08bde2cdd",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/aviation_refinery_city_activity.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 42458,
+      "dataset_id": "c1-logistics-v08",
+      "public_path": "data/processed/dynamic_analyses_v08/c1_logistics.csv",
+      "sha256": "58342624ffd454353b9f932563561e70f1375c742ec7fe71a209c0c6b7e23c8e",
+      "source_relative_path": "727修改/data/derived/dynamic_analyses_v08/c1_logistics.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 20644,
+      "dataset_id": "c3-unlocking-cost-v01",
+      "public_path": "data/processed/dynamic_analyses_v08/c3_unlocking_cost.csv",
+      "sha256": "040e2c9f4a538a38c092227909b058e33b87ffdca2d61631b86c7f42fde44ee2",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/derived/c3_unlocking_cost.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 6303,
+      "dataset_id": "chemical-city-activity-v01",
+      "public_path": "data/raw/city_topology_v01/chemical_city_activity.csv",
+      "sha256": "ec25660817e082a3fb4b6557b308ed0305b6cbe202da528b15b755a135a73d50",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/chemical_city_activity.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 38761,
+      "dataset_id": "city-aliases-v01",
+      "public_path": "data/raw/city_topology_v01/city_aliases_v01.csv",
+      "sha256": "01b09f8d257e697ba90631a489aff8742a7f58cf30322460b4a5778390a74bd1",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/city_aliases_v01.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 57658,
+      "dataset_id": "city-master-2024-v01",
+      "public_path": "data/raw/city_topology_v01/city_master_2024.csv",
+      "sha256": "38d646efeb753c4f6ddd70276626a51f30bfca875d02d2c2a2ba264b397a67a0",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/city_master_2024.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 160624,
+      "dataset_id": "city-proxy-supply-weights-v01",
+      "public_path": "data/raw/city_topology_v01/city_proxy_supply_weights.csv",
+      "sha256": "af51b02b4d146248bee7752e6d4c07c0315658a0545a7c8ce6c53dcb5c8cb1ef",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/city_proxy_supply_weights.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 14419,
+      "dataset_id": "city-topology-source-manifest-v01",
+      "public_path": "data/raw/city_topology_v01/source_manifest.csv",
+      "sha256": "84512bf958d882f291f4fcac948fb97ac94dd9ce9621cce9257c9865bf256f25",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/source_manifest.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 7268,
+      "dataset_id": "demand-province-corrected-product-coeff-v01",
+      "public_path": "data/raw/demand/province_demand_corrected_product_coeff.csv",
+      "sha256": "133aeba37ca99842d598da38a83d7fef19a10dbfb004cb103a2017e392537652",
+      "source_relative_path": "_codex_sinopec_demand_work/province_demand_corrected_product_coeff.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 1877,
+      "dataset_id": "demand-province-origin-2024",
+      "public_path": "data/raw/demand/province_origin_2024.csv",
+      "sha256": "37ceab950254d745ea2e80733e17fae051ccbb9762c9dcb85e8ff1257e2f0124",
+      "source_relative_path": "tmp/aviation_methanol/processed/province_origin_2024.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 2800,
+      "dataset_id": "figure-01-source",
+      "public_path": "figures/source_data/figure-01.csv",
+      "sha256": "d19e81a52b391331718ff2702651b66e676bb38b59762dda7d4b5405b3ea7963",
+      "source_relative_path": "",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 24033,
+      "dataset_id": "figure-02-aggregate-source",
+      "public_path": "data/author_derived/figure2_aggregate_source.csv",
+      "sha256": "7633f710a74b124f3d96602bc409285e0d9b4684ababc4790d6dc13fba9193c6",
+      "source_relative_path": "",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 109264,
+      "dataset_id": "figure-02-source-real",
+      "public_path": "data/figure_source/figure-02.csv",
+      "sha256": "a23ee5499317616e3fc6a21550764c80aa97140e11c62bf6e62dde9bab31bf41",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/outputs/manuscript_v117_figures/figure-02_source_data.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 463,
+      "dataset_id": "figure-03-source",
+      "public_path": "figures/source_data/figure-03.csv",
+      "sha256": "1a02eb23b52b5a88f6465bb55a694f3d74c5362f9e33ae9b46c95300453cd79b",
+      "source_relative_path": "",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 6698,
+      "dataset_id": "figure-04-source",
+      "public_path": "figures/source_data/figure-04.csv",
+      "sha256": "3d3e24781f389a806d90c8145a6f628d79536dfb03815a1685111873a6aecc0c",
+      "source_relative_path": "",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 208702,
+      "dataset_id": "figure-04-source-real",
+      "public_path": "data/figure_source/figure-04.csv",
+      "sha256": "8ed63dff86fc6ba9d048149f345afe10b9dcaf6c14eb4e595e2d1df796e6c165",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/outputs/manuscript_v115_figures/figure-04_source_data.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 2540,
+      "dataset_id": "figure-05-source",
+      "public_path": "figures/source_data/figure-05.csv",
+      "sha256": "10c95e22495c81b1b1563afa0e539c6ad406406bdff53b90f5143b2f6e8db63f",
+      "source_relative_path": "",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 121147,
+      "dataset_id": "figure-05-source-real",
+      "public_path": "data/figure_source/figure-05.csv",
+      "sha256": "0dba5f39e587c2d4d72282f5120b763157965cf22d549ebe4b468eb68d4a8904",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/outputs/manuscript_v115_figures/figure-05_source_data.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 2263,
+      "dataset_id": "green-methanol-projects-city-v01",
+      "public_path": "data/raw/city_topology_v01/green_methanol_projects_city.csv",
+      "sha256": "613e78e01f79af2ee0f746461f514027e3fb8874d08b2b65d435ff186dc91306",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/green_methanol_projects_city.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 3351,
+      "dataset_id": "official-mot-2025-shipping-port-weights",
+      "public_path": "data/raw/official_sources/mot_2025_shipping_port_weights.csv",
+      "sha256": "7920b16fabf8864f7e25febb5a220b100060be159fbdb6231c166dc555d94f0e",
+      "source_relative_path": "data/official_sources/mot_2025_port_throughput/mot_2025_shipping_port_weights.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 85607,
+      "dataset_id": "pipeline-city-assignments-v01",
+      "public_path": "data/raw/pipeline/city_assignments.csv",
+      "sha256": "531a9ea784d290cb480ca67bdcdea3fed3469de57f7af816f3a194e5f89716b4",
+      "source_relative_path": "_codex_node_clustering_work/city_assignments.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 29425,
+      "dataset_id": "pipeline-edges-with-node-coords-v01",
+      "public_path": "data/raw/pipeline/pipeline_edges_with_node_coords.csv",
+      "sha256": "36ab5eae5e52605b9c99d8d1219807bcb88c9a3a8d98bc48b7081fb20fe6c264",
+      "source_relative_path": "_codex_node_clustering_work/pipeline_edges_with_node_coords.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 150285,
+      "dataset_id": "pipeline-level-utilization-v01",
+      "public_path": "data/raw/pipeline/pipeline_level_utilization_long.csv",
+      "sha256": "136f37b4da204d12df40ff370433425a240123807be6e2c161d768891a28b7f8",
+      "source_relative_path": "_codex_pipeline_level_utilization_work/pipeline_level_utilization_long.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 33348,
+      "dataset_id": "pipeline-network-segments-v01",
+      "public_path": "data/raw/pipeline/pipeline_network_segments_v01.csv",
+      "sha256": "a8420758a540f3f8e35f787afdea874a01ba21934940f4864661fb08da207545",
+      "source_relative_path": "727修改/data/baseline/pipeline_network_segments_v01.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 30159,
+      "dataset_id": "pipeline-nodes-geocoded-v01",
+      "public_path": "data/raw/pipeline/pipeline_nodes_geocoded.csv",
+      "sha256": "04d17712776415ae202abc819838eca93a2630ae91e0ea6ec4e179c47a7304e6",
+      "source_relative_path": "_codex_node_clustering_work/pipeline_nodes_geocoded.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 264010,
+      "dataset_id": "pipeline-segment-transport-task-v01",
+      "public_path": "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv",
+      "sha256": "e47f2f1e374e22ab2d9f20d06e3b00c767c494a87cbb7248d52e78dd8b05bbc2",
+      "source_relative_path": "_codex_pipeline_transport_correction_work/segment_transport_task_pipeline_adjusted_long.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 151127,
+      "dataset_id": "regional-accounts-v08",
+      "public_path": "data/processed/dynamic_analyses_v08/regional_accounts.csv",
+      "sha256": "5537f669c62505868e279ee1d065f13ab6c0c4fe7b9765761d9ad4173d0327ed",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/derived/dynamic_analyses_v08/regional_accounts.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 21491,
+      "dataset_id": "shipping-city-activity-v01",
+      "public_path": "data/raw/city_topology_v01/shipping_city_activity.csv",
+      "sha256": "95147f05409047128c6c3694145b5224b62a3d56c207ee0fc3abaaacfa888258",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/shipping_city_activity.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": null,
+      "dataset_id": "standard-map-gs2023-2767",
+      "public_path": "data/external/maps/standard_map_gs2023_2767.json",
+      "sha256": "b525e1c8b4c9a53ab2e7dd2608472263b773cadaecbac9108d7e6916beade414",
+      "source_relative_path": "",
+      "stage_action": "acquire",
+      "status": "PASS"
+    },
+    {
+      "bytes": 47111,
+      "dataset_id": "station-city-overrides-v01",
+      "public_path": "data/raw/city_topology_v01/station_city_overrides_v01.csv",
+      "sha256": "a5c5330f6a6d0c998c770b79bf1b384e75a7fa04a0a879ffdb9a44cd5c8be0f8",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/station_city_overrides_v01.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 170042,
+      "dataset_id": "supply-province-projection-nbs-v01",
+      "public_path": "data/raw/supply/province_projection_nbs_generation.csv",
+      "sha256": "3bcfe8f37a2067304b094c3dc8c4b350d5ac388b7bc7f1c7bf1127797db2b789",
+      "source_relative_path": "_codex_methanol_supply_work/data/province_projection_nbs_generation.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 1488,
+      "dataset_id": "topology-best-two-link-plans-v038",
+      "public_path": "data/raw/topology/best_two_link_plans.csv",
+      "sha256": "28333b48fc786910e8f66ba4f2c5f5e2bfd5acda51cb08e69d8205ce368da2c5",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/submission_data_v038/topology/best_two_link_plans.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 89538,
+      "dataset_id": "topology-candidate-links-v038",
+      "public_path": "data/raw/topology/candidate_links.csv",
+      "sha256": "e5a49224629b4a172daca81f72f863f426ad40a5dd87c240ee6398175909bda6",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/submission_data_v038/topology/candidate_links.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 1370,
+      "dataset_id": "topology-capacity-sensitivity-5point-v038",
+      "public_path": "data/raw/topology/capacity_sensitivity_5point.csv",
+      "sha256": "b4b02a2f065019da50fd152d830c531f1586acc49666cf790a3d34981b3ba367",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/submission_data_v038/topology/capacity_sensitivity_5point.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 167816,
+      "dataset_id": "topology-edge-flows-v038",
+      "public_path": "data/raw/topology/edge_flows.csv",
+      "sha256": "a7cb9d5f3285b0bbb8237aa55c250952a2d4ca1f6997fa0e3295b9083abb3fea",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/submission_data_v038/topology/edge_flows.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 9002,
+      "dataset_id": "topology-node-audit-v038",
+      "public_path": "data/raw/topology/topology_node_audit.csv",
+      "sha256": "400d2c74b68bd819c380005e375281c652ffb49654ce352168f592299a11498a",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/submission_data_v038/topology/topology_node_audit.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 83883,
+      "dataset_id": "topology-regional-connector-gain-v01",
+      "public_path": "data/raw/topology/regional_connector_gain.csv",
+      "sha256": "d551fa6b655de134b5a526d1c5b4097698f5c01a4db41a932acb9a5735250977",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/topology_increment/regional_connector_gain.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    },
+    {
+      "bytes": 15207,
+      "dataset_id": "trucking-city-activity-v01",
+      "public_path": "data/raw/city_topology_v01/trucking_city_activity.csv",
+      "sha256": "3177078336d966d55ebc015a1e2e83bcb985c30607a911abb58f2cbb12f866a1",
+      "source_relative_path": "727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/trucking_city_activity.csv",
+      "stage_action": "copy",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "status": "PASS",
+  "totals": {
+    "acquire": 1,
+    "copy": 33,
+    "datasets": 39,
+    "errors": 0,
+    "existing": 5,
+    "failed": 0,
+    "passed": 39
+  }
+}
