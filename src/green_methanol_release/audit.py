@@ -178,6 +178,11 @@ _REQUIRED_METADATA = (
     "environment/environment.md",
     ".github/workflows/ci.yml",
 )
+_ACQUIRE_METADATA_ROLE = "map acquisition metadata carrier"
+_ACQUIRE_METADATA_PROCESSING = "metadata-only acquisition record"
+_ACQUIRE_METADATA_LICENSE = "third-party/not-relicensed"
+_ACQUIRE_METADATA_FIELDS = ("review_number", "publisher", "source_url", "accessed_date")
+_ACQUIRE_METADATA_FORBIDDEN_KEYWORDS = ("payload", "blob", "geometry")
 
 
 def _sha256(path: Path) -> str:
@@ -186,6 +191,37 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _contains_acquire_metadata_payload_fields(value: object) -> bool:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized = str(key).strip().casefold()
+            if any(keyword in normalized for keyword in _ACQUIRE_METADATA_FORBIDDEN_KEYWORDS):
+                return True
+            if _contains_acquire_metadata_payload_fields(child):
+                return True
+    elif isinstance(value, list):
+        return any(_contains_acquire_metadata_payload_fields(child) for child in value)
+    return False
+
+
+def _is_valid_acquire_metadata_payload(path: Path) -> bool:
+    try:
+        text = path.read_bytes().decode("utf-8")
+        metadata = json.loads(text)
+    except (OSError, UnicodeDecodeError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+    if not isinstance(metadata, dict):
+        return False
+    if any(
+        not isinstance(metadata.get(field), str) or not metadata[field].strip()
+        for field in _ACQUIRE_METADATA_FIELDS
+    ):
+        return False
+    if metadata.get("local_reference_files") != []:
+        return False
+    return not _contains_acquire_metadata_payload_fields(metadata)
 
 
 def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
@@ -212,20 +248,15 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
         stage_action = row["stage_action"]
         if stage_action not in {"copy", "existing", "acquire"}:
             continue
-        if stage_action == "acquire":
-            role = row["role"].strip().casefold()
-            processing = row["processing_command"].strip().casefold()
-            license_text = row["license"].strip().casefold()
-            if (
-                "metadata" not in role
-                or "carrier" not in role
-                or "metadata-only" not in processing
-                or license_text != "third-party/not-relicensed"
-            ):
-                errors.append(
-                    "dataset registry acquire metadata carrier validation failed"
-                )
-                continue
+        if stage_action == "acquire" and (
+            row["role"] != _ACQUIRE_METADATA_ROLE
+            or row["processing_command"] != _ACQUIRE_METADATA_PROCESSING
+            or row["license"] != _ACQUIRE_METADATA_LICENSE
+        ):
+            errors.append(
+                "dataset registry acquire metadata carrier validation failed"
+            )
+            continue
         relative = row["public_path"]
         try:
             safe = safe_relative_path(relative)
@@ -235,11 +266,22 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
         except ValueError:
             errors.append("dataset registry exemption validation failed")
             continue
+        if stage_action == "acquire" and (
+            safe.parts[:2] != ("data", "external") or safe.suffix != ".json"
+        ):
+            errors.append(
+                "dataset registry acquire metadata carrier validation failed"
+            )
+            continue
         declared = row["sha256"]
         if not _SHA256_RE.fullmatch(declared):
             errors.append("dataset registry carrier hash mismatch")
             continue
-        deposited = root.joinpath(*safe.parts)
+        try:
+            deposited = _resolve(root, safe.as_posix())
+        except ValueError:
+            errors.append("dataset registry exemption validation failed")
+            continue
         if not deposited.is_file():
             errors.append("dataset registry carrier missing")
             continue
@@ -250,6 +292,11 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
             continue
         if actual != declared:
             errors.append("dataset registry carrier hash mismatch")
+            continue
+        if stage_action == "acquire" and not _is_valid_acquire_metadata_payload(deposited):
+            errors.append(
+                "dataset registry acquire metadata carrier validation failed"
+            )
             continue
         verified.add(safe.as_posix())
     return verified, sorted(set(errors))

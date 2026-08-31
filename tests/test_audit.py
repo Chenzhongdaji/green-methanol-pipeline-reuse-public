@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import csv
 import hashlib
+import json
 import shutil
 from pathlib import Path
 
@@ -42,6 +44,31 @@ def _write_manifest_fixture(root: Path) -> None:
     ]
     checksum_rows.append(f"{manifest_digest}  FILE_MANIFEST.csv")
     checksum.write_text("\n".join(checksum_rows) + "\n", encoding="utf-8", newline="\n")
+
+
+def _update_map_registry(root: Path, **updates: str) -> None:
+    registry = root / "data" / "dataset_registry.csv"
+    with registry.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    assert fieldnames is not None
+    row = next(item for item in rows if item["dataset_id"] == "standard-map-gs2023-2767")
+    row.update(updates)
+    with registry.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _rewrite_map_metadata(root: Path, metadata: object) -> None:
+    path = root / "data" / "external" / "maps" / "standard_map_gs2023_2767.json"
+    path.write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    _update_map_registry(root, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
 
 
 def test_repository_passes_public_release_gates():
@@ -103,6 +130,66 @@ def test_acquire_metadata_carrier_hash_mismatch_is_not_exempt(tmp_path: Path):
     assert relative in report["lf_hits"]
     assert any(relative in hit for hit in report["restricted_payload_hits"])
     assert "dataset registry carrier hash mismatch" in report["errors"]
+
+
+def test_acquire_metadata_non_json_path_is_not_exempt(tmp_path: Path):
+    root = _copy_release(tmp_path, "non_json_acquire_metadata")
+    relative = "data/external/maps/standard_map_gs2023_2767.json"
+    _update_map_registry(
+        root,
+        public_path="data/external/maps/standard_map_gs2023_2767.shp",
+    )
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert relative in report["lf_hits"]
+    assert any(relative in hit for hit in report["restricted_payload_hits"])
+    assert "dataset registry acquire metadata carrier validation failed" in report["errors"]
+
+
+def test_acquire_metadata_keyword_field_is_not_exempt(tmp_path: Path):
+    root = _copy_release(tmp_path, "keyword_acquire_metadata")
+    metadata = json.loads(
+        (root / "data" / "external" / "maps" / "standard_map_gs2023_2767.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    metadata["payload_blob_geometry"] = {"value": "not a boundary payload"}
+    _rewrite_map_metadata(root, metadata)
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert "dataset registry acquire metadata carrier validation failed" in report["errors"]
+
+
+def test_acquire_metadata_bad_json_is_not_exempt(tmp_path: Path):
+    root = _copy_release(tmp_path, "bad_json_acquire_metadata")
+    path = root / "data" / "external" / "maps" / "standard_map_gs2023_2767.json"
+    path.write_text('{"review_number": "GS(2023)2767"\n', encoding="utf-8", newline="\n")
+    _update_map_registry(root, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert "dataset registry acquire metadata carrier validation failed" in report["errors"]
+
+
+def test_acquire_metadata_local_reference_is_not_exempt(tmp_path: Path):
+    root = _copy_release(tmp_path, "local_reference_acquire_metadata")
+    metadata = json.loads(
+        (root / "data" / "external" / "maps" / "standard_map_gs2023_2767.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    metadata["local_reference_files"] = ["official-map.shp"]
+    _rewrite_map_metadata(root, metadata)
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert "dataset registry acquire metadata carrier validation failed" in report["errors"]
 
 
 @pytest.mark.parametrize(
