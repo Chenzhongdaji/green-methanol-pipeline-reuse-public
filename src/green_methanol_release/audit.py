@@ -22,7 +22,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .contracts import ReleaseRoot, safe_relative_path
-from .inventory import CONTROLLED_DATASET_IDS, validate_inventory
+from .inventory import CONTROLLED_DATASET_IDS, load_dataset_registry, validate_inventory
 from .reproduce import run_reproduction
 from .safety import assert_public_path, audit_tracked_paths
 
@@ -188,6 +188,51 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
+    """Return hash-verified copy/existing carriers eligible for narrow exemptions."""
+
+    registry_path = root / "data" / "dataset_registry.csv"
+    if not registry_path.is_file():
+        return set(), []
+    try:
+        rows = load_dataset_registry(registry_path)
+    except (OSError, ValueError):
+        return set(), ["dataset registry exemption validation failed"]
+
+    verified: set[str] = set()
+    errors: list[str] = []
+    for row in rows:
+        if row["stage_action"] not in {"copy", "existing"}:
+            continue
+        relative = row["public_path"]
+        try:
+            safe = safe_relative_path(relative)
+            if not safe.parts:
+                raise ValueError("empty public path")
+            assert_public_path(Path(relative))
+        except ValueError:
+            errors.append("dataset registry exemption validation failed")
+            continue
+        declared = row["sha256"]
+        if not _SHA256_RE.fullmatch(declared):
+            errors.append("dataset registry carrier hash mismatch")
+            continue
+        deposited = root.joinpath(*safe.parts)
+        if not deposited.is_file():
+            errors.append("dataset registry carrier missing")
+            continue
+        try:
+            actual = _sha256(deposited)
+        except OSError:
+            errors.append("dataset registry carrier missing")
+            continue
+        if actual != declared:
+            errors.append("dataset registry carrier hash mismatch")
+            continue
+        verified.add(safe.as_posix())
+    return verified, sorted(set(errors))
+
+
 def _relative(root: Path, path: Path) -> str:
     return path.resolve().relative_to(root.resolve()).as_posix()
 
@@ -300,7 +345,9 @@ def _schema_fields(text: str, suffix: str) -> set[str]:
     return {normalize_field(field) for field in rows[0] if normalize_field(field)}
 
 
-def _scan_disclosures(root: Path) -> dict[str, Any]:
+def _scan_disclosures(
+    root: Path, exempt_registry_carriers: Iterable[str] = ()
+) -> dict[str, Any]:
     absolute: list[str] = []
     credentials: list[str] = []
     restricted: list[str] = []
@@ -313,6 +360,7 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
     # Report the exact directory-name patterns that are intentionally omitted;
     # payload-like directories are not in this set and are always scanned.
     exclusions = sorted(_SKIP_PARTS)
+    registry_exemptions = set(exempt_registry_carriers)
 
     def inspect(
         label: str,
@@ -321,8 +369,9 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
         payload_schema: bool = False,
         restricted_text: bool = False,
         suffix: str = "",
+        exempt_registry_carrier: bool = False,
     ) -> None:
-        if "\r" in text:
+        if "\r" in text and not exempt_registry_carrier:
             lf_hits.append(label)
         for pattern in (_DRIVE_PATH_RE, _UNC_PATH_RE, _POSIX_HOME_RE):
             if pattern.search(text):
@@ -361,18 +410,19 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
                 format_hits.append(label)
                 return
             forbidden = sorted(fieldnames & _RESTRICTED_SCHEMA_FIELDS)
-            if forbidden:
+            if forbidden and not exempt_registry_carrier:
                 restricted.append(f"{label}:schema={','.join(forbidden)}")
-            if _RESTRICTED_NAME_RE.search(text):
+            if _RESTRICTED_NAME_RE.search(text) and not exempt_registry_carrier:
                 restricted.append(label)
-        elif restricted_text and _RESTRICTED_NAME_RE.search(text):
+        elif restricted_text and _RESTRICTED_NAME_RE.search(text) and not exempt_registry_carrier:
             restricted.append(label)
 
     for path in _iter_payload_files(root):
         relative = _relative(root, path)
         if path.stat().st_size >= 100 * 1024 * 1024:
             size_hits.append(relative)
-        if _RESTRICTED_NAME_RE.search(path.name):
+        exempt_registry_carrier = relative in registry_exemptions
+        if _RESTRICTED_NAME_RE.search(path.name) and not exempt_registry_carrier:
             restricted.append(f"{relative}:filename")
         text = _text_payload(path)
         if text is None:
@@ -386,6 +436,7 @@ def _scan_disclosures(root: Path) -> dict[str, Any]:
             payload_schema=suffix in {".csv", ".tsv", ".json"},
             restricted_text=path.name in _TEXT_NAMES,
             suffix=suffix,
+            exempt_registry_carrier=exempt_registry_carrier,
         )
 
     for path in _iter_payload_files(root):
@@ -898,7 +949,9 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         errors.extend(required_errors)
     except (OSError, ValueError) as exc:
         errors.append(f"metadata audit failed: {exc}")
-    disclosure = _scan_disclosures(root)
+    registry_exemptions, registry_errors = _verified_registry_carriers(root)
+    errors.extend(registry_errors)
+    disclosure = _scan_disclosures(root, registry_exemptions)
     for key, values in disclosure.items():
         report[key] = values
     for key in (

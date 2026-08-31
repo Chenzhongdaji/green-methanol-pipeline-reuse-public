@@ -54,6 +54,68 @@ def test_repository_passes_public_release_gates():
     assert report["restricted_payload_hits"] == []
 
 
+def test_registered_copy_carrier_allows_byte_exact_crlf_and_restricted_schema(tmp_path: Path):
+    root = _copy_release(tmp_path, "registered_carrier")
+    relative = "data/raw/pipeline/pipeline_network_segments_v01.csv"
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "PASS"
+    assert relative not in report["lf_hits"]
+    assert not any(relative in hit for hit in report["restricted_payload_hits"])
+
+
+def test_unregistered_restricted_name_and_schema_still_fail(tmp_path: Path):
+    root = _copy_release(tmp_path, "unregistered_carrier")
+    relative = "data/unregistered/pipeline_network_segments_v01.csv"
+    path = root / Path(*relative.split("/"))
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"from_lon,from_lat,to_lon,to_lat\r\n0,0,1,1\r\n")
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert any(relative in hit for hit in report["restricted_payload_hits"])
+
+
+def test_registered_carrier_hash_mismatch_is_not_exempt(tmp_path: Path):
+    root = _copy_release(tmp_path, "mismatched_carrier")
+    relative = "data/raw/pipeline/pipeline_network_segments_v01.csv"
+    path = root / Path(*relative.split("/"))
+    path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert any(relative in hit for hit in report["restricted_payload_hits"])
+    assert "dataset registry carrier hash mismatch" in report["errors"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "report_key"),
+    [
+        ("token=gh" + "p_" + "A" * 36, "credential_hits"),
+        ("path=C:" + "/" + "Users/author/private.txt", "absolute_path_hits"),
+    ],
+)
+def test_registered_carrier_still_scans_sensitive_disclosures(
+    tmp_path: Path, payload: str, report_key: str
+):
+    root = _copy_release(tmp_path, report_key)
+    relative = "data/raw/pipeline/pipeline_network_segments_v01.csv"
+    path = root / Path(*relative.split("/"))
+    path.write_text(
+        path.read_text(encoding="utf-8") + "\n" + payload + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert relative in report[report_key]
+
+
 def test_release_has_separate_data_and_code_statements():
     assert (ROOT / "DATA_AVAILABILITY.md").is_file()
     assert (ROOT / "CODE_AVAILABILITY.md").is_file()

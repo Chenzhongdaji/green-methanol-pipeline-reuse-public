@@ -296,16 +296,30 @@ def test_registry_headers_are_exact_and_utf8_lf():
         assert raw.splitlines()[0].decode("utf-8") == ",".join(fields)
 
 
-def test_registry_loads_and_validates_seed_counts():
+def test_registry_loads_and_validates_current_counts():
     datasets = inventory_module.load_dataset_registry(ROOT / "data" / "dataset_registry.csv")
     outputs = inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
 
-    assert len(datasets) == 5
-    assert all(row["stage_action"] == "existing" for row in datasets)
-    assert all(row["source_relative_path"] == "" for row in datasets)
+    assert len(datasets) == 39
+    assert sum(row["stage_action"] == "copy" for row in datasets) == 33
+    assert sum(row["stage_action"] == "existing" for row in datasets) == 5
+    assert sum(row["stage_action"] == "acquire" for row in datasets) == 1
+    seed_ids = {
+        "figure-01-source",
+        "figure-02-aggregate-source",
+        "figure-03-source",
+        "figure-04-source",
+        "figure-05-source",
+    }
+    assert {row["dataset_id"] for row in datasets if row["stage_action"] == "existing"} == seed_ids
+    assert all(
+        row["source_relative_path"] == ""
+        for row in datasets
+        if row["stage_action"] in {"existing", "acquire"}
+    )
     assert len(outputs) == 6
     assert inventory_module.validate_release_registry(ROOT) == {
-        "datasets": 5,
+        "datasets": 39,
         "outputs": 6,
         "referenced_datasets": 5,
     }
@@ -451,7 +465,7 @@ def test_release_registry_rejects_incomplete_figure2e_contract(
 
 def test_output_commands_use_declared_inputs_and_exact_artifact_targets():
     assert inventory_module.validate_release_registry(ROOT) == {
-        "datasets": 5,
+        "datasets": 39,
         "outputs": 6,
         "referenced_datasets": 5,
     }
