@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Patch
 
+from .safety import resolve_public_path
+
 
 FIGURE_DPI = 150
 FIGURE_FONT = "Microsoft YaHei"
@@ -29,6 +31,14 @@ FIGURE_ORANGE = "#D97706"
 FIGURE_GREEN = "#15803D"
 
 _CSV_ENCODING = "utf-8-sig"
+
+
+def _resolve_standalone_path(path: Path) -> Path:
+    """Resolve a direct figure path immediately before filesystem access."""
+
+    path = Path(path)
+    root = Path.cwd() if not path.is_absolute() else path.parent
+    return resolve_public_path(root, path)
 
 
 def _configure_plot() -> None:
@@ -51,7 +61,7 @@ def _configure_plot() -> None:
 
 
 def _read_rows(path: Path, required_columns: Iterable[str]) -> list[dict[str, str]]:
-    path = Path(path)
+    path = _resolve_standalone_path(Path(path))
     if not path.is_file():
         raise ValueError(f"input carrier does not exist: {path}")
     try:
@@ -98,6 +108,7 @@ def _coordinate_pair(x_value: str, y_value: str, *, row_index: int) -> tuple[flo
 
 
 def _sha256(path: Path) -> str:
+    path = _resolve_standalone_path(Path(path))
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
@@ -106,7 +117,7 @@ def _sha256(path: Path) -> str:
 
 
 def _save_figure(fig: plt.Figure, output: Path, *, pdf: bool = False) -> None:
-    output = Path(output)
+    output = _resolve_standalone_path(Path(output))
     output.parent.mkdir(parents=True, exist_ok=True)
     metadata = {
         "Creator": "green_methanol_release.figures",
@@ -545,7 +556,7 @@ def build_figure_02(
 def _read_exact_rows(path: Path, required_columns: Iterable[str]) -> list[dict[str, str]]:
     """Read a public carrier with an exact header and non-empty record set."""
 
-    path = Path(path)
+    path = _resolve_standalone_path(Path(path))
     rows = _read_rows(path, required_columns)
     with path.open("r", encoding=_CSV_ENCODING, newline="") as handle:
         reader = csv.DictReader(handle, strict=True)

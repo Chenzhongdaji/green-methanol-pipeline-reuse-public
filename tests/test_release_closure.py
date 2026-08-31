@@ -17,6 +17,23 @@ from green_methanol_release.reproduce import run_reproduction
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PUBLIC_BOUNDARY_FILES = (
+    "MANUSCRIPT_SCOPE.md",
+    "figures/panel_map.csv",
+    "data/dictionaries/panel_map.md",
+    "data/author_derived/figure2_aggregate_source.csv",
+    "data/dictionaries/figure2_aggregate_source.md",
+    "data/dictionaries/figure_02.md",
+    "data/dictionaries/output_registry.md",
+)
+LEGACY_BOUNDARY_MARKERS = (
+    "provisional candidate",
+    "offline candidate",
+    "restricted-map-not-released",
+    "unavailable",
+    "withheld",
+    "interim",
+)
 
 
 def _tracked_payload_paths(root: Path) -> set[str]:
@@ -71,6 +88,21 @@ def test_manifest_attributes_are_bound_to_dataset_registry():
         assert entry["purpose"] == row["role"]
         assert entry["licence_scope"] == row["license"]
         assert entry["data_class"] == row["origin"]
+
+    with (ROOT / "data" / "output_registry.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        outputs = list(csv.DictReader(handle))
+    for row in outputs:
+        artifacts = [row["expected_artifact"]]
+        artifacts.extend(
+            item for item in row["secondary_artifacts"].split(";") if item
+        )
+        for artifact in artifacts:
+            entry = manifest[artifact]
+            assert entry["purpose"] == f"manuscript output: {row['manuscript_location']}"
+            assert entry["licence_scope"] == "generated artifact; see registered inputs"
+            assert entry["data_class"] == "manuscript output"
 
 
 def test_manifest_regeneration_is_byte_deterministic(tmp_path: Path):
@@ -152,6 +184,10 @@ def test_full_report_has_public_workflow_keys_and_figure2e_outputs(tmp_path: Pat
         "figure-05",
     }
     assert report["artifacts"]["figure-02e"]["path"] == "figures/figure-02e.png"
+    assert report["artifacts"]["figure-02e"]["secondary_artifacts"][0]["path"] == (
+        "figures/figure-02e.pdf"
+    )
+    assert len(report["artifacts"]["figure-02e"]["secondary_artifacts"][0]["sha256"]) == 64
     assert (ROOT / "figures" / "figure-02e.png").is_file()
     assert (ROOT / "figures" / "figure-02e.pdf").is_file()
     assert "NOT_REPRODUCED" not in json.dumps(report, ensure_ascii=False)
@@ -182,6 +218,48 @@ def test_public_metadata_binds_registry_and_full_reproduction_contract():
     assert "figure-02e" in output_registry
     assert "data/figure_source/figure-02.csv" in output_registry
     assert "figure-02-source-real" in dataset_registry
+
+
+def test_public_boundary_files_use_the_current_figure2e_contract():
+    text = "\n".join(
+        (ROOT / relative).read_text(encoding="utf-8")
+        for relative in PUBLIC_BOUNDARY_FILES
+    ).casefold()
+
+    assert not any(marker in text for marker in LEGACY_BOUNDARY_MARKERS)
+    panel_map = (ROOT / "figures" / "panel_map.csv").read_text(encoding="utf-8")
+    assert "Figure 2,e,aggregate-only,data/figure_source/figure-02.csv" in panel_map
+    assert "figure-02-source-real" in (
+        ROOT / "data" / "dictionaries" / "figure2_aggregate_source.md"
+    ).read_text(encoding="utf-8")
+    assert "figures/figure-02e.pdf" in (
+        ROOT / "data" / "dictionaries" / "output_registry.md"
+    ).read_text(encoding="utf-8")
+
+
+def test_audit_rejects_legacy_boundary_wording_in_each_public_contract_file(
+    tmp_path: Path,
+):
+    for index, relative in enumerate(PUBLIC_BOUNDARY_FILES):
+        release = tmp_path / f"release-{index}"
+        shutil.copytree(
+            ROOT,
+            release,
+            ignore=shutil.ignore_patterns(
+                ".git", ".venv", "__pycache__", ".pytest_cache", ".superpowers"
+            ),
+        )
+        path = release / Path(*relative.split("/"))
+        path.write_text(
+            path.read_text(encoding="utf-8") + "\ninterim unavailable wording\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+        report = audit_release(release, require_manifest=False)
+
+        assert report["status"] == "FAIL"
+        assert any(relative in error and "legacy" in error for error in report["errors"])
 
 
 def test_audit_passes_public_release_gates_without_absolute_paths_or_disabled_status():

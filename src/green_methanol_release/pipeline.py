@@ -18,7 +18,7 @@ from .inventory import (
     load_output_registry,
     validate_release_registry,
 )
-from .safety import assert_public_path
+from .safety import assert_public_path, resolve_public_path
 
 
 _REGISTRY_PATHS = (
@@ -35,6 +35,7 @@ _POSIX_ABSOLUTE = re.compile(r"(?<![a-z0-9_])/(?:[^\s,;]+)")
 
 
 def _sha256(path: Path) -> str:
+    path = resolve_public_path(Path(path).parent, Path(path))
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -81,7 +82,8 @@ def _prepare_boundary(root: Path, output_root: Path) -> tuple[Path, Path]:
     assert_public_path(Path(root))
     assert_public_path(Path(output_root))
     assert_public_path(Path(output_root) / "full_reproduction.json")
-    resolved_root = Path(root).resolve()
+    resolved_root = Path(root).resolve(strict=False)
+    resolved_root = resolve_public_path(resolved_root, resolved_root)
     resolved_output = Path(output_root).resolve()
     assert_public_path(resolved_root)
     assert_public_path(resolved_output)
@@ -166,6 +168,25 @@ def _validate_command(
             f"does not match expected artifact {expected_relative!r}"
         )
 
+    secondary_artifacts: list[dict[str, Any]] = []
+    secondary_paths: set[str] = set()
+    for secondary_value in row["secondary_artifacts"].split(";"):
+        if not secondary_value:
+            continue
+        secondary_relative, secondary_path = _safe_repo_path(
+            root,
+            secondary_value,
+            f"output {output_id!r} secondary artifact",
+        )
+        if secondary_relative in {expected_relative, *secondary_paths}:
+            raise ValueError(
+                f"output {output_id!r} repeats artifact {secondary_relative!r}"
+            )
+        secondary_paths.add(secondary_relative)
+        secondary_artifacts.append(
+            {"relative": secondary_relative, "path": secondary_path}
+        )
+
     input_values, input_value_indices = _option_values(tokens, "--input", output_id)
     declared_ids = [item for item in row["input_dataset_ids"].split(";") if item]
     declared_inputs = [dataset_paths[dataset_id] for dataset_id in declared_ids]
@@ -202,11 +223,13 @@ def _validate_command(
         "script_path": script_path,
         "artifact_relative": expected_relative,
         "artifact_path": expected_path,
+        "secondary_artifacts": secondary_artifacts,
         "log_relative": _log_relative_path(output_id),
     }
 
 
 def _write_log(path: Path, payload: dict[str, Any], root: Path, output_root: Path) -> None:
+    assert_public_path(path)
     sanitized = {
         key: _redact_paths(value, root, output_root) if isinstance(value, str) else value
         for key, value in payload.items()
@@ -219,7 +242,9 @@ def _write_log(path: Path, payload: dict[str, Any], root: Path, output_root: Pat
 
 
 def _write_report(output_root: Path, report: dict[str, Any]) -> None:
-    (output_root / "full_reproduction.json").write_text(
+    report_path = output_root / "full_reproduction.json"
+    assert_public_path(report_path)
+    report_path.write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
         newline="\n",
@@ -374,9 +399,21 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 )
                 break
 
-            artifact_path = job["artifact_path"]
-            if not artifact_path.is_file():
-                message = f"output {output_id!r} expected artifact is missing: {job['artifact_relative']}"
+            artifact_paths = [
+                (job["artifact_relative"], job["artifact_path"]),
+                *[
+                    (item["relative"], item["path"])
+                    for item in job["secondary_artifacts"]
+                ],
+            ]
+            missing_artifacts = [
+                relative for relative, path in artifact_paths if not path.is_file()
+            ]
+            if missing_artifacts:
+                message = (
+                    f"output {output_id!r} expected artifact is missing: "
+                    + ", ".join(missing_artifacts)
+                )
                 report["error"] = message
                 report["errors"] = [message]
                 _write_log(
@@ -394,10 +431,17 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 )
                 break
 
-            digest = _sha256(artifact_path)
+            primary_relative, primary_path = artifact_paths[0]
             report["artifacts"][output_id] = {
-                "path": job["artifact_relative"],
-                "sha256": digest,
+                "path": primary_relative,
+                "sha256": _sha256(primary_path),
+                "secondary_artifacts": [
+                    {
+                        "path": relative,
+                        "sha256": _sha256(path),
+                    }
+                    for relative, path in artifact_paths[1:]
+                ],
             }
             _write_log(
                 resolved_output / Path(*job["log_relative"].split("/")),

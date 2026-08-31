@@ -24,7 +24,7 @@ from typing import Any, Iterable
 from .contracts import ReleaseRoot, safe_relative_path
 from .inventory import load_dataset_registry, load_output_registry, validate_inventory
 from .reproduce import run_reproduction
-from .safety import assert_public_path, audit_tracked_paths
+from .safety import assert_public_path, audit_tracked_paths, resolve_public_path
 
 
 _MANIFEST_FIELDS = ("path", "bytes", "sha256", "purpose", "licence_scope", "data_class")
@@ -178,6 +178,23 @@ _REQUIRED_METADATA = (
     "environment/environment.md",
     ".github/workflows/ci.yml",
 )
+_PUBLIC_BOUNDARY_FILES = (
+    "MANUSCRIPT_SCOPE.md",
+    "figures/panel_map.csv",
+    "data/dictionaries/panel_map.md",
+    "data/author_derived/figure2_aggregate_source.csv",
+    "data/dictionaries/figure2_aggregate_source.md",
+    "data/dictionaries/figure_02.md",
+    "data/dictionaries/output_registry.md",
+)
+_LEGACY_BOUNDARY_MARKERS = (
+    "provisional candidate",
+    "offline candidate",
+    "restricted-map-not-released",
+    "unavailable",
+    "withheld",
+    "interim",
+)
 _ACQUIRE_METADATA_ROLE = "map acquisition metadata carrier"
 _ACQUIRE_METADATA_PROCESSING = "metadata-only acquisition record"
 _ACQUIRE_METADATA_LICENSE = "third-party/not-relicensed"
@@ -185,7 +202,16 @@ _ACQUIRE_METADATA_FIELDS = ("review_number", "publisher", "source_url", "accesse
 _ACQUIRE_METADATA_FORBIDDEN_KEYWORDS = ("payload", "blob", "geometry")
 
 
+def _resolve_standalone_path(path: Path) -> Path:
+    """Resolve a direct file argument without changing relative-path meaning."""
+
+    path = Path(path)
+    root = Path.cwd() if not path.is_absolute() else path.parent
+    return resolve_public_path(root, path)
+
+
 def _sha256(path: Path) -> str:
+    path = _resolve_standalone_path(Path(path))
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -207,6 +233,7 @@ def _contains_acquire_metadata_payload_fields(value: object) -> bool:
 
 
 def _is_valid_acquire_metadata_payload(path: Path) -> bool:
+    path = _resolve_standalone_path(Path(path))
     try:
         text = path.read_bytes().decode("utf-8")
         metadata = json.loads(text)
@@ -234,7 +261,10 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
     file merely because it happens to have a matching hash.
     """
 
-    registry_path = root / "data" / "dataset_registry.csv"
+    try:
+        registry_path = _resolve(root, "data/dataset_registry.csv")
+    except ValueError:
+        return set(), ["dataset registry exemption validation failed"]
     if not registry_path.is_file():
         return set(), []
     try:
@@ -303,13 +333,28 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
 
 
 def _relative(root: Path, path: Path) -> str:
-    return path.resolve().relative_to(root.resolve()).as_posix()
+    resolved_root = Path(root).resolve(strict=False)
+    resolved_path = resolve_public_path(resolved_root, path)
+    return resolved_path.relative_to(resolved_root).as_posix()
 
 
 def _is_skipped(path: Path, root: Path) -> bool:
-    relative = _relative(root, path)
+    resolved_root = Path(root).resolve(strict=False)
+    try:
+        lexical = Path(path).relative_to(resolved_root).as_posix()
+    except ValueError:
+        lexical = ""
+    lexical_parts = tuple(part for part in lexical.split("/") if part)
+    if any(
+        lexical == part or lexical.startswith(part + "/") or part in lexical_parts
+        for part in _SKIP_PARTS
+    ):
+        return True
+    resolved = resolve_public_path(resolved_root, path)
+    relative = resolved.relative_to(resolved_root).as_posix()
+    relative_parts = tuple(part for part in relative.split("/") if part)
     return any(
-        relative == part or relative.startswith(part + "/") or part in path.parts
+        relative == part or relative.startswith(part + "/") or part in relative_parts
         for part in _SKIP_PARTS
     )
 
@@ -317,8 +362,13 @@ def _is_skipped(path: Path, root: Path) -> bool:
 def _iter_payload_files(root: Path) -> Iterable[Path]:
     # ``Path.rglob`` cannot prune a directory before descending into it.  Walk
     # top-down so the excluded directory is never traversed or opened.
+    root = Path(root).resolve(strict=False)
+    root = resolve_public_path(root, root)
     payload_files: list[Path] = []
-    for directory, dirnames, filenames in os.walk(root, topdown=True):
+    def onerror(exc: OSError) -> None:
+        raise RuntimeError(f"payload walk failed: {exc}") from exc
+
+    for directory, dirnames, filenames in os.walk(root, topdown=True, onerror=onerror):
         directory_path = Path(directory)
         dirnames[:] = sorted(
             name
@@ -328,7 +378,7 @@ def _iter_payload_files(root: Path) -> Iterable[Path]:
         for filename in sorted(filenames):
             path = directory_path / filename
             if not _is_skipped(path, root):
-                payload_files.append(path)
+                payload_files.append(resolve_public_path(root, path))
     yield from sorted(payload_files, key=lambda item: item.as_posix())
 
 
@@ -354,11 +404,12 @@ def _git_tracked_paths(root: Path) -> list[str]:
 def _text_payload(path: Path) -> str | None:
     """Decode a text-like payload; return None for opaque binary files."""
 
+    path = _resolve_standalone_path(Path(path))
     known_text = path.suffix.casefold() in _TEXT_SUFFIXES or path.name in _TEXT_NAMES
     try:
         payload = path.read_bytes()
-    except OSError:
-        return None
+    except OSError as exc:
+        raise ValueError(f"cannot read payload: {path}") from exc
     if not known_text and (len(payload) > _TEXT_SNIFF_LIMIT or b"\x00" in payload):
         return None
     try:
@@ -370,6 +421,7 @@ def _text_payload(path: Path) -> str | None:
 def _docx_xml_payload(path: Path) -> Iterable[tuple[str, str]]:
     if path.suffix.casefold() != ".docx":
         return
+    path = _resolve_standalone_path(Path(path))
     try:
         with zipfile.ZipFile(path) as package:
             for name in sorted(package.namelist()):
@@ -378,8 +430,8 @@ def _docx_xml_payload(path: Path) -> Iterable[tuple[str, str]]:
                         yield f"{path.name}!{name}", package.read(name).decode("utf-8")
                     except (KeyError, UnicodeDecodeError, zipfile.BadZipFile):
                         continue
-    except (OSError, zipfile.BadZipFile):
-        return
+    except (OSError, zipfile.BadZipFile) as exc:
+        raise ValueError(f"cannot read DOCX payload: {path}") from exc
 
 
 def _schema_fields(text: str, suffix: str) -> set[str]:
@@ -487,6 +539,7 @@ def _scan_disclosures(
             restricted.append(label)
 
     for path in _iter_payload_files(root):
+        path = resolve_public_path(root, path)
         relative = _relative(root, path)
         if path.stat().st_size >= 100 * 1024 * 1024:
             size_hits.append(relative)
@@ -626,6 +679,11 @@ def _validate_metadata(root: Path) -> list[str]:
     for marker in obsolete_markers:
         if marker in metadata_text.casefold():
             errors.append(f"release metadata contains obsolete disabled wording: {marker}")
+    for relative in _PUBLIC_BOUNDARY_FILES:
+        text = _read_text(root, relative).casefold()
+        for marker in _LEGACY_BOUNDARY_MARKERS:
+            if marker in text:
+                errors.append(f"{relative} contains legacy boundary wording: {marker}")
     obsolete_repository = "7_27" + ".git"
     obsolete_remote_suffix = "green-methanol-pipeline-" + "reuse`"
     if obsolete_repository in metadata_text or obsolete_remote_suffix in metadata_text:
@@ -853,6 +911,7 @@ def _payload_files_for_manifest(root: Path) -> set[str]:
 
 def _read_manifest(path: Path) -> tuple[list[dict[str, str]], list[str]]:
     errors: list[str] = []
+    path = _resolve_standalone_path(Path(path))
     try:
         payload = path.read_bytes()
     except OSError as exc:
@@ -906,6 +965,7 @@ def _read_manifest(path: Path) -> tuple[list[dict[str, str]], list[str]]:
 
 def _read_checksums(path: Path) -> tuple[dict[str, str], list[str]]:
     errors: list[str] = []
+    path = _resolve_standalone_path(Path(path))
     try:
         payload = path.read_bytes()
     except OSError as exc:
@@ -942,7 +1002,10 @@ def _read_checksums(path: Path) -> tuple[dict[str, str], list[str]]:
 def _check_manifest_registry_alignment(root: Path) -> list[str]:
     """Ensure manifest classifications are derived from current registries."""
 
-    manifest_path = root / "FILE_MANIFEST.csv"
+    try:
+        manifest_path = _resolve(root, "FILE_MANIFEST.csv")
+    except (OSError, ValueError):
+        return ["manifest registry alignment cannot resolve FILE_MANIFEST.csv"]
     if not manifest_path.is_file():
         return ["manifest registry alignment cannot run without FILE_MANIFEST.csv"]
     rows, manifest_errors = _read_manifest(manifest_path)
@@ -969,29 +1032,48 @@ def _check_manifest_registry_alignment(root: Path) -> list[str]:
             errors.append(f"manifest registry attributes differ for dataset {row['dataset_id']!r}")
 
     for row in output_rows:
-        relative = row["expected_artifact"]
-        manifest_row = manifest_by_path.get(relative)
         expected = (
             f"manuscript output: {row['manuscript_location']}",
             "generated artifact; see registered inputs",
             "manuscript output",
         )
-        actual = (
-            (manifest_row["purpose"], manifest_row["licence_scope"], manifest_row["data_class"])
-            if manifest_row
-            else None
+        artifacts = [row["expected_artifact"]]
+        artifacts.extend(
+            item for item in row["secondary_artifacts"].split(";") if item
         )
-        if actual != expected:
-            errors.append(f"manifest registry attributes differ for output {row['output_id']!r}")
+        for relative in artifacts:
+            manifest_row = manifest_by_path.get(relative)
+            actual = (
+                (manifest_row["purpose"], manifest_row["licence_scope"], manifest_row["data_class"])
+                if manifest_row
+                else None
+            )
+            if actual != expected:
+                errors.append(f"manifest registry attributes differ for output {row['output_id']!r}")
     return errors
 
 
 def verify_manifest_closure(root: Path) -> dict[str, object]:
     """Verify one-to-one manifest/checksum closure over the release payload."""
 
-    root = Path(root).resolve()
-    manifest_path = root / "FILE_MANIFEST.csv"
-    checksum_path = root / "CHECKSUMS.sha256"
+    root = Path(root).resolve(strict=False)
+    try:
+        root = resolve_public_path(root, root)
+        manifest_path = resolve_public_path(root, root / "FILE_MANIFEST.csv")
+        checksum_path = resolve_public_path(root, root / "CHECKSUMS.sha256")
+    except (OSError, ValueError) as exc:
+        return {
+            "manifest_present": False,
+            "checksums_present": False,
+            "orphan_files": [],
+            "missing_files": [],
+            "hash_mismatches": [],
+            "checksum_orphan_files": [],
+            "checksum_missing_files": [],
+            "checksum_hash_mismatches": [],
+            "errors": [f"unsafe manifest boundary: {exc}"],
+            "status": "FAIL",
+        }
     result: dict[str, object] = {
         "manifest_present": manifest_path.is_file(),
         "checksums_present": checksum_path.is_file(),
@@ -1016,26 +1098,42 @@ def verify_manifest_closure(root: Path) -> dict[str, object]:
     manifest_paths = [row["path"] for row in rows]
     if len(manifest_paths) != len(set(manifest_paths)):
         errors.append("manifest paths must be unique")
-    payload_paths = _payload_files_for_manifest(root)
+    try:
+        payload_paths = _payload_files_for_manifest(root)
+    except (OSError, RuntimeError, ValueError) as exc:
+        errors.append(f"payload walk failed: {exc}")
+        result["errors"] = errors
+        result["status"] = "FAIL"
+        return result
     manifest_set = set(manifest_paths)
     result["orphan_files"] = sorted(manifest_set - payload_paths)
     result["missing_files"] = sorted(payload_paths - manifest_set)
     for row in rows:
         relative = row["path"]
-        path = root / Path(*PurePosixPath(relative).parts)
-        if not path.is_file():
-            continue
-        if str(path.stat().st_size) != row["bytes"] or _sha256(path) != row["sha256"]:
-            result["hash_mismatches"].append(relative)
+        try:
+            path = resolve_public_path(
+                root, root / Path(*PurePosixPath(relative).parts)
+            )
+            if not path.is_file():
+                continue
+            if str(path.stat().st_size) != row["bytes"] or _sha256(path) != row["sha256"]:
+                result["hash_mismatches"].append(relative)
+        except (OSError, ValueError) as exc:
+            errors.append(f"unsafe manifest target {relative!r}: {exc}")
 
     expected_checksum_paths = payload_paths | {"FILE_MANIFEST.csv"}
     checksum_set = set(checksums)
     result["checksum_orphan_files"] = sorted(checksum_set - expected_checksum_paths)
     result["checksum_missing_files"] = sorted(expected_checksum_paths - checksum_set)
     for relative, expected in checksums.items():
-        path = root / Path(*PurePosixPath(relative).parts)
-        if path.is_file() and _sha256(path) != expected:
-            result["checksum_hash_mismatches"].append(relative)
+        try:
+            path = resolve_public_path(
+                root, root / Path(*PurePosixPath(relative).parts)
+            )
+            if path.is_file() and _sha256(path) != expected:
+                result["checksum_hash_mismatches"].append(relative)
+        except (OSError, ValueError) as exc:
+            errors.append(f"unsafe checksum target {relative!r}: {exc}")
     errors.extend(
         ["manifest closure has orphan or missing files"]
         if result["orphan_files"] or result["missing_files"]
@@ -1054,7 +1152,7 @@ def verify_manifest_closure(root: Path) -> dict[str, object]:
 def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object]:
     """Run all public-release gates and return a JSON-compatible report."""
 
-    root = Path(root).resolve()
+    raw_root = Path(root)
     report: dict[str, Any] = {
         "status": "PASS",
         "public_release": "BLOCKED_MANIFEST" if not require_manifest else "FAIL",
@@ -1075,8 +1173,10 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
     }
     errors: list[str] = []
     try:
+        assert_public_path(raw_root)
+        root = resolve_public_path(raw_root, Path("."))
         assert_public_path(root)
-    except ValueError as exc:
+    except (OSError, ValueError) as exc:
         report["status"] = "FAIL"
         report["public_release"] = "FAIL" if require_manifest else "BLOCKED_MANIFEST"
         report["pre_manifest"] = "FAIL"
@@ -1100,7 +1200,22 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         errors.append(f"metadata audit failed: {exc}")
     registry_exemptions, registry_errors = _verified_registry_carriers(root)
     errors.extend(registry_errors)
-    disclosure = _scan_disclosures(root, registry_exemptions)
+    try:
+        disclosure = _scan_disclosures(root, registry_exemptions)
+    except (OSError, RuntimeError, ValueError) as exc:
+        disclosure = {
+            "absolute_path_hits": [],
+            "restricted_payload_hits": [],
+            "credential_hits": [],
+            "zero_hash_hits": [],
+            "doi_hits": [],
+            "format_hits": [],
+            "lf_hits": [],
+            "utf8_hits": [],
+            "size_hits": [],
+            "scan_exclusions": sorted(_SKIP_PARTS),
+        }
+        errors.append(f"disclosure audit failed: {exc}")
     for key, values in disclosure.items():
         report[key] = values
     for key in (

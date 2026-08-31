@@ -21,7 +21,7 @@ from typing import Any
 from .contracts import ReleaseRoot, validate_status
 from .inventory import PUBLIC_SOURCE_FIELDS, validate_inventory
 from .pipeline import run_full
-from .safety import assert_public_path
+from .safety import assert_public_path, resolve_public_path
 
 
 _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -76,7 +76,23 @@ _ACCOUNT_FIELDS = (
     "account_status",
     "scope_note",
 )
+_FIGURE_02_SOURCE_FIELDS = (
+    "panel",
+    "scenario",
+    "year",
+    "case",
+    "metric",
+    "value",
+    "unit",
+    "denominator",
+    "source_type",
+    "style",
+    "x",
+    "y",
+    "note",
+)
 _FIGURE_SPECS: dict[str, tuple[str, ...]] = {
+    "data/figure_source/figure-02.csv": _FIGURE_02_SOURCE_FIELDS,
     "data/author_derived/figure2_aggregate_source.csv": (
         "panel",
         "record_type",
@@ -136,6 +152,7 @@ _DICTIONARY_PATHS = (
     "data/dictionaries/public_sources.md",
     "data/dictionaries/dataset_registry.md",
     "data/dictionaries/output_registry.md",
+    "data/dictionaries/figure_02.md",
     "data/dictionaries/figure_01.md",
     "data/dictionaries/figure2_aggregate_source.md",
     "data/dictionaries/figure_03.md",
@@ -168,7 +185,9 @@ _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
         "generation_command",
         "input_dataset_ids",
         "expected_artifact",
+        "secondary_artifacts",
     ),
+    "data/dictionaries/figure_02.md": _FIGURE_SPECS["data/figure_source/figure-02.csv"],
     "data/dictionaries/figure_01.md": _FIGURE_SPECS["figures/source_data/figure-01.csv"],
     "data/dictionaries/figure2_aggregate_source.md": _FIGURE_SPECS["data/author_derived/figure2_aggregate_source.csv"],
     "data/dictionaries/figure_03.md": _FIGURE_SPECS["figures/source_data/figure-03.csv"],
@@ -217,7 +236,16 @@ _FORBIDDEN_COLUMNS = {
 }
 
 
+def _resolve_standalone_path(path: Path) -> Path:
+    """Resolve a direct file argument without changing relative-path meaning."""
+
+    path = Path(path)
+    root = Path.cwd() if not path.is_absolute() else path.parent
+    return resolve_public_path(root, path)
+
+
 def _sha256(path: Path) -> str:
+    path = _resolve_standalone_path(Path(path))
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -228,6 +256,7 @@ def _sha256(path: Path) -> str:
 def _load_csv(path: Path, fields: tuple[str, ...], label: str) -> list[dict[str, str]]:
     """Load a UTF-8 LF CSV with an exact header and no malformed rows."""
 
+    path = _resolve_standalone_path(Path(path))
     payload = path.read_bytes()
     if b"\r" in payload:
         raise ValueError(f"{label} must use LF line endings: {path.as_posix()}")
@@ -257,6 +286,7 @@ def _load_csv(path: Path, fields: tuple[str, ...], label: str) -> list[dict[str,
 def _validate_utf8_lf(path: Path, label: str) -> None:
     """Reject CRLF and invalid UTF-8 before the Task 2 inventory loader runs."""
 
+    path = _resolve_standalone_path(Path(path))
     payload = path.read_bytes()
     if b"\r" in payload:
         raise ValueError(f"{label} must use LF line endings: {path.as_posix()}")
@@ -338,6 +368,7 @@ def _validate_panel_map(root: Path) -> list[dict[str, str]]:
 
 
 def _validate_dictionary(path: Path, fields: tuple[str, ...], label: str) -> None:
+    path = _resolve_standalone_path(Path(path))
     payload = path.read_bytes()
     if b"\r" in payload:
         raise ValueError(f"dictionary must use LF line endings: {label}")
@@ -382,6 +413,7 @@ def _validate_dictionary(path: Path, fields: tuple[str, ...], label: str) -> Non
 def _validate_registry_dictionary(path: Path, fields: tuple[str, ...], label: str) -> None:
     """Validate the compact three-column dictionaries for the registries."""
 
+    path = _resolve_standalone_path(Path(path))
     payload = path.read_bytes()
     if b"\r" in payload:
         raise ValueError(f"dictionary must use LF line endings: {label}")
@@ -519,6 +551,8 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
             assert_public_path(output_path)
             resolved_root = Path(root).resolve()
             resolved_output = output_path.resolve()
+            assert_public_path(resolved_root)
+            assert_public_path(resolved_output)
             if resolved_output == resolved_root or resolved_root in resolved_output.parents:
                 return report
             output_path = resolved_output
@@ -532,8 +566,13 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
             return report
         return report
 
-    root = Path(root).resolve()
-    output = Path(output).resolve()
+    raw_root = Path(root)
+    raw_output = Path(output)
+    assert_public_path(raw_root)
+    assert_public_path(raw_output)
+    root = resolve_public_path(raw_root, Path("."))
+    output = raw_output.resolve(strict=False)
+    assert_public_path(output)
     if output == root or root in output.parents:
         raise ValueError("reproduction report must be outside the immutable repository")
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -614,7 +653,10 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
         errors.append(str(exc))
         report["status"] = "FAIL"
         report["errors"] = errors
-    unique_paths = sorted({path.resolve() for path in checked_paths}, key=lambda item: item.as_posix())
+    unique_paths = sorted(
+        {resolve_public_path(root, path) for path in checked_paths},
+        key=lambda item: item.as_posix(),
+    )
     for path in unique_paths:
         if path.is_file():
             report["input_hashes"][path.relative_to(root).as_posix()] = _sha256(path)

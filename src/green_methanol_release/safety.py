@@ -45,6 +45,30 @@ def assert_public_path(path: Path) -> None:
         )
 
 
+def resolve_public_path(root: Path | str, path: Path | str) -> Path:
+    """Resolve a path and re-check the denylist and repository boundary.
+
+    Lexical checks alone do not catch a public-looking symlink whose target
+    enters the excluded component.  Callers use this helper immediately
+    before opening, hashing, or stat-ing repository payloads.
+    """
+
+    raw_root = Path(root)
+    raw_path = Path(path)
+    assert_public_path(raw_root)
+    assert_public_path(raw_path)
+    resolved_root = raw_root.resolve(strict=False)
+    assert_public_path(resolved_root)
+    candidate = raw_path if raw_path.is_absolute() else resolved_root / raw_path
+    resolved = candidate.resolve(strict=False)
+    assert_public_path(resolved)
+    try:
+        resolved.relative_to(resolved_root)
+    except ValueError as exc:
+        raise ValueError(f"path escapes release root: {path}") from exc
+    return resolved
+
+
 def audit_tracked_paths(paths: Iterable[str]) -> list[str]:
     """Return sorted, normalized tracked paths entering the excluded directory.
 
@@ -61,4 +85,4 @@ def audit_tracked_paths(paths: Iterable[str]) -> list[str]:
     return sorted(forbidden)
 
 
-__all__ = ["assert_public_path", "audit_tracked_paths"]
+__all__ = ["assert_public_path", "audit_tracked_paths", "resolve_public_path"]

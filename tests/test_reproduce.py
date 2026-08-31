@@ -35,6 +35,7 @@ def _minimal_output_row(
     expected_artifact: str,
     *,
     input_path: str = "data/carrier.csv",
+    secondary_artifacts: str = "",
     command: str | None = None,
 ) -> dict[str, str]:
     return {
@@ -47,6 +48,7 @@ def _minimal_output_row(
         ),
         "input_dataset_ids": "carrier-1",
         "expected_artifact": expected_artifact,
+        "secondary_artifacts": secondary_artifacts,
     }
 
 
@@ -139,6 +141,9 @@ def test_full_real_release_executes_all_registered_outputs(tmp_path):
     assert report["executed_output_ids"] == expected_ids
     assert set(report["artifacts"]) == set(expected_ids)
     assert all(len(item["sha256"]) == 64 for item in report["artifacts"].values())
+    figure2e_secondary = report["artifacts"]["figure-02e"]["secondary_artifacts"]
+    assert figure2e_secondary[0]["path"] == "figures/figure-02e.pdf"
+    assert len(figure2e_secondary[0]["sha256"]) == 64
     report_text = (tmp_path / "full_reproduction.json").read_text(encoding="utf-8")
     log_paths = sorted((tmp_path / "logs").glob("*.log"))
     log_text = "\n".join(path.read_text(encoding="utf-8") for path in log_paths)
@@ -173,10 +178,12 @@ def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_pat
         "first": {
             "path": "figures/first.png",
             "sha256": hashlib.sha256(first.read_bytes()).hexdigest(),
+            "secondary_artifacts": [],
         },
         "second": {
             "path": "figures/second.png",
             "sha256": hashlib.sha256(second.read_bytes()).hexdigest(),
+            "secondary_artifacts": [],
         },
     }
     assert json.loads(requested.read_text(encoding="utf-8")) == report
@@ -713,6 +720,6 @@ def test_dictionary_missing_codes_match_released_blanks():
     panel_map = (ROOT / "data" / "dictionaries" / "panel_map.md").read_text(encoding="utf-8")
     registry = (ROOT / "data" / "dictionaries" / "dataset_registry.md").read_text(encoding="utf-8")
     assert "| target |" in figure_01 and "text or blank for terminal stage" in figure_01
-    assert "| source_data |" in panel_map and "POSIX path or blank" in panel_map
-    assert "| dictionary |" in panel_map and "POSIX path or blank" in panel_map
+    assert "| source_data |" in panel_map and "POSIX path" in panel_map
+    assert "| dictionary |" in panel_map and "POSIX path" in panel_map
     assert "| sha256 |" in registry and "64 lowercase hexadecimal" in registry

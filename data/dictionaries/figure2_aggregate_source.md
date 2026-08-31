@@ -1,10 +1,10 @@
-# Figure 2 partial aggregate-source dictionary
+# Figure 2 aggregate-source dictionary
 
-`data/author_derived/figure2_aggregate_source.csv` is a partial, editable
-carrier for the quantitative parts of current rev03 Figure 2. It releases
-safe aggregates for panels a--d and f--h. Panel e is represented by one
-non-quantitative status row because the underlying reference map is
-restricted; no map payload is redistributed.
+`data/author_derived/figure2_aggregate_source.csv` is the author-derived
+aggregate carrier for the quantitative parts of Figure 2 panels a--d and f--h.
+Figure 2e has its own public row-level carrier at
+`data/figure_source/figure-02.csv`, registered as `figure-02-source-real` and
+documented in `data/dictionaries/figure_02.md`.
 
 Licence class: author-generated aggregate data (CC BY 4.0).
 
@@ -30,16 +30,16 @@ demand-weighted cells and effect annotations from `cross_2x2.csv`.
 
 | Column | Definition | Unit or codes | Missing-value policy | Derivation | Related panel |
 | --- | --- | --- | --- | --- | --- |
-| panel | Current Figure 2 panel represented by the row. | a--h | blank forbidden | panel-contract assignment | Figure 2 |
-| record_type | Aggregate record family. | trajectory, scenario_account, gap_decomposition, counterfactual_relaxation, service_mode_account, scenario_point, strict_pipeline_account, strict_quantity_placement_2x2, strict_quantity_placement_effect, status | blank forbidden | controlled vocabulary assignment | Figure 2 a--h |
-| scenario | Scenario or pooled scope. | S1--S8, S1-S8, or all for the map-status row | blank forbidden | source-scope transcription | Figure 2 a--h |
-| tier | Demand tier for quantitative rows. | mid; all for the map-status row | blank forbidden | source-scope transcription | Figure 2 a--h |
-| year | Model year or status reference year. | 2025--2060 or 2060 | blank forbidden | source-scope transcription | Figure 2 a--h |
+| panel | Current Figure 2 panel represented by the row. | a--d, f--h | blank forbidden | panel-contract assignment | Figure 2 |
+| record_type | Aggregate record family. | trajectory, scenario_account, gap_decomposition, counterfactual_relaxation, service_mode_account, scenario_point, strict_pipeline_account, strict_quantity_placement_2x2, strict_quantity_placement_effect | blank forbidden | controlled vocabulary assignment | Figure 2 a--d, f--h |
+| scenario | Scenario or pooled scope. | S1--S8 or S1-S8 | blank forbidden | source-scope transcription | Figure 2 a--d, f--h |
+| tier | Demand tier for quantitative rows. | mid | blank forbidden | source-scope transcription | Figure 2 a--d, f--h |
+| year | Model year. | 2025--2060 or 2060 | blank forbidden | source-scope transcription | Figure 2 a--d, f--h |
 | metric | Quantity represented by `value`. | controlled metric vocabulary below | blank forbidden | metric selection or aggregate transform | Figure 2 a--h |
-| value | Aggregate value, or the literal `unavailable` for panel e. | percent, percentage points, 10 kt/y, or status code | blank forbidden; zero is a modelled zero | source transcription or documented transformation | Figure 2 a--h |
-| unit | Display unit for `value`. | %, percentage points, 10 kt/y, or status | blank forbidden | unit assignment | Figure 2 a--h |
-| source_boundary | Short, repository-safe provenance and interpretation boundary. | text; no machine-local path | blank forbidden | evidence-boundary annotation | Figure 2 a--h |
-| variant | Display or source variant used to disambiguate repeated metrics. | dynamic_v08, baseline, local_co_location, strict_pipeline, terminal_account, strict_quantity_placement_2x2:<cell>, strict_quantity_placement_effect, restricted_map | blank forbidden | variant assignment | Figure 2 d, f, h |
+| value | Aggregate value. | percent, percentage points, 10 kt/y, or numeric display value | blank forbidden; zero is a modelled zero | source transcription or documented transformation | Figure 2 a--d, f--h |
+| unit | Display unit for `value`. | %, percentage points, or 10 kt/y | blank forbidden | unit assignment | Figure 2 a--d, f--h |
+| source_boundary | Short, repository-safe provenance and interpretation boundary. | text; no machine-local path | blank forbidden | evidence-boundary annotation | Figure 2 a--d, f--h |
+| variant | Display or source variant used to disambiguate repeated metrics. | dynamic_v08, baseline, local_co_location, strict_pipeline, terminal_account, strict_quantity_placement_2x2:<cell>, strict_quantity_placement_effect | blank forbidden | variant assignment | Figure 2 d, f, h |
 
 ## Metric vocabulary and transforms
 
@@ -63,9 +63,10 @@ demand-weighted cells and effect annotations from `cross_2x2.csv`.
 - Panel h demand-weights each cell and effect across the eight scenario rows;
   effect values are percentage-point differences of the unserved-demand
   cells.
-- Panel e uses `metric=map_status`, `value=unavailable`,
-  `source_boundary=restricted-map-not-released`; it is a release-status
-  record, not a map substitute.
+The separate Figure 2e carrier is the source for the public analytical map
+view. The Figure 2e builder uses its real carrier rows directly and writes
+`figures/figure-02e.png` plus `figures/figure-02e.pdf`; the aggregate carrier
+above is not substituted for those rows.
 
 The carrier contains no map payload or exact network/location records. It is
 model-derived aggregate evidence, not an observation, forecast, engineering

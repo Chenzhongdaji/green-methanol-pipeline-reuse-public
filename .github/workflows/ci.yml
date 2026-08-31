@@ -25,13 +25,20 @@ jobs:
         run: python scripts/audit_release.py --pre-manifest --output "$RUNNER_TEMP/green-methanol-pre-manifest-audit.json"
       - name: Run full public test suite
         run: python -m pytest -q
-      - name: Run full public reproduction
-        run: python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full"
+      - name: Run full public reproduction twice
+        run: |
+          python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-1"
+          python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-2"
       - name: Verify reproduction leaves the committed payload unchanged
         run: git diff --exit-code
       - name: Regenerate and verify deterministic release inventories
         run: |
           python scripts/build_manifest.py
+          cp FILE_MANIFEST.csv "$RUNNER_TEMP/green-methanol-manifest-first.csv"
+          cp CHECKSUMS.sha256 "$RUNNER_TEMP/green-methanol-checksums-first.sha256"
+          python scripts/build_manifest.py
+          cmp --silent FILE_MANIFEST.csv "$RUNNER_TEMP/green-methanol-manifest-first.csv"
+          cmp --silent CHECKSUMS.sha256 "$RUNNER_TEMP/green-methanol-checksums-first.sha256"
           git diff --check
           git diff --exit-code -- FILE_MANIFEST.csv CHECKSUMS.sha256
       - name: Run final safety and manifest audit

@@ -16,7 +16,7 @@ import shlex
 from pathlib import Path
 
 from .contracts import ReleaseRoot, safe_relative_path
-from .safety import assert_public_path
+from .safety import assert_public_path, resolve_public_path
 
 
 PUBLIC_SOURCE_FIELDS = (
@@ -67,6 +67,7 @@ OUTPUT_REGISTRY_FIELDS = (
     "generation_command",
     "input_dataset_ids",
     "expected_artifact",
+    "secondary_artifacts",
 )
 
 _DATASET_REQUIRED_FIELDS = tuple(
@@ -79,7 +80,9 @@ _DATASET_REQUIRED_FIELDS = tuple(
         "source_relative_path",
     }
 )
-_OUTPUT_REQUIRED_FIELDS = OUTPUT_REGISTRY_FIELDS
+_OUTPUT_REQUIRED_FIELDS = tuple(
+    field for field in OUTPUT_REGISTRY_FIELDS if field != "secondary_artifacts"
+)
 _FIGURE2E_FORBIDDEN_MARKERS = ("withheld", "status", "not_reproduced")
 _COMMAND_INPUT_OPTION = "--input"
 _COMMAND_OUTPUT_OPTION = "--output"
@@ -109,10 +112,18 @@ _AUTHOR_SOURCE_TYPE = "author-generated aggregate"
 _ENGINEERING_SOURCE_TYPE = "engineering source"
 
 
+def _resolve_standalone_path(path: Path) -> Path:
+    """Resolve a direct file argument without changing relative-path meaning."""
+
+    path = Path(path)
+    root = Path.cwd() if not path.is_absolute() else path.parent
+    return resolve_public_path(root, path)
+
+
 def _load_csv(path: Path, fields: tuple[str, ...], identifier: str) -> list[dict[str, str]]:
     """Load one UTF-8 CSV and reject schema or identifier violations."""
 
-    path = Path(path)
+    path = _resolve_standalone_path(Path(path))
     try:
         handle = path.open("r", encoding="utf-8", newline="")
     except OSError as exc:
@@ -153,6 +164,7 @@ def _load_csv(path: Path, fields: tuple[str, ...], identifier: str) -> list[dict
 
 
 def _sha256(path: Path) -> str:
+    path = _resolve_standalone_path(Path(path))
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -167,7 +179,7 @@ def _load_registry_csv(
 ) -> list[dict[str, str]]:
     """Load a registry with an exact header and normalized text fields."""
 
-    path = Path(path)
+    path = _resolve_standalone_path(Path(path))
     try:
         handle = path.open("r", encoding="utf-8", newline="")
     except OSError as exc:
@@ -277,6 +289,26 @@ def _split_dataset_references(value: str, output_id: str, line_number: int) -> l
     return references
 
 
+def _split_secondary_artifacts(
+    value: str, output_id: str, line_number: int
+) -> list[str]:
+    if not value.strip():
+        return []
+    references = [part.strip() for part in value.split(";")]
+    if any(not reference for reference in references):
+        raise ValueError(
+            f"output {output_id!r} has a blank secondary artifact at row {line_number}"
+        )
+    if len(references) != len(set(references)):
+        raise ValueError(
+            f"output {output_id!r} repeats a secondary artifact at row {line_number}"
+        )
+    return [
+        _normalize_registry_path(reference, "secondary_artifacts", line_number)
+        for reference in references
+    ]
+
+
 def _validate_figure2e_contract(row: dict[str, str], line_number: int) -> None:
     output_id = row["output_id"]
     if output_id != "figure-02e":
@@ -311,6 +343,20 @@ def load_output_registry(path: Path) -> list[dict[str, str]]:
         row["expected_artifact"] = _normalize_registry_path(
             row["expected_artifact"], "expected_artifact", line_number
         )
+        secondary = _split_secondary_artifacts(
+            row["secondary_artifacts"], row["output_id"], line_number
+        )
+        if row["output_id"] == "figure-02e" and secondary != [
+            "figures/figure-02e.pdf"
+        ]:
+            raise ValueError(
+                "figure-02e must declare figures/figure-02e.pdf as its secondary artifact"
+            )
+        if row["expected_artifact"] in secondary:
+            raise ValueError(
+                f"output {row['output_id']!r} repeats its primary artifact"
+            )
+        row["secondary_artifacts"] = ";".join(secondary)
     return rows
 
 
@@ -443,6 +489,12 @@ def validate_release_registry(root: Path) -> dict[str, int]:
         if artifact in artifacts:
             raise ValueError(f"duplicate expected_artifact {artifact!r}")
         artifacts.add(artifact)
+        for secondary in row["secondary_artifacts"].split(";"):
+            if not secondary:
+                continue
+            if secondary in artifacts:
+                raise ValueError(f"duplicate expected_artifact {secondary!r}")
+            artifacts.add(secondary)
 
     return {
         "datasets": len(datasets),
@@ -459,7 +511,8 @@ def _relative_payload_files(root: Path) -> list[tuple[str, Path]]:
     produces byte-identical records on Windows and Linux.
     """
 
-    root = Path(root).resolve()
+    root = Path(root).resolve(strict=False)
+    root = resolve_public_path(root, root)
     if not root.is_dir():
         raise ValueError(f"release root is not a directory: {root}")
     assert_public_path(root)
@@ -468,17 +521,17 @@ def _relative_payload_files(root: Path) -> list[tuple[str, Path]]:
     # ``Path.rglob`` cannot prune a directory before descending into it.  Walk
     # top-down and apply the path guard to directory entries before they are
     # opened, so the excluded directory is never traversed or hashed.
-    for directory, dirnames, filenames in os.walk(root, topdown=True):
+    def onerror(exc: OSError) -> None:
+        raise ValueError(f"payload walk failed: {exc}") from exc
+
+    for directory, dirnames, filenames in os.walk(root, topdown=True, onerror=onerror):
         directory_path = Path(directory)
         kept_dirnames: list[str] = []
         for name in sorted(dirnames):
-            candidate = directory_path / name
             if name in _INVENTORY_SKIP_NAMES:
                 continue
-            try:
-                assert_public_path(candidate)
-            except ValueError:
-                continue
+            candidate = directory_path / name
+            resolve_public_path(root, candidate)
             kept_dirnames.append(name)
         dirnames[:] = kept_dirnames
         for name in sorted(filenames):
@@ -486,14 +539,11 @@ def _relative_payload_files(root: Path) -> list[tuple[str, Path]]:
                 continue
             path = directory_path / name
             try:
-                assert_public_path(path)
-                resolved_path = path.resolve()
-                if resolved_path != root and root not in resolved_path.parents:
-                    raise ValueError(f"payload path escapes release root: {path}")
+                resolved_path = resolve_public_path(root, path)
                 relative_path = resolved_path.relative_to(root)
             except (OSError, ValueError) as exc:
                 raise ValueError(f"unsafe release payload path: {path}") from exc
-            payloads.append((relative_path.as_posix(), path))
+            payloads.append((relative_path.as_posix(), resolved_path))
     return sorted(payloads, key=lambda item: item[0])
 
 
@@ -516,8 +566,8 @@ def _registry_manifest_attributes(
 ) -> tuple[dict[str, tuple[str, str, str]], dict[str, tuple[str, str, str]]]:
     """Load manifest classifications from the authoritative registries."""
 
-    dataset_path = root / "data" / "dataset_registry.csv"
-    output_path = root / "data" / "output_registry.csv"
+    dataset_path = resolve_public_path(root, root / "data" / "dataset_registry.csv")
+    output_path = resolve_public_path(root, root / "data" / "output_registry.csv")
     dataset_attributes: dict[str, tuple[str, str, str]] = {}
     output_attributes: dict[str, tuple[str, str, str]] = {}
     if dataset_path.is_file():
@@ -529,15 +579,18 @@ def _registry_manifest_attributes(
             dataset_attributes[public_path] = attributes
     if output_path.is_file():
         for row in load_output_registry(output_path):
-            artifact = row["expected_artifact"]
             attributes = (
                 f"manuscript output: {row['manuscript_location']}",
                 "generated artifact; see registered inputs",
                 "manuscript output",
             )
-            if artifact in output_attributes and output_attributes[artifact] != attributes:
-                raise ValueError(f"output registry maps one artifact to conflicting attributes: {artifact}")
-            output_attributes[artifact] = attributes
+            for artifact in (
+                [row["expected_artifact"]]
+                + [item for item in row["secondary_artifacts"].split(";") if item]
+            ):
+                if artifact in output_attributes and output_attributes[artifact] != attributes:
+                    raise ValueError(f"output registry maps one artifact to conflicting attributes: {artifact}")
+                output_attributes[artifact] = attributes
     return dataset_attributes, output_attributes
 
 
@@ -612,23 +665,23 @@ def write_release_inventories(root: Path) -> dict[str, int]:
     and avoids an impossible checksum cycle.
     """
 
-    root = Path(root).resolve()
+    root = Path(root).resolve(strict=False)
+    root = resolve_public_path(root, root)
     assert_public_path(root)
     payloads = _relative_payload_files(root)
     dataset_attributes, output_attributes = _registry_manifest_attributes(root)
     manifest_text = _render_manifest(
         root, payloads, dataset_attributes, output_attributes
     )
-    manifest_path = root / MANIFEST_FILENAME
+    manifest_path = resolve_public_path(root, root / MANIFEST_FILENAME)
     manifest_path.write_text(manifest_text, encoding="utf-8", newline="\n")
 
     checksum_paths = sorted([relative for relative, _ in payloads] + [MANIFEST_FILENAME])
     checksum_rows = []
     for relative in checksum_paths:
-        path = root / Path(*relative.split("/"))
-        assert_public_path(path)
+        path = resolve_public_path(root, root / Path(*relative.split("/")))
         checksum_rows.append(f"{_sha256(path)}  {relative}")
-    checksum_path = root / CHECKSUMS_FILENAME
+    checksum_path = resolve_public_path(root, root / CHECKSUMS_FILENAME)
     checksum_path.write_text("\n".join(checksum_rows) + "\n", encoding="utf-8", newline="\n")
     return {"manifest_rows": len(payloads), "checksum_rows": len(checksum_rows)}
 

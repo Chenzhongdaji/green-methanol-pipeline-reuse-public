@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+import green_methanol_release.safety as safety_module
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -191,6 +193,32 @@ def test_forbidden_source_is_rejected_without_inspecting_excluded_directory(tmp_
 
     assert report["status"] == "FAIL"
     assert report["errors"][0]["code"] == "forbidden_source"
+
+
+def test_symlink_source_alias_to_excluded_component_is_rejected_before_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(stage_module, "_FORBIDDEN_COMPONENT", "blocked-component")
+    monkeypatch.setattr(safety_module, "_FORBIDDEN_COMPONENT", "blocked-component")
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    blocked = source_root / "blocked-component"
+    blocked.mkdir()
+    payload = blocked / "payload.bin"
+    payload.write_bytes(b"public payload")
+    alias = source_root / "alias.bin"
+    try:
+        alias.symlink_to(payload)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+    row = _row(source_relative_path="alias.bin")
+    registry = _write_registry(tmp_path, [row])
+
+    report = stage_inputs(registry, source_root, tmp_path / "release")
+
+    assert report["status"] == "FAIL"
+    assert report["errors"][0]["code"] == "forbidden_source"
+    assert not (tmp_path / "release" / "data" / "staged" / "payload.bin").exists()
 
 
 def test_early_registry_error_totals_match_empty_dataset_report(tmp_path: Path):

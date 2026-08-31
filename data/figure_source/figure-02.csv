@@ -1,4 +1,4 @@
-﻿panel,scenario,year,case,metric,value,unit,denominator,source_type,style,x,y,note
+panel,scenario,year,case,metric,value,unit,denominator,source_type,style,x,y,note
 a,S1,2025,dynamic_mid_tier,served_share_pct,81.37529197007804,%,non-zero provincial demand cases,frozen_dynamic_v08_gap_account,trajectory,2025,81.37529197007804,
 a,S1,2030,dynamic_mid_tier,served_share_pct,63.763033352976834,%,non-zero provincial demand cases,frozen_dynamic_v08_gap_account,trajectory,2030,63.763033352976834,
 a,S1,2035,dynamic_mid_tier,served_share_pct,59.298405614547065,%,non-zero provincial demand cases,frozen_dynamic_v08_gap_account,trajectory,2035,59.298405614547065,

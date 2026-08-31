@@ -1,7 +1,7 @@
-output_id,manuscript_location,generation_command,input_dataset_ids,expected_artifact
-figure-01,Figure 1,python scripts/build_figure_01.py --input figures/source_data/figure-01.csv --output figures/figure-01.png,figure-01-source,figures/figure-01.png
-figure-02a-d-f-h,Figure 2 panels a-d and f-h,"python scripts/build_figure_02.py --panels a-d,f-h --input data/figure_source/figure-02.csv --output figures/figure-02-a-d-f-h.png",figure-02-source-real,figures/figure-02-a-d-f-h.png
-figure-02e,Figure 2 panel e,python scripts/build_figure_02.py --panel e --input data/figure_source/figure-02.csv --output figures/figure-02e.png,figure-02-source-real,figures/figure-02e.png
-figure-03,Figure 3,python scripts/build_figure_03.py --input figures/source_data/figure-03.csv --output figures/figure-03.png,figure-03-source,figures/figure-03.png
-figure-04,Figure 4 panel c,python scripts/build_figure_04.py --input figures/source_data/figure-04.csv --output figures/figure-04.png,figure-04-source,figures/figure-04.png
-figure-05,Figure 5 panel c,python scripts/build_figure_05.py --input figures/source_data/figure-05.csv --output figures/figure-05.png,figure-05-source,figures/figure-05.png
+output_id,manuscript_location,generation_command,input_dataset_ids,expected_artifact,secondary_artifacts
+figure-01,Figure 1,python scripts/build_figure_01.py --input figures/source_data/figure-01.csv --output figures/figure-01.png,figure-01-source,figures/figure-01.png,
+figure-02a-d-f-h,Figure 2 panels a-d and f-h,"python scripts/build_figure_02.py --panels a-d,f-h --input data/figure_source/figure-02.csv --output figures/figure-02-a-d-f-h.png",figure-02-source-real,figures/figure-02-a-d-f-h.png,
+figure-02e,Figure 2 panel e,python scripts/build_figure_02.py --panel e --input data/figure_source/figure-02.csv --output figures/figure-02e.png,figure-02-source-real,figures/figure-02e.png,figures/figure-02e.pdf
+figure-03,Figure 3,python scripts/build_figure_03.py --input figures/source_data/figure-03.csv --output figures/figure-03.png,figure-03-source,figures/figure-03.png,
+figure-04,Figure 4 panel c,python scripts/build_figure_04.py --input figures/source_data/figure-04.csv --output figures/figure-04.png,figure-04-source,figures/figure-04.png,
+figure-05,Figure 5 panel c,python scripts/build_figure_05.py --input figures/source_data/figure-05.csv --output figures/figure-05.png,figure-05-source,figures/figure-05.png,

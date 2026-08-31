@@ -8,6 +8,9 @@ import sys
 
 import pytest
 
+import green_methanol_release.figures as figures_module
+import green_methanol_release.safety as safety_module
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,6 +62,24 @@ def test_figure_02_panel_e_uses_exact_public_row_contract_and_writes_sibling_pdf
     assert output.stat().st_size > 1_000
     assert output.with_suffix(".pdf").is_file()
     assert output.with_suffix(".pdf").stat().st_size > 1_000
+
+
+def test_figure_reader_rejects_symlink_alias_to_excluded_component(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(safety_module, "_FORBIDDEN_COMPONENT", "blocked-component")
+    blocked = tmp_path / "blocked-component"
+    blocked.mkdir()
+    source = blocked / "carrier.csv"
+    source.write_text("panel\na\n", encoding="utf-8", newline="\n")
+    alias = tmp_path / "carrier.csv"
+    try:
+        alias.symlink_to(source)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    with pytest.raises(ValueError, match="excluded directory"):
+        figures_module._read_rows(alias, ("panel",))
 
 
 def test_figure_02_panel_e_reports_sorted_coverage_label_value_pairs(tmp_path):

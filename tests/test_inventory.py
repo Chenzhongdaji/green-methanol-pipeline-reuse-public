@@ -193,6 +193,7 @@ OUTPUT_REGISTRY_FIELDS = (
     "generation_command",
     "input_dataset_ids",
     "expected_artifact",
+    "secondary_artifacts",
 )
 
 
@@ -236,6 +237,7 @@ def _output_row(
     input_dataset_ids: str = "dataset-1",
     expected_artifact: str = "figures/figure-01.png",
     input_path: str = "data/example.csv",
+    secondary_artifacts: str = "",
     **overrides: str,
 ) -> dict[str, str]:
     row = {
@@ -247,6 +249,7 @@ def _output_row(
         ),
         "input_dataset_ids": input_dataset_ids,
         "expected_artifact": expected_artifact,
+        "secondary_artifacts": secondary_artifacts,
     }
     row.update(overrides)
     return row
@@ -398,10 +401,24 @@ def test_figure2e_has_concrete_generation_contract():
     assert row["generation_command"].strip()
     assert "--output" in row["generation_command"]
     assert row["expected_artifact"].endswith(".png")
+    assert row["secondary_artifacts"] == "figures/figure-02e.pdf"
     assert not any(
         marker in row["generation_command"].casefold()
         for marker in ("withheld", "status", "not_reproduced")
     )
+
+
+def test_output_registry_rejects_duplicate_or_unsafe_secondary_artifacts(
+    tmp_path: Path,
+):
+    for secondary_artifacts in ("figures/figure-01.png", "../outside.pdf"):
+        root = _write_registry(
+            tmp_path / secondary_artifacts.replace("/", "_"),
+            [_dataset_row()],
+            [_output_row(secondary_artifacts=secondary_artifacts)],
+        )
+        with pytest.raises(ValueError, match="secondary_artifacts|artifact"):
+            inventory_module.validate_release_registry(root)
 
 
 @pytest.mark.parametrize(

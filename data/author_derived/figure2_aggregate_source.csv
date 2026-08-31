@@ -126,7 +126,6 @@ d,counterfactual_relaxation,S7,mid,2060,joint_relaxation_gain_10kt,863.847499999
 d,counterfactual_relaxation,S8,mid,2060,capacity_relaxation_gain_10kt,0.0,10 kt/y,upstream_figure3_dynamic_v08_panel_c_aggregate,dynamic_v08
 d,counterfactual_relaxation,S8,mid,2060,direction_relaxation_gain_10kt,663.8674999999998,10 kt/y,upstream_figure3_dynamic_v08_panel_c_aggregate,dynamic_v08
 d,counterfactual_relaxation,S8,mid,2060,joint_relaxation_gain_10kt,741.5938999999998,10 kt/y,upstream_figure3_dynamic_v08_panel_c_aggregate,dynamic_v08
-e,status,all,all,2060,map_status,unavailable,status,restricted-map-not-released,restricted_map
 f,scenario_point,S1,mid,2060,scenario_served_pct,17.715898711683206,%,upstream_service_mode_summary_baseline_replay_scenario_aggregate,baseline
 f,scenario_point,S1,mid,2060,scenario_served_pct,86.52518968224842,%,upstream_service_mode_summary_free_all_positive_city_support_scenario_aggregate,local_co_location
 f,scenario_point,S1,mid,2060,scenario_served_pct,32.32139898989897,%,upstream_service_mode_summary_free_all_positive_city_support_no_local_direct_scenario_aggregate,strict_pipeline

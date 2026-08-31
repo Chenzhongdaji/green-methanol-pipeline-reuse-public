@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from .safety import resolve_public_path
+
 ALLOWED_WORKFLOW_STATUSES = {
     "reproduced",
     "aggregate-only",
@@ -42,8 +44,4 @@ class ReleaseRoot:
 
     def resolve(self, value: str) -> Path:
         relative = safe_relative_path(value)
-        root = self.root.resolve()
-        candidate = (root / Path(*relative.parts)).resolve()
-        if candidate != root and root not in candidate.parents:
-            raise ValueError(f"path escapes release root: {value}")
-        return candidate
+        return resolve_public_path(self.root, Path(*relative.parts))

@@ -6,8 +6,16 @@ from pathlib import Path
 import pytest
 
 import green_methanol_release.audit as audit_module
+import green_methanol_release.inventory as inventory_module
+import green_methanol_release.reproduce as reproduce_module
+import green_methanol_release.safety as safety_module
 from green_methanol_release.audit import audit_release
-from green_methanol_release.safety import assert_public_path, audit_tracked_paths
+from green_methanol_release.reproduce import run_reproduction
+from green_methanol_release.safety import (
+    assert_public_path,
+    audit_tracked_paths,
+    resolve_public_path,
+)
 
 
 @pytest.mark.parametrize(
@@ -116,3 +124,95 @@ def test_payload_walk_is_globally_sorted(tmp_path: Path):
     paths = [path.relative_to(tmp_path).as_posix() for path in audit_module._iter_payload_files(tmp_path)]
 
     assert paths == sorted(paths)
+
+
+def test_resolve_public_path_rejects_symlink_alias_to_excluded_component(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(safety_module, "_FORBIDDEN_COMPONENT", "blocked-component")
+    blocked = tmp_path / "blocked-component"
+    blocked.mkdir()
+    (blocked / "secret.txt").write_text("secret", encoding="utf-8", newline="\n")
+    alias = tmp_path / "public-alias"
+    try:
+        alias.symlink_to(blocked, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    with pytest.raises(ValueError, match="excluded directory"):
+        resolve_public_path(tmp_path, alias / "secret.txt")
+
+
+def test_inventory_loader_resolves_before_reading_symlink_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(safety_module, "_FORBIDDEN_COMPONENT", "blocked-component")
+    blocked = tmp_path / "blocked-component"
+    blocked.mkdir()
+    source = blocked / "public_sources.csv"
+    source.write_text("source_id\nsecret\n", encoding="utf-8", newline="\n")
+    alias = tmp_path / "public_sources.csv"
+    try:
+        alias.symlink_to(source)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    with pytest.raises(ValueError, match="excluded directory"):
+        inventory_module.load_public_sources(alias)
+
+
+def test_full_report_rejects_symlink_alias_to_excluded_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(safety_module, "_FORBIDDEN_COMPONENT", "blocked-component")
+    blocked = tmp_path / "blocked-component"
+    blocked.mkdir()
+    target = blocked / "report.json"
+    alias = tmp_path / "report.json"
+    try:
+        alias.symlink_to(target)
+    except OSError as exc:
+        pytest.skip(f"symlink creation unavailable: {exc}")
+
+    monkeypatch.setattr(
+        reproduce_module,
+        "run_full",
+        lambda root, output_root: {"status": "PASS", "mode": "full"},
+    )
+
+    report = run_reproduction(tmp_path, "full", alias)
+
+    assert report["status"] == "PASS"
+    assert not target.exists()
+
+
+def test_inventory_walker_fails_closed_on_walk_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    def failing_walk(*args: object, **kwargs: object):
+        assert "onerror" in kwargs
+        callback = kwargs["onerror"]
+        assert callable(callback)
+        callback(OSError("permission denied"))
+        return iter(())
+
+    monkeypatch.setattr(inventory_module.os, "walk", failing_walk)
+
+    with pytest.raises(ValueError, match="walk"):
+        inventory_module._relative_payload_files(tmp_path)
+
+
+def test_audit_walker_fails_closed_on_walk_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    def failing_walk(*args: object, **kwargs: object):
+        assert "onerror" in kwargs
+        callback = kwargs["onerror"]
+        assert callable(callback)
+        callback(OSError("permission denied"))
+        return iter(())
+
+    monkeypatch.setattr(audit_module.os, "walk", failing_walk)
+
+    with pytest.raises(RuntimeError, match="payload walk"):
+        list(audit_module._iter_payload_files(tmp_path))

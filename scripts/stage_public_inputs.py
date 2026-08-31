@@ -13,13 +13,13 @@ from pathlib import Path
 try:
     from green_methanol_release.contracts import ReleaseRoot, safe_relative_path
     from green_methanol_release.inventory import load_dataset_registry
-    from green_methanol_release.safety import assert_public_path
+    from green_methanol_release.safety import assert_public_path, resolve_public_path
 except ModuleNotFoundError:  # pragma: no cover - used by direct CLI execution
     _SRC_ROOT = Path(__file__).resolve().parents[1] / "src"
     sys.path.insert(0, str(_SRC_ROOT))
     from green_methanol_release.contracts import ReleaseRoot, safe_relative_path
     from green_methanol_release.inventory import load_dataset_registry
-    from green_methanol_release.safety import assert_public_path
+    from green_methanol_release.safety import assert_public_path, resolve_public_path
 
 
 _ALLOWED_ACTIONS = ("copy", "existing", "acquire")
@@ -62,6 +62,7 @@ def _empty_report() -> dict[str, object]:
 
 
 def _hash_file(path: Path) -> str:
+    path = resolve_public_path(Path(path).parent, Path(path))
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -145,6 +146,11 @@ def stage_inputs(
             assert_public_path(path)
         except ValueError:
             return _root_error(path, code)
+    try:
+        source_root = resolve_public_path(source_root, Path("."))
+        release_root = resolve_public_path(release_root, Path("."))
+    except (OSError, ValueError):
+        return _root_error(source_root, "forbidden_source_root")
 
     try:
         rows = load_dataset_registry(registry)
@@ -179,7 +185,7 @@ def stage_inputs(
         if source_value:
             try:
                 source_relative = _relative_path(source_value, kind="source")
-            except ValueError:
+            except (OSError, ValueError):
                 code = (
                     "forbidden_source"
                     if _FORBIDDEN_COMPONENT in source_value.replace("\\", "/").split("/")
@@ -209,8 +215,8 @@ def stage_inputs(
         if action == "copy":
             source_path = source_root / Path(*source_relative.split("/"))
             try:
-                assert_public_path(source_path)
-            except ValueError:
+                source_path = resolve_public_path(source_root, source_path)
+            except (OSError, ValueError):
                 _entry_error(entry, errors, "forbidden_source", path=source_relative)
                 continue
             if not source_path.is_file():
@@ -228,8 +234,8 @@ def stage_inputs(
 
         try:
             destination = ReleaseRoot(release_root).resolve(public_relative)
-            assert_public_path(destination)
-        except ValueError:
+            destination = resolve_public_path(release_root, destination)
+        except (OSError, ValueError):
             _entry_error(entry, errors, "invalid_destination", path=public_relative)
             continue
 
@@ -294,6 +300,7 @@ def stage_inputs(
 def _validate_report_path(path: Path) -> None:
     path = Path(path)
     assert_public_path(path)
+    path = resolve_public_path(path.parent, path)
     if not path.name or "\x00" in str(path) or path.is_dir():
         raise ValueError("report path must name a file")
 
