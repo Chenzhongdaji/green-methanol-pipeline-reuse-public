@@ -4,6 +4,7 @@ import json
 import hashlib
 import math
 from pathlib import Path
+import shutil
 
 import pandas as pd
 import pytest
@@ -20,6 +21,7 @@ from green_methanol_release.model.workflow import (
     run_model_chain,
     run_model_stage,
 )
+from green_methanol_release.pipeline import _copy_ignore
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,15 +98,30 @@ def test_public_model_chain_is_deterministic_under_repeated_in_memory_runs():
     assert first.audit == second.audit
 
 
-def test_write_through_chain_matches_registered_stage_carriers():
+def _isolated_release(tmp_path: Path) -> Path:
+    release = tmp_path / "release"
+    shutil.copytree(
+        ROOT,
+        release,
+        symlinks=True,
+        ignore=lambda directory, names: _copy_ignore(directory, names)
+        | set(shutil.ignore_patterns(".git", ".venv", "__pycache__", ".pytest_cache")(
+            directory, names
+        )),
+    )
+    return release
+
+
+def test_write_through_chain_matches_registered_stage_carriers(tmp_path: Path):
     """The convenience chain must use the same persisted carriers as full mode."""
 
-    result = run_model_chain(ROOT, write_outputs=True)
-    run_model_stage(ROOT, "demand_preprocessing")
-    run_model_stage(ROOT, "directed_network_flow")
-    run_model_stage(ROOT, "dynamic_analysis")
-    persisted_network = load_network_outputs(ROOT)
-    persisted_analysis = load_analysis_outputs(ROOT)
+    release = _isolated_release(tmp_path)
+    result = run_model_chain(release, write_outputs=True)
+    run_model_stage(release, "demand_preprocessing")
+    run_model_stage(release, "directed_network_flow")
+    run_model_stage(release, "dynamic_analysis")
+    persisted_network = load_network_outputs(release)
+    persisted_analysis = load_analysis_outputs(release)
 
     for left, right in (
         (result.network.summary, persisted_network.summary),
@@ -186,8 +203,8 @@ def test_model_source_tables_match_figure_contracts():
     assert set(result.analysis.figure_05_source["panel"]) == {"c"}
 
 
-def test_model_carriers_are_hashable_and_have_schema_metadata():
-    result = run_model_chain(ROOT, write_outputs=True)
+def test_model_carriers_are_hashable_and_have_schema_metadata(tmp_path: Path):
+    result = run_model_chain(_isolated_release(tmp_path), write_outputs=True)
 
     assert result.audit["input_hashes"]
     assert result.audit["output_hashes"]
