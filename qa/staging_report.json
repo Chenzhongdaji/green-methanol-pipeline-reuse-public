@@ -28,10 +28,10 @@
       "status": "PASS"
     },
     {
-      "bytes": 20616,
+      "bytes": 21658,
       "dataset_id": "c3-unlocking-cost-v01",
       "public_path": "data/processed/dynamic_analyses_v08/c3_unlocking_cost.csv",
-      "sha256": "c68d5c2a6bf9a2a6136aef781e0098ea1a4a737c3e39f78f149305b92179b4ee",
+      "sha256": "f17eb5a066e849781a5fa480372e3e56ad3ac606aff7ac4c3d4f3cd286cdbe4a",
       "source_relative_path": "source-id:c3-unlocking-cost-v01",
       "stage_action": "copy",
       "status": "PASS"
@@ -73,10 +73,10 @@
       "status": "PASS"
     },
     {
-      "bytes": 14310,
+      "bytes": 16366,
       "dataset_id": "city-topology-source-manifest-v01",
       "public_path": "data/raw/city_topology_v01/source_manifest.csv",
-      "sha256": "78d0cfa52d464dc328b5da3fa56657ea65a6b2b8ee9659d5cf7188cead9fbc1f",
+      "sha256": "6a8587a144c8de2463b5c00c9a171975fdb563938683d989ec0252f3bc2215db",
       "source_relative_path": "source-id:city-topology-source-manifest-v01",
       "stage_action": "copy",
       "status": "PASS"
@@ -181,10 +181,10 @@
       "status": "PASS"
     },
     {
-      "bytes": 4737,
+      "bytes": 5333,
       "dataset_id": "model-analysis-audit-v01",
       "public_path": "data/processed/model_v01/dynamic_analysis_audit.json",
-      "sha256": "27064b1150f0ceac1fe45ca8426d14f1bac76c1d8d84cc2c932e4632b3c46f4b",
+      "sha256": "0e65d461714886ce31368deceec6f2d24fb6cd7095b5349d62814b4bae10a47c",
       "source_relative_path": "source-id:model-analysis-audit-v01",
       "stage_action": "existing",
       "status": "PASS"
@@ -208,10 +208,10 @@
       "status": "PASS"
     },
     {
-      "bytes": 2656,
+      "bytes": 3240,
       "dataset_id": "model-demand-audit-v01",
       "public_path": "data/processed/model_v01/demand_preprocessing_audit.json",
-      "sha256": "d26702725be5114dd7d7a3f3fc124780f324f314691c04a29dc1ab560d43f7b8",
+      "sha256": "c70eea825f4fffe84317b81c11cfb61a23fab797231e8d631c3942a866ab1c9f",
       "source_relative_path": "source-id:model-demand-audit-v01",
       "stage_action": "existing",
       "status": "PASS"
@@ -253,10 +253,10 @@
       "status": "PASS"
     },
     {
-      "bytes": 3781,
+      "bytes": 4653,
       "dataset_id": "model-network-audit-v01",
       "public_path": "data/processed/model_v01/network_model_audit.json",
-      "sha256": "daf7aecfa8dd593c44f981e356a571527596b4ea72738ffe1510ba201570ed26",
+      "sha256": "58156806625430ce36a9fd8e7b3c8c2347bf09a708327c602880333986dcab17",
       "source_relative_path": "source-id:model-network-audit-v01",
       "stage_action": "existing",
       "status": "PASS"

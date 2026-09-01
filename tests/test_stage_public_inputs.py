@@ -582,6 +582,32 @@ def test_real_staging_report_passes_and_counts_all_actions():
     assert str(ROOT.parents[2]) not in json.dumps(report, ensure_ascii=False)
 
 
+def test_real_staging_report_rows_match_registry_and_deposited_hashes():
+    report = json.loads(
+        (ROOT / "qa" / "staging_report.json").read_text(encoding="utf-8")
+    )
+    report_rows = {row["dataset_id"]: row for row in report["datasets"]}
+    registry_rows = {row["dataset_id"]: row for row in _real_registry_rows()}
+
+    assert set(report_rows) == set(registry_rows)
+    for dataset_id, registry_row in registry_rows.items():
+        staged = report_rows[dataset_id]
+        assert staged["dataset_id"] == dataset_id
+        assert staged["public_path"] == registry_row["public_path"]
+        assert staged["stage_action"] == registry_row["stage_action"]
+        assert staged["status"] == "PASS"
+        assert staged["sha256"] == registry_row["sha256"]
+
+        if registry_row["stage_action"] in {"copy", "existing"}:
+            deposited = _repo_relative(registry_row["public_path"])
+            assert deposited.is_file(), registry_row["public_path"]
+            assert staged["bytes"] == deposited.stat().st_size
+            assert _digest(deposited.read_bytes()) == registry_row["sha256"]
+        else:
+            assert registry_row["stage_action"] == "acquire"
+            assert staged["bytes"] is None
+
+
 def test_real_tracked_and_staged_paths_exclude_forbidden_component():
     forbidden = stage_module._FORBIDDEN_COMPONENT.encode("utf-8")
     tracked = subprocess.run(
