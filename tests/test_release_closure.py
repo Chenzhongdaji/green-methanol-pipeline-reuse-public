@@ -237,7 +237,7 @@ def test_full_report_has_public_workflow_keys_and_figure2e_outputs(tmp_path: Pat
     report = run_reproduction(ROOT, "full", first_report_path)
     second_report = run_reproduction(ROOT, "full", second_report_path)
 
-    assert report["status"] == "PASS"
+    assert report["status"] == "PASS", (report.get("error"), report.get("errors"))
     assert second_report == report
     assert first_report_path.read_bytes() == second_report_path.read_bytes()
     assert report["artifacts"] == second_report["artifacts"]

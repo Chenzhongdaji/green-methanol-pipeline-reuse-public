@@ -128,14 +128,14 @@ def _rewrite_dataset_registry(root: Path, rows: list[dict[str, str]]) -> None:
 
 def test_smoke_reproduces_open_aggregate_scope(tmp_path):
     report = run_reproduction(ROOT, "smoke", tmp_path / "run.json")
-    assert report["status"] == "PASS"
+    assert report["status"] == "PASS", (report.get("error"), report.get("errors"))
     assert report["workflows"]["figure_source_data"] == "aggregate-only"
 
 
 def test_full_real_release_executes_all_registered_outputs(tmp_path):
     report = run_reproduction(ROOT, "full", tmp_path / "run.json")
     expected_ids = list(EXPECTED_OUTPUT_IDS)
-    assert report["status"] == "PASS"
+    assert report["status"] == "PASS", (report.get("error"), report.get("errors"))
     assert report["executed_output_ids"] == expected_ids
     assert set(report["artifacts"]) == set(expected_ids)
     assert all(len(item["sha256"]) == 64 for item in report["artifacts"].values())
@@ -159,8 +159,8 @@ def test_full_real_release_repeats_with_identical_artifact_hashes(tmp_path):
     first = run_reproduction(ROOT, "full", tmp_path / "first.json")
     second = run_reproduction(ROOT, "full", tmp_path / "second.json")
 
-    assert first["status"] == "PASS"
-    assert second["status"] == "PASS"
+    assert first["status"] == "PASS", (first.get("error"), first.get("errors"))
+    assert second["status"] == "PASS", (second.get("error"), second.get("errors"))
     assert first["executed_output_ids"] == second["executed_output_ids"]
     assert first["artifacts"] == second["artifacts"]
 
