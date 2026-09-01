@@ -26,7 +26,24 @@ jobs:
       - name: Run release safety audit before inventory closure
         run: python scripts/audit_release.py --pre-manifest --output "$RUNNER_TEMP/green-methanol-pre-manifest-audit.json"
       - name: Run full public test suite
-        run: python -m pytest -q
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q 2>&1 | tee "$RUNNER_TEMP/pytest.log"
+          pytest_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$pytest_status" -ne 0 ]; then
+            python - "$RUNNER_TEMP/pytest.log" <<'PY'
+          from pathlib import Path
+          import sys
+
+          lines = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace").splitlines()
+          summary = "\n".join(lines[-120:])
+          summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=pytest failure summary::{summary}")
+          PY
+            exit "$pytest_status"
+          fi
       - name: Run full public reproduction twice
         run: |
           python scripts/reproduce.py --mode full --output "$RUNNER_TEMP/green-methanol-full-1/full_reproduction.json"
