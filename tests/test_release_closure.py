@@ -12,6 +12,7 @@ from pathlib import Path
 from green_methanol_release.audit import audit_release, verify_manifest_closure
 from green_methanol_release.inventory import (
     CHECKSUMS_FILENAME,
+    EXPECTED_OUTPUT_IDS,
     MANIFEST_FILENAME,
     write_release_inventories,
 )
@@ -230,14 +231,7 @@ def test_full_report_has_public_workflow_keys_and_figure2e_outputs(tmp_path: Pat
     assert first_root != second_root
     assert "level_1_status" not in report
     assert "level_2_status" not in report
-    assert set(report["executed_output_ids"]) == {
-        "figure-01",
-        "figure-02a-d-f-h",
-        "figure-02e",
-        "figure-03",
-        "figure-04",
-        "figure-05",
-    }
+    assert set(report["executed_output_ids"]) == set(EXPECTED_OUTPUT_IDS)
     assert report["artifacts"]["figure-02e"]["path"] == "figures/figure-02e.png"
     assert report["artifacts"]["figure-02e"]["secondary_artifacts"][0]["path"] == (
         "figures/figure-02e.pdf"

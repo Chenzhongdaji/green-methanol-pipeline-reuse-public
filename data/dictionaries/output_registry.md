@@ -5,11 +5,12 @@ that generates it and the dataset identifiers it consumes. The output
 registry is intentionally separate from the dataset registry so that output
 execution can validate provenance before running a command.
 
-The public release fixes the output identifier set to exactly
-`figure-01`, `figure-02a-d-f-h`, `figure-02e`, `figure-03`, `figure-04`, and
-`figure-05`. Every ID and required field must be nonempty; an empty, reduced,
-or expanded registry is invalid. The final audit and full orchestrator both
-require all six IDs to execute.
+The public release fixes the output identifier set to the five public model
+stages (`model-preprocess`, `model-network`, `model-analysis`,
+`model-figure-04`, and `model-figure-05`) followed by the six manuscript
+figure outputs. Every ID and required field must be nonempty; an empty,
+reduced, or expanded registry is invalid. The final audit and full
+orchestrator require all eleven IDs to execute.
 
 | Column | Definition | Missing-value policy |
 | --- | --- | --- |
@@ -26,6 +27,12 @@ the concrete command
 The command produces the primary `figures/figure-02e.png` artifact and the
 registered secondary `figures/figure-02e.pdf`; the full orchestrator checks and
 hashes both files on every run.
+
+The model rows run the public demand/supply preprocessing, directed NetworkX
+flow, dynamic regional/logistics analysis, and model-derived Figure 4/5
+source regeneration. Their inputs are the public raw carriers and
+`config/model_parameters_v01.csv`; their secondary artifacts retain the
+stage-level tables and audit JSON needed to inspect schemas and hashes.
 
 The registry validator returns the number of declared datasets, output rows
 and distinct datasets referenced by outputs. It does not require physical

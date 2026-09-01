@@ -1287,7 +1287,7 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
                 errors.append("offline full reproduction failed")
             expected_ids = list(EXPECTED_OUTPUT_IDS)
             if full_reproduction.get("executed_output_ids") != expected_ids:
-                errors.append("final audit requires all six registered output IDs")
+                errors.append("final audit requires all registered output IDs")
         except (OSError, ValueError, KeyError) as exc:
             report["offline_full"] = "FAIL"
             report["full_reproduction"] = {

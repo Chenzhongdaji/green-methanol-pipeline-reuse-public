@@ -71,6 +71,11 @@ OUTPUT_REGISTRY_FIELDS = (
 )
 
 EXPECTED_OUTPUT_IDS = (
+    "model-preprocess",
+    "model-network",
+    "model-analysis",
+    "model-figure-04",
+    "model-figure-05",
     "figure-01",
     "figure-02a-d-f-h",
     "figure-02e",
@@ -396,7 +401,7 @@ def load_output_registry(
             missing = sorted(expected - actual)
             unexpected = sorted(actual - expected)
             raise ValueError(
-                "output registry must declare the six fixed output IDs "
+                "output registry must declare all fixed output IDs "
                 f"(missing={missing}, unexpected={unexpected})"
             )
     return rows
@@ -671,6 +676,8 @@ def _manifest_attributes(
         return "automated verification code", "MIT", "test code"
     if relative.startswith("src/") or relative.startswith("scripts/"):
         return "release workflow code", "MIT", "code"
+    if relative.startswith("config/"):
+        return "public model configuration", "MIT", "configuration"
     if relative.startswith("environment/") or relative.startswith(".github/"):
         return "runtime or continuous-integration configuration", "MIT", "configuration"
     if relative == "LICENSE":

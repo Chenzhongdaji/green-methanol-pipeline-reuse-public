@@ -151,7 +151,7 @@ def test_final_audit_runs_full_workflow_and_requires_all_fixed_outputs(
     assert report["status"] == "FAIL"
     assert report["offline_full"] == "PASS"
     assert report["full_reproduction"]["executed_output_ids"] == ["figure-01"]
-    assert any("six registered output IDs" in error for error in report["errors"])
+    assert any("all registered output IDs" in error for error in report["errors"])
 
 
 def test_unregistered_restricted_name_and_schema_still_fail(tmp_path: Path):
@@ -521,6 +521,11 @@ def test_known_extensionless_text_names_are_scanned(
 ):
     root = _copy_release(tmp_path, filename.replace(".", "_"))
     path = root / filename
+    # The release now legitimately contains a top-level ``config/`` directory.
+    # Replace it in this isolated fixture so the extensionless-file scanner can
+    # still exercise the exact historical filename ``config``.
+    if path.is_dir():
+        shutil.rmtree(path)
     path.write_text(payload + "\n", encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"
@@ -530,6 +535,8 @@ def test_known_extensionless_text_names_are_scanned(
 def test_known_extensionless_text_restricted_token_is_scanned(tmp_path: Path):
     root = _copy_release(tmp_path, "extensionless_restricted")
     path = root / "config"
+    if path.is_dir():
+        shutil.rmtree(path)
     path.write_text("candidate_links_v01.csv\n", encoding="utf-8", newline="\n")
     report = audit_release(root, require_manifest=False)
     assert report["status"] == "FAIL"

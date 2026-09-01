@@ -76,6 +76,16 @@ _ACCOUNT_FIELDS = (
     "account_status",
     "scope_note",
 )
+_MODEL_PARAMETER_FIELDS = (
+    "parameter",
+    "sector",
+    "tier",
+    "year",
+    "scenario",
+    "value",
+    "unit",
+    "notes",
+)
 _FIGURE_02_SOURCE_FIELDS = (
     "panel",
     "scenario",
@@ -161,6 +171,7 @@ _DICTIONARY_PATHS = (
     "data/dictionaries/headline_claims.md",
     "data/dictionaries/panel_map.md",
     "data/dictionaries/terminal_gap_aggregate.md",
+    "data/dictionaries/model_parameters.md",
 )
 _PANEL_FIELDS = ("figure", "panel", "status", "source_data", "dictionary", "reason")
 _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
@@ -196,6 +207,7 @@ _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
     "data/dictionaries/headline_claims.md": _CLAIM_FIELDS,
     "data/dictionaries/panel_map.md": _PANEL_FIELDS,
     "data/dictionaries/terminal_gap_aggregate.md": _ACCOUNT_FIELDS,
+    "data/dictionaries/model_parameters.md": _MODEL_PARAMETER_FIELDS,
 }
 _REQUIRED_PATHS = (
     "data/public_sources.csv",
@@ -204,6 +216,7 @@ _REQUIRED_PATHS = (
     "data/author_derived/terminal_gap_aggregate.csv",
     "qa/expected/headline_claims.csv",
     "figures/panel_map.csv",
+    "config/model_parameters_v01.csv",
     *_FIGURE_SPECS.keys(),
     *_DICTIONARY_PATHS,
 )
@@ -607,6 +620,9 @@ def run_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
             }
             if mismatches:
                 raise ValueError(f"claim {claim_id!r} differs from the immutable contract: {mismatches}")
+        model_config_path = _resolve(root, "config/model_parameters_v01.csv")
+        _load_csv(model_config_path, _MODEL_PARAMETER_FIELDS, "public model configuration")
+        checked_paths.append(model_config_path)
         account_path = _resolve(root, "data/author_derived/terminal_gap_aggregate.csv")
         account_rows = _load_csv(account_path, _ACCOUNT_FIELDS, "terminal gap aggregate")
         checked_paths.append(account_path)

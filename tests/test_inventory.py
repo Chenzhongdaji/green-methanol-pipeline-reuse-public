@@ -51,9 +51,9 @@ def test_public_source_register_is_complete_and_non_redistributive():
 
 def test_public_registry_exposes_current_dataset_and_output_counts():
     result = validate_inventory(ROOT)
-    assert result["dataset_rows"] == 39
-    assert result["output_rows"] == 6
-    assert result["referenced_dataset_rows"] == 5
+    assert result["dataset_rows"] == 40
+    assert result["output_rows"] == 11
+    assert result["referenced_dataset_rows"] == 17
 
 
 def test_third_party_sources_are_not_cc_by_relicensed():
@@ -271,9 +271,9 @@ def test_registry_loads_and_validates_current_counts():
     datasets = inventory_module.load_dataset_registry(ROOT / "data" / "dataset_registry.csv")
     outputs = inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
 
-    assert len(datasets) == 39
+    assert len(datasets) == 40
     assert sum(row["stage_action"] == "copy" for row in datasets) == 33
-    assert sum(row["stage_action"] == "existing" for row in datasets) == 5
+    assert sum(row["stage_action"] == "existing" for row in datasets) == 6
     assert sum(row["stage_action"] == "acquire" for row in datasets) == 1
     seed_ids = {
         "figure-01-source",
@@ -281,18 +281,19 @@ def test_registry_loads_and_validates_current_counts():
         "figure-03-source",
         "figure-04-source",
         "figure-05-source",
+        "model-parameters-v01",
     }
     assert {row["dataset_id"] for row in datasets if row["stage_action"] == "existing"} == seed_ids
     assert all(
-        row["source_relative_path"] == ""
+        row["source_relative_path"] == "" or row["source_relative_path"] == f"source-id:{row['dataset_id']}"
         for row in datasets
         if row["stage_action"] in {"existing", "acquire"}
     )
-    assert len(outputs) == 6
+    assert len(outputs) == 11
     assert inventory_module.validate_release_registry(ROOT) == {
-        "datasets": 39,
-        "outputs": 6,
-        "referenced_datasets": 5,
+        "datasets": 40,
+        "outputs": 11,
+        "referenced_datasets": 17,
     }
 
 
@@ -329,12 +330,12 @@ def test_output_registry_rejects_duplicate_ids(tmp_path: Path):
         ],
     ],
 )
-def test_output_registry_requires_the_fixed_six_nonempty_output_ids(
+def test_output_registry_requires_all_fixed_nonempty_output_ids(
     tmp_path: Path, output_rows: list[dict[str, str]]
 ):
     root = _write_registry(tmp_path, [_dataset_row()], output_rows)
 
-    with pytest.raises(ValueError, match="six fixed output IDs"):
+    with pytest.raises(ValueError, match="all fixed output IDs"):
         inventory_module.load_output_registry(root / "data" / "output_registry.csv")
 
 
@@ -471,9 +472,9 @@ def test_release_registry_rejects_incomplete_figure2e_contract(
 
 def test_output_commands_use_declared_inputs_and_exact_artifact_targets():
     assert inventory_module.validate_release_registry(ROOT) == {
-        "datasets": 39,
-        "outputs": 6,
-        "referenced_datasets": 5,
+        "datasets": 40,
+        "outputs": 11,
+        "referenced_datasets": 17,
     }
 
 

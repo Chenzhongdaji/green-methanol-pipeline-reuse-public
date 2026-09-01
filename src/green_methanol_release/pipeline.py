@@ -350,6 +350,10 @@ def _base_report() -> dict[str, Any]:
         "workflow_status": {
             "registry_validation": "not-run",
             "carrier_validation": "not-run",
+            "model_preprocessing": "not-run",
+            "network_model": "not-run",
+            "dynamic_analysis": "not-run",
+            "figure_source_regeneration": "not-run",
             "manuscript_outputs": "not-run",
         },
         "executed_output_ids": [],
@@ -546,6 +550,15 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                     for relative, path in artifact_paths[1:]
                 ],
             }
+            model_status = {
+                "model-preprocess": "model_preprocessing",
+                "model-network": "network_model",
+                "model-analysis": "dynamic_analysis",
+                "model-figure-04": "figure_source_regeneration",
+                "model-figure-05": "figure_source_regeneration",
+            }.get(output_id)
+            if model_status is not None:
+                report["workflow_status"][model_status] = "reproduced"
             _write_log(
                 resolved_output / Path(*job["log_relative"].split("/")),
                 {

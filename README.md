@@ -10,10 +10,11 @@ the deposited public carrier.
 ## What this release reproduces
 
 The full workflow regenerates every output registered in
-`data/output_registry.csv`. It validates the deposited carriers, runs the six
-registered figure builders, checks their expected artifacts, records their
-logs, and writes a machine-readable report. Run it from a clean checkout with
-an output directory outside the repository:
+`data/output_registry.csv`. It validates the deposited carriers, runs the
+public demand/preprocessing, directed-flow, dynamic-analysis, and model
+Figure 4/5 stages, then runs the six manuscript figure builders and checks all
+expected artifacts. Run it from a clean checkout with an output directory
+outside the repository:
 
 ```text
 python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full
@@ -33,8 +34,11 @@ depend on an external map download.
 
 The four remaining figure commands are recorded verbatim in
 `data/output_registry.csv` and rebuild Figures 1, 3, 4, and 5 from their
-versioned source carriers. Headline and model-ready carriers are retained in
-`data/raw/`, `data/processed/`, and `data/author_derived/`.
+versioned source carriers. The model stages additionally regenerate public
+demand nodes, directed NetworkX flow accounts, dynamic regional/logistics
+tables, and model-derived Figure 4/5 source tables under
+`data/processed/model_v01/`. Headline and model-ready carriers are retained
+in `data/raw/`, `data/processed/`, and `data/author_derived/`.
 
 ## Install, test and audit
 
@@ -54,8 +58,10 @@ python -m venv <external-venv>
 `FILE_MANIFEST.csv` and `CHECKSUMS.sha256` are deterministic inventories of
 the release tree. The dataset and output registries are the authoritative
 mapping from each input or manuscript output to its repository location and
-generating command. A full run report contains the output IDs, return codes,
-artifact hashes, and sanitized logs.
+generating command. A full run report contains all eleven output IDs, return
+codes, artifact hashes, and sanitized logs. NetworkX flow uses the public
+directed segment/node carriers and reports model-derived accounts; it does not
+claim engineering qualification or observational status.
 
 The optional pre-commit boundary guard checks Git index paths without opening
 payload files. Install it with `pre-commit install`, or run

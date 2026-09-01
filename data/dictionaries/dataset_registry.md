@@ -50,3 +50,8 @@ The `standard-map-gs2023-2767` row uses `stage_action=acquire` for the official
 catalogue metadata record only. The copied JSON retains third-party and
 not-relicensed terms. Official JPG/EPS payloads and any research-boundary SHP
 are not deposited because redistribution permission is not confirmed.
+
+The `model-parameters-v01` row is an author-generated configuration carrier
+for the public demand, directed-flow, and dynamic-analysis chain. It is
+versioned under `config/`, carries a SHA-256 hash and explicit schema
+dictionary, and contains assumptions rather than observations.

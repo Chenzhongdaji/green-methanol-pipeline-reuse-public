@@ -5,8 +5,9 @@
 This repository contains the checked public reproducibility package at version
 `1.0.0`. The package includes the registered input carriers, executable code,
 figure-source data, tests, provenance records, and release inventories. The
-full workflow has been exercised against the six registered output jobs and
-records PASS for the figure outputs, including Figure 2e. Figure 2e is
+full workflow has been exercised against the five public model stages and
+six manuscript figure output jobs and records PASS for all eleven outputs,
+including Figure 2e. Figure 2e is
 reproduced from the deposited public carrier.
 
 The repository URL is

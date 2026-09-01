@@ -7,7 +7,7 @@ name = "green-methanol-pipeline-reuse"
 version = "1.0.0"
 description = "Public data and code release for green methanol pipeline reuse research"
 requires-python = ">=3.12,<3.13"
-dependencies = ["pandas==3.0.1"]
+dependencies = ["numpy==2.5.1", "pandas==3.0.1", "matplotlib==3.11.1", "networkx==3.5"]
 
 [project.optional-dependencies]
 test = ["pytest==8.4.2"]

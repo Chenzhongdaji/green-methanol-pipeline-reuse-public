@@ -1,10 +1,10 @@
 {
   "datasets": [
     {
-      "bytes": 480456,
+      "bytes": 475847,
       "dataset_id": "aviation-nodes-v08",
       "public_path": "data/processed/dynamic_analyses_v08/aviation_nodes.csv",
-      "sha256": "ebb439d24b9140f34e7cec46ec2345c7ec1f06af9376c1c54a111388bd78d979",
+      "sha256": "c49b922076ef89f2b1dd92a3ac1d1a11648ad176a67738b54eb52097b805d834",
       "source_relative_path": "source-id:aviation-nodes-v08",
       "stage_action": "copy",
       "status": "PASS"
@@ -19,19 +19,19 @@
       "status": "PASS"
     },
     {
-      "bytes": 42458,
+      "bytes": 42265,
       "dataset_id": "c1-logistics-v08",
       "public_path": "data/processed/dynamic_analyses_v08/c1_logistics.csv",
-      "sha256": "58342624ffd454353b9f932563561e70f1375c742ec7fe71a209c0c6b7e23c8e",
+      "sha256": "256230bf346e9c0a8e77ba0047016941688ff809aad88e47e282616d96b94e5a",
       "source_relative_path": "source-id:c1-logistics-v08",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 20644,
+      "bytes": 20616,
       "dataset_id": "c3-unlocking-cost-v01",
       "public_path": "data/processed/dynamic_analyses_v08/c3_unlocking_cost.csv",
-      "sha256": "040e2c9f4a538a38c092227909b058e33b87ffdca2d61631b86c7f42fde44ee2",
+      "sha256": "c68d5c2a6bf9a2a6136aef781e0098ea1a4a737c3e39f78f149305b92179b4ee",
       "source_relative_path": "source-id:c3-unlocking-cost-v01",
       "stage_action": "copy",
       "status": "PASS"
@@ -46,34 +46,34 @@
       "status": "PASS"
     },
     {
-      "bytes": 38761,
+      "bytes": 38420,
       "dataset_id": "city-aliases-v01",
       "public_path": "data/raw/city_topology_v01/city_aliases_v01.csv",
-      "sha256": "01b09f8d257e697ba90631a489aff8742a7f58cf30322460b4a5778390a74bd1",
+      "sha256": "2ae73af1e075ea59477427754115128fe6c353ab7ee2fbf7f120cdc41bd88e6a",
       "source_relative_path": "source-id:city-aliases-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 57658,
+      "bytes": 57320,
       "dataset_id": "city-master-2024-v01",
       "public_path": "data/raw/city_topology_v01/city_master_2024.csv",
-      "sha256": "38d646efeb753c4f6ddd70276626a51f30bfca875d02d2c2a2ba264b397a67a0",
+      "sha256": "0f21ab953c22e8f7cf93879bbcae499bc3900a2d6cb5309b26109a7534aa0045",
       "source_relative_path": "source-id:city-master-2024-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 160624,
+      "bytes": 160286,
       "dataset_id": "city-proxy-supply-weights-v01",
       "public_path": "data/raw/city_topology_v01/city_proxy_supply_weights.csv",
-      "sha256": "af51b02b4d146248bee7752e6d4c07c0315658a0545a7c8ce6c53dcb5c8cb1ef",
+      "sha256": "3378ecf802073ff4483ef72c04fc39d0b3599867f1ba294b37ac1f76950dcbb5",
       "source_relative_path": "source-id:city-proxy-supply-weights-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 14419,
+      "bytes": 14310,
       "dataset_id": "city-topology-source-manifest-v01",
       "public_path": "data/raw/city_topology_v01/source_manifest.csv",
       "sha256": "78d0cfa52d464dc328b5da3fa56657ea65a6b2b8ee9659d5cf7188cead9fbc1f",
@@ -82,19 +82,19 @@
       "status": "PASS"
     },
     {
-      "bytes": 7268,
+      "bytes": 7236,
       "dataset_id": "demand-province-corrected-product-coeff-v01",
       "public_path": "data/raw/demand/province_demand_corrected_product_coeff.csv",
-      "sha256": "133aeba37ca99842d598da38a83d7fef19a10dbfb004cb103a2017e392537652",
+      "sha256": "fb7c0bffdff9473601026a5cba6d8871e0c8309ec42fcf38c1964b10ebe0c05b",
       "source_relative_path": "source-id:demand-province-corrected-product-coeff-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 1877,
+      "bytes": 1844,
       "dataset_id": "demand-province-origin-2024",
       "public_path": "data/raw/demand/province_origin_2024.csv",
-      "sha256": "37ceab950254d745ea2e80733e17fae051ccbb9762c9dcb85e8ff1257e2f0124",
+      "sha256": "e0b7481bad60c450a86d1dada28addd8d5896196c6eb172aa5832724e867fd00",
       "source_relative_path": "source-id:demand-province-origin-2024",
       "stage_action": "copy",
       "status": "PASS"
@@ -109,19 +109,19 @@
       "status": "PASS"
     },
     {
-      "bytes": 24033,
+      "bytes": 23938,
       "dataset_id": "figure-02-aggregate-source",
       "public_path": "data/author_derived/figure2_aggregate_source.csv",
-      "sha256": "7633f710a74b124f3d96602bc409285e0d9b4684ababc4790d6dc13fba9193c6",
+      "sha256": "fef8a2c346cfaedc7cac0c153fab102624a7ae7ec2e310a2b8f6162aaafa474c",
       "source_relative_path": "",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 109264,
+      "bytes": 108766,
       "dataset_id": "figure-02-source-real",
       "public_path": "data/figure_source/figure-02.csv",
-      "sha256": "a23ee5499317616e3fc6a21550764c80aa97140e11c62bf6e62dde9bab31bf41",
+      "sha256": "cc296256a93573b3f3c4d4e96fec1a6f5276e9dd5095e5bf1a4e55e65d39490e",
       "source_relative_path": "source-id:figure-02-source-real",
       "stage_action": "copy",
       "status": "PASS"
@@ -145,10 +145,10 @@
       "status": "PASS"
     },
     {
-      "bytes": 208702,
+      "bytes": 207123,
       "dataset_id": "figure-04-source-real",
       "public_path": "data/figure_source/figure-04.csv",
-      "sha256": "8ed63dff86fc6ba9d048149f345afe10b9dcaf6c14eb4e595e2d1df796e6c165",
+      "sha256": "eb6debb1f717a263770c73f19c0db2d735b58b6e6341a54a9a449e0671fefabc",
       "source_relative_path": "source-id:figure-04-source-real",
       "stage_action": "copy",
       "status": "PASS"
@@ -163,91 +163,100 @@
       "status": "PASS"
     },
     {
-      "bytes": 121147,
+      "bytes": 120418,
       "dataset_id": "figure-05-source-real",
       "public_path": "data/figure_source/figure-05.csv",
-      "sha256": "0dba5f39e587c2d4d72282f5120b763157965cf22d549ebe4b468eb68d4a8904",
+      "sha256": "a10614a8b506dc436c5021dc0f047eb63a8c76f6d9c6571717bbe72d3979208a",
       "source_relative_path": "source-id:figure-05-source-real",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 2263,
+      "bytes": 2259,
       "dataset_id": "green-methanol-projects-city-v01",
       "public_path": "data/raw/city_topology_v01/green_methanol_projects_city.csv",
-      "sha256": "613e78e01f79af2ee0f746461f514027e3fb8874d08b2b65d435ff186dc91306",
+      "sha256": "acad33a5bd71c667d187b4212a6ca96c1e5a9882bddb76b2b6134085d251e80c",
       "source_relative_path": "source-id:green-methanol-projects-city-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 3351,
+      "bytes": 5774,
+      "dataset_id": "model-parameters-v01",
+      "public_path": "config/model_parameters_v01.csv",
+      "sha256": "2125cf9ab5e87d673f7650b642ceea871a70d1e8e4a038a577ebac43a8670f7d",
+      "source_relative_path": "source-id:model-parameters-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 3339,
       "dataset_id": "official-mot-2025-shipping-port-weights",
       "public_path": "data/raw/official_sources/mot_2025_shipping_port_weights.csv",
-      "sha256": "7920b16fabf8864f7e25febb5a220b100060be159fbdb6231c166dc555d94f0e",
+      "sha256": "e7cbb5372dff62cc4330245806dc843fa0325ea1b3b29c1d3ef63587f2e2cc39",
       "source_relative_path": "source-id:official-mot-2025-shipping-port-weights",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 85607,
+      "bytes": 85265,
       "dataset_id": "pipeline-city-assignments-v01",
       "public_path": "data/raw/pipeline/city_assignments.csv",
-      "sha256": "531a9ea784d290cb480ca67bdcdea3fed3469de57f7af816f3a194e5f89716b4",
+      "sha256": "5bc9cfad516875f8ee83944eac8f5a71ede61224f4aebdbe353c77cbcb6a8d6f",
       "source_relative_path": "source-id:pipeline-city-assignments-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 29425,
+      "bytes": 29284,
       "dataset_id": "pipeline-edges-with-node-coords-v01",
       "public_path": "data/raw/pipeline/pipeline_edges_with_node_coords.csv",
-      "sha256": "36ab5eae5e52605b9c99d8d1219807bcb88c9a3a8d98bc48b7081fb20fe6c264",
+      "sha256": "cd6294bd374c75b629c37050e9414c4254f1cc2b0c71cfb2056b774d1465dc2c",
       "source_relative_path": "source-id:pipeline-edges-with-node-coords-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 150285,
+      "bytes": 149884,
       "dataset_id": "pipeline-level-utilization-v01",
       "public_path": "data/raw/pipeline/pipeline_level_utilization_long.csv",
-      "sha256": "136f37b4da204d12df40ff370433425a240123807be6e2c161d768891a28b7f8",
+      "sha256": "51c3c55fff0aec86fc4c79a11817f12caab39e9785007d7f6032717b23bfd598",
       "source_relative_path": "source-id:pipeline-level-utilization-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 33348,
+      "bytes": 33207,
       "dataset_id": "pipeline-network-segments-v01",
       "public_path": "data/raw/pipeline/pipeline_network_segments_v01.csv",
-      "sha256": "a8420758a540f3f8e35f787afdea874a01ba21934940f4864661fb08da207545",
+      "sha256": "b52f3b2bd17fade12a4b2ab79da5818049fb8971cf71197c9eb1d07ebb3e3752",
       "source_relative_path": "source-id:pipeline-network-segments-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 30159,
+      "bytes": 30005,
       "dataset_id": "pipeline-nodes-geocoded-v01",
       "public_path": "data/raw/pipeline/pipeline_nodes_geocoded.csv",
-      "sha256": "04d17712776415ae202abc819838eca93a2630ae91e0ea6ec4e179c47a7304e6",
+      "sha256": "98b637c2b3b9050134e6e2dbc84f0f8d41829a630a90151499d3e30cac5f00f7",
       "source_relative_path": "source-id:pipeline-nodes-geocoded-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 264010,
+      "bytes": 262889,
       "dataset_id": "pipeline-segment-transport-task-v01",
       "public_path": "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv",
-      "sha256": "e47f2f1e374e22ab2d9f20d06e3b00c767c494a87cbb7248d52e78dd8b05bbc2",
+      "sha256": "8d603eab33bd48fbb058431ecf7b9d2a395db0c978d68658b7d5fa390415ea8f",
       "source_relative_path": "source-id:pipeline-segment-transport-task-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 151127,
+      "bytes": 149782,
       "dataset_id": "regional-accounts-v08",
       "public_path": "data/processed/dynamic_analyses_v08/regional_accounts.csv",
-      "sha256": "5537f669c62505868e279ee1d065f13ab6c0c4fe7b9765761d9ad4173d0327ed",
+      "sha256": "e85b1f863e736c662af8e916ab1f4619fc55155d77c8f670308c2e6cb088ddfd",
       "source_relative_path": "source-id:regional-accounts-v08",
       "stage_action": "copy",
       "status": "PASS"
@@ -265,7 +274,7 @@
       "bytes": null,
       "dataset_id": "standard-map-gs2023-2767",
       "public_path": "data/external/maps/standard_map_gs2023_2767.json",
-      "sha256": "b525e1c8b4c9a53ab2e7dd2608472263b773cadaecbac9108d7e6916beade414",
+      "sha256": "d2e84c21619d5daf1ab81385de587773c408fef58e299354ea6ffecdefa8cdff",
       "source_relative_path": "",
       "stage_action": "acquire",
       "status": "PASS"
@@ -280,64 +289,64 @@
       "status": "PASS"
     },
     {
-      "bytes": 170042,
+      "bytes": 169297,
       "dataset_id": "supply-province-projection-nbs-v01",
       "public_path": "data/raw/supply/province_projection_nbs_generation.csv",
-      "sha256": "3bcfe8f37a2067304b094c3dc8c4b350d5ac388b7bc7f1c7bf1127797db2b789",
+      "sha256": "f658f36a42cb73e809d615f073bb35663d122fbec53776e6c0d48f5a3c431577",
       "source_relative_path": "source-id:supply-province-projection-nbs-v01",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 1488,
+      "bytes": 1478,
       "dataset_id": "topology-best-two-link-plans-v038",
       "public_path": "data/raw/topology/best_two_link_plans.csv",
-      "sha256": "28333b48fc786910e8f66ba4f2c5f5e2bfd5acda51cb08e69d8205ce368da2c5",
+      "sha256": "31719b2e24fc247da52e254f7ea3625c230ff489f2756a211f6c24a41fabc627",
       "source_relative_path": "source-id:topology-best-two-link-plans-v038",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 89538,
+      "bytes": 88719,
       "dataset_id": "topology-candidate-links-v038",
       "public_path": "data/raw/topology/candidate_links.csv",
-      "sha256": "e5a49224629b4a172daca81f72f863f426ad40a5dd87c240ee6398175909bda6",
+      "sha256": "db214bfc36956a865f007d503a4d6b264d54fe96f8ac02080ee1b1c33a24594b",
       "source_relative_path": "source-id:topology-candidate-links-v038",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 1370,
+      "bytes": 1324,
       "dataset_id": "topology-capacity-sensitivity-5point-v038",
       "public_path": "data/raw/topology/capacity_sensitivity_5point.csv",
-      "sha256": "b4b02a2f065019da50fd152d830c531f1586acc49666cf790a3d34981b3ba367",
+      "sha256": "253b8092d0e97202673e22036cebe203bf3a992e6b2bd33f36d09e2a1072dde4",
       "source_relative_path": "source-id:topology-capacity-sensitivity-5point-v038",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 167816,
+      "bytes": 166762,
       "dataset_id": "topology-edge-flows-v038",
       "public_path": "data/raw/topology/edge_flows.csv",
-      "sha256": "a7cb9d5f3285b0bbb8237aa55c250952a2d4ca1f6997fa0e3295b9083abb3fea",
+      "sha256": "070d3a85c471ee45da3ebb9e1ecdf3d5503c42421c87776da5d6402d53bfa5bd",
       "source_relative_path": "source-id:topology-edge-flows-v038",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 9002,
+      "bytes": 8848,
       "dataset_id": "topology-node-audit-v038",
       "public_path": "data/raw/topology/topology_node_audit.csv",
-      "sha256": "400d2c74b68bd819c380005e375281c652ffb49654ce352168f592299a11498a",
+      "sha256": "f75a9fd4f52b3ca463b4734957216546b250647ab3886c462691e4ec1281eb03",
       "source_relative_path": "source-id:topology-node-audit-v038",
       "stage_action": "copy",
       "status": "PASS"
     },
     {
-      "bytes": 83883,
+      "bytes": 83434,
       "dataset_id": "topology-regional-connector-gain-v01",
       "public_path": "data/raw/topology/regional_connector_gain.csv",
-      "sha256": "d551fa6b655de134b5a526d1c5b4097698f5c01a4db41a932acb9a5735250977",
+      "sha256": "7050189eb235e066a38393b968b991881603e13f6b2eb3874fe3c7c7aa35a837",
       "source_relative_path": "source-id:topology-regional-connector-gain-v01",
       "stage_action": "copy",
       "status": "PASS"
@@ -357,10 +366,10 @@
   "totals": {
     "acquire": 1,
     "copy": 33,
-    "datasets": 39,
+    "datasets": 40,
     "errors": 0,
-    "existing": 5,
+    "existing": 6,
     "failed": 0,
-    "passed": 39
+    "passed": 40
   }
 }

@@ -14,6 +14,7 @@ from green_methanol_release import pipeline as pipeline_module
 from green_methanol_release import reproduce as reproduce_module
 from green_methanol_release.inventory import (
     DATASET_REGISTRY_FIELDS,
+    EXPECTED_OUTPUT_IDS,
     OUTPUT_REGISTRY_FIELDS,
     write_release_inventories,
 )
@@ -133,18 +134,15 @@ def test_smoke_reproduces_open_aggregate_scope(tmp_path):
 
 def test_full_real_release_executes_all_registered_outputs(tmp_path):
     report = run_reproduction(ROOT, "full", tmp_path / "run.json")
-    expected_ids = [
-        "figure-01",
-        "figure-02a-d-f-h",
-        "figure-02e",
-        "figure-03",
-        "figure-04",
-        "figure-05",
-    ]
+    expected_ids = list(EXPECTED_OUTPUT_IDS)
     assert report["status"] == "PASS"
     assert report["executed_output_ids"] == expected_ids
     assert set(report["artifacts"]) == set(expected_ids)
     assert all(len(item["sha256"]) == 64 for item in report["artifacts"].values())
+    assert report["workflow_status"]["model_preprocessing"] == "reproduced"
+    assert report["workflow_status"]["network_model"] == "reproduced"
+    assert report["workflow_status"]["dynamic_analysis"] == "reproduced"
+    assert report["workflow_status"]["figure_source_regeneration"] == "reproduced"
     figure2e_secondary = report["artifacts"]["figure-02e"]["secondary_artifacts"]
     assert figure2e_secondary[0]["path"] == "figures/figure-02e.pdf"
     assert len(figure2e_secondary[0]["sha256"]) == 64

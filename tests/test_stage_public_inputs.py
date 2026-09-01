@@ -571,11 +571,11 @@ def test_real_staging_report_passes_and_counts_all_actions():
 
     assert report["status"] == "PASS"
     assert report["totals"] == {
-        "datasets": 39,
+        "datasets": 40,
         "copy": 33,
-        "existing": 5,
+        "existing": 6,
         "acquire": 1,
-        "passed": 39,
+        "passed": 40,
         "failed": 0,
         "errors": 0,
     }

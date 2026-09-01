@@ -9,11 +9,12 @@ analysis tables, and source data for Figures 1-5. Figure 2e is reproduced from
 the public carrier at `data/figure_source/figure-02.csv`.
 
 `data/dataset_registry.csv` is the authoritative dataset-to-location register;
-it records 39 dataset records, including 38 deposited byte carriers and one
+it records 40 dataset records, including 39 deposited byte carriers and one
 metadata-only acquisition record. Each record states its origin, access route,
 source terms, SHA-256 value, processing information, and manuscript use.
-`data/output_registry.csv` maps each registered figure output to its input
-dataset IDs and generating command. `FILE_MANIFEST.csv` and
+`data/output_registry.csv` maps each of the five public model stages and six
+manuscript figure outputs to its input dataset IDs and generating command.
+`FILE_MANIFEST.csv` and
 `CHECKSUMS.sha256` provide the final-tree inventory and byte checks.
 
 The public source register at `data/public_sources.csv` records stable source

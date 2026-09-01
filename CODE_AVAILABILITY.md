@@ -4,8 +4,9 @@ Package version `1.0.0` provides the Python package under
 `src/green_methanol_release/`, the command-line builders and audit tools under
 `scripts/`, the pinned environment in `environment/`, configuration and
 registries, tests, and the expected release inventories. The code reproduces
-the registered manuscript outputs, including Figure 2e. Figure 2e is
-reproduced from its deposited public carrier.
+the public demand/preprocessing, directed NetworkX flow, dynamic-analysis,
+model Figure 4/5 source, and six manuscript figure outputs, including Figure
+2e. Figure 2e is reproduced from its deposited public carrier.
 
 From a clean checkout, install Python 3.12 and the pinned requirements, then
 run:
@@ -22,7 +23,9 @@ python scripts/audit_release.py --output <external-output>/green-methanol-audit.
 The full command consumes the dataset and output registries, validates every
 registered carrier and its hash, executes the registered builders in registry
 order, checks the expected artifacts, and writes sanitized logs plus
-`full_reproduction.json` to the external output directory. Figure 2e is
+`full_reproduction.json` to the external output directory. The model rows run
+from public raw carriers through demand allocation, directed flow, dynamic
+accounts, and Figure 4/5 source regeneration. Figure 2e is
 explicitly bound to:
 
 ```text
