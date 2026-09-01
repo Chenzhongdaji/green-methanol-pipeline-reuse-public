@@ -290,7 +290,9 @@ def _supply_nodes(root: Path, config: ModelConfig) -> pd.DataFrame:
         selected = frame[frame["scenario"].eq(supply_scenario)].copy()
         if selected.empty:
             raise ValueError(f"supply projection missing scenario {supply_scenario!r}")
-        grouped = selected.groupby(["province_key", "year"], sort=True)["methanol_supply_Mt"].sum()
+        grouped = selected.groupby(["province_key", "year"], sort=True)[
+            "methanol_supply_Mt"
+        ].agg(lambda values: math.fsum(float(value) for value in values))
         for (province, year), value in grouped.items():
             rows.append(
                 {

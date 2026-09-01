@@ -526,6 +526,56 @@ def _solve_graph(graph: nx.DiGraph) -> tuple[int, int, dict[str, dict[str, int]]
     return maximum, int(objective), flow
 
 
+def validate_flow_conservation(
+    graph: nx.DiGraph,
+    flow: dict[str, dict[str, int]],
+    *,
+    source: str = "__source__",
+    sink: str = "__sink__",
+    tolerance: int = 0,
+) -> dict[str, int]:
+    """Validate node-wise conservation and source/sink accounting in flow units."""
+
+    if source not in graph or sink not in graph:
+        raise ValueError("flow conservation graph must include source and sink")
+
+    def edge_value(upstream: str, downstream: str) -> int:
+        return int(flow.get(upstream, {}).get(downstream, 0))
+
+    max_internal_residual = 0
+    for node in graph.nodes:
+        incoming = sum(
+            edge_value(upstream, node) for upstream in graph.predecessors(node)
+        )
+        outgoing = sum(
+            edge_value(node, downstream) for downstream in graph.successors(node)
+        )
+        if node in {source, sink}:
+            continue
+        residual = abs(incoming - outgoing)
+        max_internal_residual = max(max_internal_residual, residual)
+        if residual > tolerance:
+            raise ValueError(
+                "flow conservation failed at node "
+                f"{node!r}: inflow={incoming}, outflow={outgoing}"
+            )
+
+    source_inflow = sum(edge_value(upstream, source) for upstream in graph.predecessors(source))
+    source_outflow = sum(edge_value(source, downstream) for downstream in graph.successors(source))
+    sink_inflow = sum(edge_value(upstream, sink) for upstream in graph.predecessors(sink))
+    sink_outflow = sum(edge_value(sink, downstream) for downstream in graph.successors(sink))
+    if source_inflow or sink_outflow or abs(source_outflow - sink_inflow) > tolerance:
+        raise ValueError(
+            "flow conservation source/sink accounting failed: "
+            f"source_in={source_inflow}, source_out={source_outflow}, "
+            f"sink_in={sink_inflow}, sink_out={sink_outflow}"
+        )
+    return {
+        "max_internal_residual_units": int(max_internal_residual),
+        "max_source_sink_residual_units": int(abs(source_outflow - sink_inflow)),
+    }
+
+
 def _case_inputs(
     demand: DemandResult,
     scenario: str,
@@ -600,6 +650,9 @@ def run_network(
     rows: list[dict[str, Any]] = []
     edge_rows: list[dict[str, Any]] = []
     service_rows: list[dict[str, Any]] = []
+    flow_conservation_cases = 0
+    max_internal_residual_units = 0
+    max_source_sink_residual_units = 0
     for scenario in requested:
         for tier in sorted(demand_result.nodes["tier"].unique(), key=("low", "mid", "high").index):
             for year in YEARS:
@@ -615,6 +668,16 @@ def run_network(
                     candidate_links=connector_by_scenario.get(scenario, []),
                 )
                 maximum, objective, flow = _solve_graph(graph)
+                conservation = validate_flow_conservation(graph, flow)
+                flow_conservation_cases += 1
+                max_internal_residual_units = max(
+                    max_internal_residual_units,
+                    conservation["max_internal_residual_units"],
+                )
+                max_source_sink_residual_units = max(
+                    max_source_sink_residual_units,
+                    conservation["max_source_sink_residual_units"],
+                )
                 pipeline_served = _from_units(maximum, config.flow_scale)
                 served_by_province = {
                     province: _from_units(int(flow.get(aggregate, {}).get("__sink__", 0)), config.flow_scale)
@@ -774,6 +837,12 @@ def run_network(
             "edge_catalog": int(len(edge_catalog)),
             "node_catalog": int(len(node_catalog)),
         },
+        "flow_conservation": {
+            "status": "PASS",
+            "cases": flow_conservation_cases,
+            "max_internal_residual_units": max_internal_residual_units,
+            "max_source_sink_residual_units": max_source_sink_residual_units,
+        },
         "boundary": "capacity-constrained directed model on author-derived segment and node carriers; no engineering qualification is inferred; legacy pressure/cost details are omitted",
     }
     return NetworkResult(
@@ -854,6 +923,7 @@ __all__ = [
     "NetworkResult",
     "NetworkTopology",
     "haversine_km",
+    "validate_flow_conservation",
     "load_network_outputs",
     "run_network",
     "write_network_outputs",
