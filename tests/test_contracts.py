@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pytest
 
@@ -59,6 +60,48 @@ def test_ci_manifest_entrypoint_exists():
     assert "green-methanol-full-2/full_reproduction.json" in workflow
     assert workflow.count("full_reproduction.json") >= 3
     assert (root / "scripts" / "build_manifest.py").is_file()
+
+
+def test_runtime_has_five_identical_pinned_dependencies():
+    root = Path(__file__).resolve().parents[1]
+    expected = {
+        "numpy": "2.5.1",
+        "pandas": "3.0.1",
+        "matplotlib": "3.11.1",
+        "networkx": "3.5",
+        "pytest": "8.4.2",
+    }
+    requirements = (root / "environment" / "requirements.txt").read_text(encoding="utf-8")
+    requirement_pins = dict(
+        line.split("==", 1)
+        for line in requirements.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+    assert requirement_pins == expected
+
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+    for name, version in expected.items():
+        assert f'"{name}=={version}"' in pyproject
+
+    environment = (root / "environment" / "environment.md").read_text(encoding="utf-8")
+    assert "five pinned dependencies" in environment
+    assert "two pinned requirements" not in environment
+    for name, version in expected.items():
+        assert f"`{name}=={version}`" in environment
+
+
+def test_release_docs_describe_output_as_a_report_file():
+    root = Path(__file__).resolve().parents[1]
+    for relative in ("README.md", "DATA_AVAILABILITY.md", "CODE_AVAILABILITY.md", "RELEASE_STATUS.md"):
+        text = (root / relative).read_text(encoding="utf-8")
+        assert "full_reproduction.json" in text or "report file" in text.casefold()
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    code = (root / "CODE_AVAILABILITY.md").read_text(encoding="utf-8")
+    status = (root / "RELEASE_STATUS.md").read_text(encoding="utf-8")
+    assert "--output <external-output>/green-methanol-full/full_reproduction.json" in readme
+    assert "--output <external-output>/green-methanol-full/full_reproduction.json" in code
+    assert "--output <external-output>/green-methanol-full/full_reproduction.json" in status
+    assert re.search(r"--output[^\n]*green-methanol-full[^\n]*full_reproduction\.json", readme)
 
 
 def test_release_status_requires_external_publication_gates_and_author_confirmation():

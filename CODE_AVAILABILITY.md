@@ -17,12 +17,13 @@ run:
 python -m pip install -r environment/requirements.txt
 python -m pip install -e .
 python -m pytest -q
-python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full
+python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full/full_reproduction.json
 python scripts/build_manifest.py
 python scripts/audit_release.py --output <external-output>/green-methanol-audit.json
 ```
 
-The full command consumes the dataset and output registries, validates every
+For `reproduce.py` and `audit_release.py`, `--output` names the external report
+file (for example `full_reproduction.json`), not a directory. The full command consumes the dataset and output registries, validates every
 registered carrier and its hash, executes the registered builders in registry
 order, checks the expected artifacts, and writes sanitized logs plus
 `full_reproduction.json` to the external output directory. The model rows run

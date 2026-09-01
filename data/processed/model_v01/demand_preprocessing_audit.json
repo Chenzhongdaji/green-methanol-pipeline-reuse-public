@@ -1,4 +1,5 @@
 {
+  "audit_sha256": "54f12952c24563162b109d0dbd2bdf99e1056d98018d6253728ade7630e03586",
   "input_hashes": {
     "config/model_parameters_v01.csv": "8ff309ee7484f6b4311061d5f682134135b6baff881fa0cbcef6b5fa2bf14406",
     "data/raw/city_topology_v01/aviation_refinery_city_activity.csv": "a34539eb46c5662e920905bcc234dc5bbcb683e9321d8034667a2cb08bde2cdd",
@@ -17,6 +18,12 @@
     "data/raw/official_sources/mot_2025_shipping_port_weights.csv",
     "data/raw/supply/province_projection_nbs_generation.csv"
   ],
+  "output_hashes": {
+    "data/processed/model_v01/component_demand.csv": "c327260505c0cea313826b763e0f367e5ed9d16ca5ae7cb5fc5e5b8f0f93cd62",
+    "data/processed/model_v01/demand_nodes.csv": "e84eb9cf7b6bb9d03ba17e64dc8036e3210fba7bcb825b9300d7b20f0e3b6cda",
+    "data/processed/model_v01/demand_totals.csv": "16ef018f11d96ba3a7fa00850527db9ea9ec0895a73c85e120cf0bffd23af887",
+    "data/processed/model_v01/supply_nodes.csv": "2017a9c2293c4da74196db84e0317a460997488a85bb55a8ac7cb6263aa729f4"
+  },
   "proxy_boundaries": {
     "aviation_origin": "validated as a public sensitivity proxy; not used as the primary city allocation",
     "city_activity": "documented refinery-city activity proxy; not measured methanol demand"

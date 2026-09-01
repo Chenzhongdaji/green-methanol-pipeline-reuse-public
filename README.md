@@ -19,7 +19,7 @@ checks all expected artifacts. Run it from a clean checkout with an output
 directory outside the repository:
 
 ```text
-python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full
+python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full/full_reproduction.json
 ```
 
 The workflow includes the public Figure 2 carrier at
@@ -61,12 +61,14 @@ python -m venv <external-venv>
 <external-venv>/Scripts/python -m pip install -r environment/requirements.txt
 <external-venv>/Scripts/python -m pip install -e .
 <external-venv>/Scripts/python -m pytest -q
-<external-venv>/Scripts/python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full
+<external-venv>/Scripts/python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full/full_reproduction.json
 <external-venv>/Scripts/python scripts/build_manifest.py
 <external-venv>/Scripts/python scripts/audit_release.py --output <external-output>/green-methanol-audit.json
 ```
 
-`FILE_MANIFEST.csv` and `CHECKSUMS.sha256` are deterministic inventories of
+For `reproduce.py` and `audit_release.py`, `--output` is a report file path
+such as `full_reproduction.json`, not an output directory; the report's parent
+directory receives sanitized logs and generated artifacts. `FILE_MANIFEST.csv` and `CHECKSUMS.sha256` are deterministic inventories of
 the release tree. The dataset and output registries are the authoritative
 mapping from each input or manuscript output to its repository location and
 generating command. A full run report contains all eleven output IDs, return

@@ -16,6 +16,9 @@ source terms, SHA-256 value, processing information, and manuscript use.
 manuscript figure outputs to its input dataset IDs and generating command.
 `FILE_MANIFEST.csv` and
 `CHECKSUMS.sha256` provide the final-tree inventory and byte checks.
+The release-facing `reproduce.py` and `audit_release.py` commands take a
+report-file path such as `full_reproduction.json` with `--output`; that option
+does not denote an output directory.
 
 The deposited model-v01 carriers include the demand, directed-network,
 analysis, and Figure 4/5 diagnostic stages. The model-figure-04 and

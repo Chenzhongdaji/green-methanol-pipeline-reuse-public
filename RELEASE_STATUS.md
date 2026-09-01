@@ -20,9 +20,10 @@ The version is the value declared in `pyproject.toml` and `CITATION.cff`.
 
 The input boundary is defined by `data/dataset_registry.csv`; manuscript-output
 mapping and commands are defined by `data/output_registry.csv`. Run
-`python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full`
-to validate hashes, execute the builders, and write the machine-readable run
-report and sanitized logs. Figure 2e is generated from
+`python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full/full_reproduction.json`
+to validate hashes, execute the builders, and write the machine-readable report
+file plus sanitized logs. The `--output` value is a report file, not a
+directory. Figure 2e is generated from
 `data/figure_source/figure-02.csv` by
 `scripts/build_figure_02.py --panel e` and produces both the PNG and PDF
 artifacts. Its network view uses analytical coordinates and does not require
