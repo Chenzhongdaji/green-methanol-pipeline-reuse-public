@@ -28,6 +28,7 @@ from .inventory import (
     load_output_registry,
     validate_inventory,
 )
+from .provenance import validate_repository_provenance
 from .reproduce import run_reproduction
 from .safety import assert_public_path, audit_tracked_paths, resolve_public_path
 
@@ -1222,6 +1223,7 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         "size_hits": [],
         "scan_exclusions": [],
         "tracked_forbidden_paths": [],
+        "provenance": {"status": "NOT_RUN", "errors": []},
         "errors": [],
     }
     errors: list[str] = []
@@ -1251,6 +1253,14 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
         errors.extend(required_errors)
     except (OSError, ValueError) as exc:
         errors.append(f"metadata audit failed: {exc}")
+    try:
+        provenance = validate_repository_provenance(root)
+        report["provenance"] = provenance
+        if provenance.get("status") != "PASS":
+            errors.append("repository provenance validation failed")
+    except (OSError, ValueError, KeyError) as exc:
+        report["provenance"] = {"status": "FAIL", "errors": [str(exc)]}
+        errors.append(f"repository provenance audit failed: {exc}")
     registry_exemptions, registry_errors = _verified_registry_carriers(root)
     errors.extend(registry_errors)
     try:
