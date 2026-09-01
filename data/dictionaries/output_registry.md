@@ -50,7 +50,8 @@ The network base graph never includes candidate links. Candidate links are
 read only for the Figure-5 sensitivity branch, where endpoints are validated
 against the public node catalog. The network uses
 `同管道运输任务_万吨` as its occupied-capacity basis and WGS84 haversine
-kilometres for `distance_km` and `pipeline_tonne_km`. Legacy pressure/cost
+kilometres for `distance_km` and `pipeline_tonne_km`, retaining the v08
+one-km lower bound for coincident analytical coordinates. Legacy pressure/cost
 details are omitted from this public analytical model; transport emissions
 are reserved/not implemented.
 

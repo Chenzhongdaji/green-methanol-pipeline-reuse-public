@@ -198,9 +198,16 @@ def _read_segments(root: Path) -> pd.DataFrame:
         raise ValueError("pipeline segment IDs must be unique")
     if (frame["design_throughput_10kt_y"] < 0).any():
         raise ValueError("pipeline design throughput must be non-negative")
+    # The original v08 routing helper applied a one-kilometre lower bound to
+    # coincident analytical coordinates; retain that convention for base
+    # segments as well as candidate links while keeping Haversine kilometres
+    # for all non-coincident geometry.
     frame["distance_km"] = frame.apply(
-        lambda row: haversine_km(
-            row["from_lon"], row["from_lat"], row["to_lon"], row["to_lat"]
+        lambda row: max(
+            haversine_km(
+                row["from_lon"], row["from_lat"], row["to_lon"], row["to_lat"]
+            ),
+            1.0,
         ),
         axis=1,
     )

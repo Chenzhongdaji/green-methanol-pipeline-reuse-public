@@ -41,7 +41,9 @@ demand nodes, directed NetworkX flow accounts, dynamic regional/logistics
 tables, and model-derived Figure 4/5 source tables under
 `data/processed/model_v01/`. The network stage uses the original task-level
 occupied-capacity field `同管道运输任务_万吨`, and computes `distance_km` and
-`pipeline_tonne_km` on the WGS84 haversine-kilometre scale. Candidate links
+`pipeline_tonne_km` on the WGS84 haversine-kilometre scale, retaining the v08
+`max(distance_km, 1.0)` lower bound for coincident analytical coordinates.
+Candidate links
 are loaded only by the Figure-5 sensitivity branch and are excluded from the
 base graph. The public analytical model omits legacy pressure/cost details
 that were not deposited; `transport_emission_per_km` is reserved/not

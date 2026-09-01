@@ -226,6 +226,26 @@ def test_network_capacity_uses_same_pipeline_task_and_haversine_distance():
     assert known["distance_km"] > 1.0
 
 
+def test_base_segment_distance_inherits_v08_one_km_lower_bound():
+    segments = network_module._read_segments(ROOT)
+    coincident = segments[segments["segment_id"] == "S019"].iloc[0]
+    assert network_module.haversine_km(
+        coincident["from_lon"],
+        coincident["from_lat"],
+        coincident["to_lon"],
+        coincident["to_lat"],
+    ) == pytest.approx(0.0)
+    assert coincident["distance_km"] == pytest.approx(1.0)
+
+    result = run_model_chain(ROOT, write_outputs=False)
+    assert result.network.edge_catalog["distance_km"].min() >= 1.0
+    known = result.network.edge_catalog[
+        (result.network.edge_catalog["segment_id"] == "S019")
+        & (result.network.edge_catalog["year"] == 2025)
+    ].iloc[0]
+    assert known["distance_km"] == pytest.approx(1.0)
+
+
 def test_model_config_exposes_capacity_basis_without_active_emission_control():
     config = load_config(ROOT)
     assert config.capacity_basis == "same_pipeline_task_10kt"

@@ -22,7 +22,8 @@ analysis, and Figure 4/5 diagnostic stages. The model-figure-04 and
 model-figure-05 artifacts are diagnostic/model-derived outputs, not formal
 manuscript figures and not numerical reproductions of v08. The directed
 network uses `同管道运输任务_万吨` as its occupied-capacity basis and WGS84
-haversine kilometres for `distance_km` and `pipeline_tonne_km`; candidate
+haversine kilometres for `distance_km` and `pipeline_tonne_km`, retaining the
+v08 one-km lower bound for coincident analytical coordinates; candidate
 links are confined to Figure-5 sensitivity. Legacy pressure/cost details are
 not represented, and transport-emission accounting is reserved/not
 implemented.

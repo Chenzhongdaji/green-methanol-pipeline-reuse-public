@@ -33,7 +33,8 @@ and checked with
 `python scripts/audit_release.py --output <external-output>/green-methanol-audit.json`.
 The public repository's CI repeats the test and audit contract. The directed
 network uses `同管道运输任务_万吨` as the occupied-capacity basis and WGS84
-haversine kilometres for `distance_km` and `pipeline_tonne_km`. Candidate
+haversine kilometres for `distance_km` and `pipeline_tonne_km`, retaining the
+v08 one-km lower bound for coincident analytical coordinates. Candidate
 links are confined to Figure-5 sensitivity. Legacy pressure/cost details are
 omitted from this public analytical model; transport emissions are reserved
 and not implemented.

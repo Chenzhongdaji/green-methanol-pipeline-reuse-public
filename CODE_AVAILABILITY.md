@@ -29,7 +29,8 @@ order, checks the expected artifacts, and writes sanitized logs plus
 from public raw carriers through demand allocation, directed flow, dynamic
 accounts, and model-v01 Figure 4/5 source regeneration. The network model
 uses `同管道运输任务_万吨` for occupied capacity and WGS84 haversine
-kilometres for `distance_km` and `pipeline_tonne_km`; candidate links are
+kilometres for `distance_km` and `pipeline_tonne_km`, with the v08 one-km
+lower bound for coincident analytical coordinates; candidate links are
 Figure-5 sensitivity inputs only. Legacy pressure/cost details are not
 represented, and transport emissions are reserved/not implemented. Figure 2e is
 explicitly bound to:
