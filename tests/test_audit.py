@@ -82,7 +82,7 @@ def test_repository_passes_public_release_gates():
     assert report["restricted_payload_hits"] == []
 
 
-def test_registered_copy_carrier_allows_byte_exact_crlf_and_restricted_schema(tmp_path: Path):
+def test_registered_copy_carrier_allows_byte_exact_lf_and_restricted_schema(tmp_path: Path):
     root = _copy_release(tmp_path, "registered_carrier")
     relative = "data/raw/pipeline/pipeline_network_segments_v01.csv"
 
