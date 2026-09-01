@@ -1,6 +1,6 @@
 path,bytes,sha256,purpose,licence_scope,data_class
 .gitattributes,381,f0dfa7e04aa7bb2d1d86a1249d891baf4901c6bb0c7ba7b0da977a647fcfccd5,release documentation or metadata,MIT,documentation
-.github/workflows/ci.yml,3431,eb8d22474acc7dcc959305eab7baa406b96cebef3cd6b74db41fa1a11b74b001,runtime or continuous-integration configuration,MIT,configuration
+.github/workflows/ci.yml,3440,5dda9755102d2979fe6a0dc11254dbad13fa2b2645d6c52812e74e162fa7bdbb,runtime or continuous-integration configuration,MIT,configuration
 .gitignore,297,c5f845f2f19d02c9e9303a1eb4e1928aea9ccef5061247b6dd2ce485f7fce836,release documentation or metadata,MIT,documentation
 .pre-commit-config.yaml,242,3ca9b97ecd6db5de7e27b7ace3e7d52ea7c50ac8b89b5bdd98c414e0717c5692,release documentation or metadata,MIT,documentation
 CITATION.cff,368,f7f3d4291ea6a5ac7786fd1446b26ed0e3fc6f89f10ed5304ea4a915c84c7cf0,release documentation or metadata,MIT,documentation

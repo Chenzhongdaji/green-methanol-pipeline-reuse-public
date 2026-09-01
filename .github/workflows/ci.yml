@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python -m pytest -q 2>&1 | tee "$RUNNER_TEMP/pytest.log"
+          python -m pytest -q --tb=line 2>&1 | tee "$RUNNER_TEMP/pytest.log"
           pytest_status=${PIPESTATUS[0]}
           set -e
           if [ "$pytest_status" -ne 0 ]; then
@@ -38,7 +38,7 @@ jobs:
           import sys
 
           lines = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace").splitlines()
-          summary = "\n".join(lines[-120:])
+          summary = "\n".join(lines[-40:])
           summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
           print(f"::error title=pytest failure summary::{summary}")
           PY
