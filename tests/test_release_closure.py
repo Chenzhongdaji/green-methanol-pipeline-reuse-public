@@ -258,6 +258,18 @@ def test_figure2_panel_map_binds_executable_registry_inputs():
         assert output["input_dataset_ids"] == "figure-02-source-real"
         assert "--input data/figure_source/figure-02.csv" in output["generation_command"]
 
+    panel_map_dictionary = (
+        ROOT / "data" / "dictionaries" / "panel_map.md"
+    ).read_text(encoding="utf-8")
+    normalized_panel_map_dictionary = " ".join(panel_map_dictionary.split())
+    assert "Figure 2 panels a-d and f-h use the direct executable carrier" in normalized_panel_map_dictionary
+    assert "Figure 2e uses the same direct executable carrier" in normalized_panel_map_dictionary
+    assert "`data/figure_source/figure-02.csv`" in normalized_panel_map_dictionary
+    assert "`data/dictionaries/figure_02.md`" in normalized_panel_map_dictionary
+    assert "`figure-02-source-real`" in normalized_panel_map_dictionary
+    assert "supplementary derived evidence only" in normalized_panel_map_dictionary
+    assert "not a direct builder input" in normalized_panel_map_dictionary
+
 
 
 def test_public_metadata_binds_registry_and_full_reproduction_contract():
