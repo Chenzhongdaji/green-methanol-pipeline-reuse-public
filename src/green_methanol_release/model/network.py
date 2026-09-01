@@ -11,7 +11,7 @@ import networkx as nx
 import pandas as pd
 
 from .config import YEARS, ModelConfig, load_config
-from .demand import DEMAND_OUTPUTS, DemandResult, preprocess_demand
+from .demand import DEMAND_OUTPUTS, DemandResult, load_demand_outputs, preprocess_demand
 from .io import (
     finalize_stage_audit,
     finite_float,
@@ -19,6 +19,8 @@ from .io import (
     normalize_province,
     read_csv,
     sorted_frame,
+    verify_registered_hashes,
+    verify_stage_input_hashes,
     verify_persisted_stage,
     write_csv,
     write_json,
@@ -867,32 +869,30 @@ def load_network_outputs(root: Path) -> NetworkResult:
         NETWORK_OUTPUTS.values(),
         "directed_network_flow",
     )
+    load_demand_outputs(root)
+    demand_hashes = hashes_for_paths(root, DEMAND_OUTPUTS.values())
+    network_hashes = verify_registered_hashes(root, NETWORK_INPUTS.values())
+    expected_hashes = {
+        **{f"demand::{key}": value for key, value in demand_hashes.items()},
+        **{f"network::{key}": value for key, value in network_hashes.items()},
+    }
+    input_hashes = verify_stage_input_hashes(
+        payload,
+        expected_hashes,
+        "network-stage",
+    )
     summary = read_csv(root, NETWORK_OUTPUTS["summary"], NETWORK_SUMMARY_COLUMNS)
     edge_flows = read_csv(root, NETWORK_OUTPUTS["edge_flows"], NETWORK_EDGE_FLOW_COLUMNS)
     service = read_csv(root, NETWORK_OUTPUTS["service"], NETWORK_SERVICE_COLUMNS)
     edge_catalog = read_csv(root, NETWORK_OUTPUTS["edge_catalog"], NETWORK_EDGE_CATALOG_COLUMNS)
     node_catalog = read_csv(root, NETWORK_OUTPUTS["node_catalog"], NETWORK_NODE_COLUMNS)
-    input_hashes = payload.get("input_hashes")
-    expected_hash_keys = {
-        *(f"demand::{path}" for path in DEMAND_OUTPUTS.values()),
-        *(f"network::{path}" for path in NETWORK_INPUTS.values()),
-    }
-    if not isinstance(input_hashes, dict) or set(input_hashes) != expected_hash_keys:
-        raise ValueError("network-stage audit is missing input hashes")
-    if any(not isinstance(value, str) or len(value) != 64 for value in input_hashes.values()):
-        raise ValueError("network-stage audit contains invalid input hashes")
-    raw_network_hashes = {
-        str(key).removeprefix("network::"): str(value)
-        for key, value in input_hashes.items()
-        if str(key).startswith("network::")
-    }
-    topology = NetworkTopology(node_catalog, edge_catalog, raw_network_hashes)
+    topology = NetworkTopology(node_catalog, edge_catalog, network_hashes)
     return NetworkResult(
         summary,
         edge_flows,
         service,
         payload,
-        {str(key): str(value) for key, value in input_hashes.items()},
+        input_hashes,
         edge_catalog=edge_catalog,
         node_catalog=node_catalog,
         topology=topology,

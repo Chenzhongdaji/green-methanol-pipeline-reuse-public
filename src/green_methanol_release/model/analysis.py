@@ -21,6 +21,8 @@ from .io import (
     hashes_for_paths,
     read_csv,
     sorted_frame,
+    verify_registered_hashes,
+    verify_stage_input_hashes,
     verify_persisted_stage,
     write_csv,
     write_json,
@@ -457,20 +459,29 @@ def load_analysis_outputs(root: Path) -> AnalysisResult:
         ANALYSIS_OUTPUTS.values(),
         "dynamic_analysis",
     )
+    load_network_outputs(root)
+    expected_hashes = {
+        **hashes_for_paths(root, DEMAND_OUTPUTS.values()),
+        **hashes_for_paths(root, NETWORK_OUTPUTS.values()),
+        **verify_registered_hashes(root, CANDIDATE_INPUTS.values()),
+        **verify_registered_hashes(root, (ANALYSIS_INPUTS["parameters"],)),
+    }
+    input_hashes = verify_stage_input_hashes(
+        payload,
+        expected_hashes,
+        "analysis-stage",
+    )
     summary = read_csv(root, ANALYSIS_OUTPUTS["summary"], ANALYSIS_SUMMARY_COLUMNS)
     regional = read_csv(root, ANALYSIS_OUTPUTS["regional_accounts"], ANALYSIS_REGIONAL_COLUMNS)
     figure_04 = read_csv(root, ANALYSIS_OUTPUTS["figure_04_source"], ANALYSIS_FIGURE_04_COLUMNS)
     figure_05 = read_csv(root, ANALYSIS_OUTPUTS["figure_05_source"], ANALYSIS_FIGURE_05_COLUMNS)
-    input_hashes = payload.get("input_hashes")
-    if not isinstance(input_hashes, dict) or not input_hashes:
-        raise ValueError("analysis-stage audit is missing input hashes")
     return AnalysisResult(
         summary,
         regional,
         figure_04,
         figure_05,
         payload,
-        {str(key): str(value) for key, value in input_hashes.items()},
+        input_hashes,
     )
 
 

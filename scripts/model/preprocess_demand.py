@@ -26,10 +26,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if sorted(set(args.input)) != sorted(set(DEMAND_INPUTS.values())):
             raise ValueError("demand preprocessing inputs must match the public model registry")
-        result = run_model_stage(ROOT, "demand_preprocessing", input_paths=args.input)
         expected = ROOT / "data" / "processed" / "model_v01" / "demand_nodes.csv"
         if args.output.resolve() != expected.resolve():
             raise ValueError("demand preprocessing output must be the registered demand_nodes.csv")
+        result = run_model_stage(ROOT, "demand_preprocessing", input_paths=args.input)
         print(json.dumps({"stage": "demand_preprocessing", "status": result.audit["status"]}, sort_keys=True))
         return 0
     except (OSError, ValueError, KeyError) as exc:

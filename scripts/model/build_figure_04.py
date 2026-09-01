@@ -26,10 +26,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.input != [ANALYSIS_FIGURE_SOURCES["figure_04"]]:
             raise ValueError("Figure 4 model input must be the registered analysis source")
-        result = run_model_stage(ROOT, "figure_04", input_paths=args.input)
         expected = ROOT / "figures" / "model-figure-04.png"
         if args.output.resolve() != expected.resolve():
             raise ValueError("Figure 4 model output must be the registered model-figure-04.png")
+        result = run_model_stage(ROOT, "figure_04", input_paths=args.input)
         print(json.dumps({"stage": "figure_04", "status": result.audit["status"]}, sort_keys=True))
         return 0
     except (OSError, ValueError, KeyError) as exc:

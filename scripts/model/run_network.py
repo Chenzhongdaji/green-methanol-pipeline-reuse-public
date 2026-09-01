@@ -27,10 +27,10 @@ def main(argv: list[str] | None = None) -> int:
         expected_inputs = set(NETWORK_STAGE_INPUTS.values())
         if sorted(set(args.input)) != sorted(expected_inputs):
             raise ValueError("directed network inputs must match the public model registry")
-        result = run_model_stage(ROOT, "directed_network_flow", input_paths=args.input)
         expected = ROOT / "data" / "processed" / "model_v01" / "network_summary.csv"
         if args.output.resolve() != expected.resolve():
             raise ValueError("network flow output must be the registered network_summary.csv")
+        result = run_model_stage(ROOT, "directed_network_flow", input_paths=args.input)
         print(json.dumps({"stage": "directed_network_flow", "status": result.audit["status"]}, sort_keys=True))
         return 0
     except (OSError, ValueError, KeyError) as exc:

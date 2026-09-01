@@ -130,6 +130,27 @@ def verify_registered_hashes(root: Path, relatives: Iterable[str]) -> dict[str, 
     return hashes
 
 
+def verify_stage_input_hashes(
+    payload: dict[str, Any],
+    expected: dict[str, str],
+    stage: str,
+) -> dict[str, str]:
+    """Require a persisted stage audit to match every current input hash."""
+
+    input_hashes = payload.get("input_hashes")
+    if not isinstance(input_hashes, dict) or set(input_hashes) != set(expected):
+        raise ValueError(f"{stage} audit input hash contract is missing or incomplete")
+    if any(
+        not isinstance(value, str) or len(value) != 64
+        for value in input_hashes.values()
+    ):
+        raise ValueError(f"{stage} audit contains invalid input hashes")
+    for relative, current in expected.items():
+        if input_hashes.get(relative) != current:
+            raise ValueError(f"{stage} input hash mismatch: {relative}")
+    return dict(expected)
+
+
 def persisted_stage_hashes(
     root: Path,
     output_paths: Iterable[str],

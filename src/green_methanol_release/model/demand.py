@@ -27,6 +27,8 @@ from .io import (
     read_csv,
     read_json,
     sorted_frame,
+    verify_registered_hashes,
+    verify_stage_input_hashes,
     verify_persisted_stage,
     write_csv,
     write_json,
@@ -389,22 +391,22 @@ def load_demand_outputs(root: Path) -> DemandResult:
         DEMAND_OUTPUTS.values(),
         "demand_preprocessing",
     )
+    input_hashes = verify_stage_input_hashes(
+        payload,
+        verify_registered_hashes(root, DEMAND_INPUTS.values()),
+        "demand-stage",
+    )
     nodes = read_csv(root, DEMAND_OUTPUTS["nodes"], DEMAND_NODE_COLUMNS)
     totals = read_csv(root, DEMAND_OUTPUTS["totals"], DEMAND_TOTAL_COLUMNS)
     supply = read_csv(root, DEMAND_OUTPUTS["supply"], DEMAND_SUPPLY_COLUMNS)
     components = read_csv(root, DEMAND_OUTPUTS["components"], DEMAND_COMPONENT_COLUMNS)
-    input_hashes = payload.get("input_hashes")
-    if not isinstance(input_hashes, dict) or set(input_hashes) != set(DEMAND_INPUTS.values()):
-        raise ValueError("demand-stage audit input hashes do not match public demand inputs")
-    if any(not isinstance(value, str) or len(value) != 64 for value in input_hashes.values()):
-        raise ValueError("demand-stage audit contains invalid input hashes")
     return DemandResult(
         nodes,
         totals,
         supply,
         components,
         payload,
-        {str(key): str(value) for key, value in input_hashes.items()},
+        input_hashes,
     )
 
 
