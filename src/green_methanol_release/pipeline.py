@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import os
@@ -30,8 +31,20 @@ _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _SHELL_METACHARACTERS = frozenset(
     ";&|<>$`(){}!'\"*?[]~#" + chr(92) + chr(13) + chr(10)
 )
+_UNC_ABSOLUTE = re.compile(
+    r"(?<![A-Za-z0-9_])\\\\[^\\/\s,;]+[\\/][^\\/\s,;]+(?:[\\/][^\s,;]*)?"
+)
 _WINDOWS_ABSOLUTE = re.compile(r"(?i)(?<![a-z0-9_])[a-z]:[^\s,;]+")
 _POSIX_ABSOLUTE = re.compile(r"(?<![a-z0-9_])/(?:[^\s,;]+)")
+_CHECKSUM_LINE = re.compile(r"^([0-9a-f]{64})  ([^\r\n]+)$")
+_FROZEN_MANIFEST_FIELDS = (
+    "path",
+    "bytes",
+    "sha256",
+    "purpose",
+    "licence_scope",
+    "data_class",
+)
 
 
 def _sha256(path: Path) -> str:
@@ -55,6 +68,7 @@ def _redact_paths(value: object, root: Path, output_root: Path) -> str:
     )
     for source, replacement in replacements:
         text = text.replace(source, replacement)
+    text = _UNC_ABSOLUTE.sub("<absolute-path>", text)
     text = _WINDOWS_ABSOLUTE.sub("<absolute-path>", text)
     text = _POSIX_ABSOLUTE.sub("<absolute-path>", text)
     text = text.replace("NOT_REPRODUCED", "not-reproduced")
@@ -74,6 +88,84 @@ def _safe_repo_path(root: Path, value: str, label: str) -> tuple[str, Path]:
     except (OSError, ValueError) as exc:
         raise ValueError(f"{label} has unsafe path: {value!r}") from exc
     return relative.as_posix(), resolved
+
+
+def _load_frozen_digest_contract(root: Path) -> dict[str, dict[str, str]] | None:
+    """Load the committed artifact digest contract after boundary checks."""
+
+    _, manifest_path = _safe_repo_path(root, "FILE_MANIFEST.csv", "frozen manifest")
+    _, checksum_path = _safe_repo_path(root, "CHECKSUMS.sha256", "frozen checksums")
+    if not manifest_path.is_file() and not checksum_path.is_file():
+        _, public_sources_path = _safe_repo_path(
+            root, "data/public_sources.csv", "public source registry"
+        )
+        if public_sources_path.is_file():
+            raise ValueError("frozen manifest/checksum files are required for a public full run")
+        return None
+    if not manifest_path.is_file() or not checksum_path.is_file():
+        raise ValueError("frozen manifest/checksum files must be present together")
+
+    manifest_payload = manifest_path.read_bytes()
+    checksum_payload = checksum_path.read_bytes()
+    if b"\r" in manifest_payload or b"\r" in checksum_payload:
+        raise ValueError("frozen manifest/checksum files must use LF line endings")
+    try:
+        manifest_text = manifest_payload.decode("utf-8")
+        checksum_text = checksum_payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("frozen manifest/checksum files must be UTF-8") from exc
+
+    reader = csv.DictReader(manifest_text.splitlines())
+    if tuple(reader.fieldnames or ()) != _FROZEN_MANIFEST_FIELDS:
+        raise ValueError("frozen manifest has an invalid header")
+    manifest: dict[str, str] = {}
+    for line_number, row in enumerate(reader, start=2):
+        if None in row or any(row.get(field) is None for field in _FROZEN_MANIFEST_FIELDS):
+            raise ValueError(f"frozen manifest has a malformed row {line_number}")
+        relative, _ = _safe_repo_path(
+            root, row["path"].strip(), f"frozen manifest row {line_number}"
+        )
+        digest = row["sha256"].strip()
+        if not _SHA256_RE.fullmatch(digest):
+            raise ValueError(f"frozen manifest has an invalid digest at row {line_number}")
+        if relative in manifest:
+            raise ValueError(f"frozen manifest repeats path {relative!r}")
+        manifest[relative] = digest
+
+    checksums: dict[str, str] = {}
+    for line_number, line in enumerate(checksum_text.splitlines(), start=1):
+        match = _CHECKSUM_LINE.fullmatch(line)
+        if not match:
+            raise ValueError(f"frozen checksums has an invalid row {line_number}")
+        digest, raw_relative = match.groups()
+        relative, _ = _safe_repo_path(
+            root, raw_relative, f"frozen checksum row {line_number}"
+        )
+        if relative in checksums:
+            raise ValueError(f"frozen checksums repeats path {relative!r}")
+        checksums[relative] = digest
+    return {"manifest": manifest, "checksums": checksums}
+
+
+def _validate_frozen_artifacts(
+    contract: dict[str, dict[str, str]],
+    artifacts: list[tuple[str, Path]],
+) -> None:
+    for relative, path in artifacts:
+        actual = _sha256(path)
+        expected_manifest = contract["manifest"].get(relative)
+        expected_checksum = contract["checksums"].get(relative)
+        if expected_manifest is None or expected_checksum is None:
+            raise ValueError(
+                f"frozen manifest/checksum digest missing for artifact {relative!r}"
+            )
+        if (
+            expected_manifest != expected_checksum
+            or actual != expected_manifest
+        ):
+            raise ValueError(
+                f"frozen manifest/checksum digest mismatch for artifact {relative!r}"
+            )
 
 
 def _prepare_boundary(root: Path, output_root: Path) -> tuple[Path, Path]:
@@ -264,6 +356,7 @@ def _base_report() -> dict[str, Any]:
         "command_return_codes": {},
         "artifacts": {},
         "logs": {},
+        "frozen_digest_checks": {"status": "not-run", "artifacts": 0},
         "error": None,
         "errors": [],
     }
@@ -290,7 +383,15 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
         }
         registry_counts = validate_release_registry(resolved_root)
         datasets = load_dataset_registry(registry_paths[_REGISTRY_PATHS[0]])
-        outputs = load_output_registry(registry_paths[_REGISTRY_PATHS[1]])
+        strict_output_ids = (
+            _safe_repo_path(resolved_root, "data/public_sources.csv", "public source registry")[1]
+            .is_file()
+        )
+        outputs = load_output_registry(
+            registry_paths[_REGISTRY_PATHS[1]],
+            enforce_fixed_ids=strict_output_ids,
+        )
+        frozen_digest_contract = _load_frozen_digest_contract(resolved_root)
         report["registry"] = dict(registry_counts)
         report["workflow_status"]["registry_validation"] = "reproduced"
 
@@ -431,6 +532,8 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 )
                 break
 
+            if frozen_digest_contract is not None:
+                _validate_frozen_artifacts(frozen_digest_contract, artifact_paths)
             primary_relative, primary_path = artifact_paths[0]
             report["artifacts"][output_id] = {
                 "path": primary_relative,
@@ -458,6 +561,15 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
         else:
             report["status"] = "PASS"
             report["workflow_status"]["manuscript_outputs"] = "reproduced"
+            if frozen_digest_contract is not None:
+                report["frozen_digest_checks"] = {
+                    "status": "PASS",
+                    "artifacts": sum(
+                        1
+                        + len(job["secondary_artifacts"])
+                        for job in jobs
+                    ),
+                }
     except (OSError, UnicodeError, ValueError, KeyError, subprocess.SubprocessError) as exc:
         message = _redact_paths(
             exc,

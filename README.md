@@ -57,6 +57,10 @@ mapping from each input or manuscript output to its repository location and
 generating command. A full run report contains the output IDs, return codes,
 artifact hashes, and sanitized logs.
 
+The optional pre-commit boundary guard checks Git index paths without opening
+payload files. Install it with `pre-commit install`, or run
+`python scripts/check_public_boundary.py` directly before committing.
+
 ## Public data and provenance
 
 Author-generated raw, processed, model-ready, and figure-source material

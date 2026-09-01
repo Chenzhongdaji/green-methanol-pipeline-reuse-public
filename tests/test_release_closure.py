@@ -6,6 +6,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tarfile
 from pathlib import Path
 
 from green_methanol_release.audit import audit_release, verify_manifest_closure
@@ -78,6 +79,45 @@ def test_manifest_and_checksum_cover_every_tracked_public_payload_once():
     assert set(checksums) == tracked | {MANIFEST_FILENAME}
     assert len(manifest) == len(tracked)
     assert len(checksums) == len(tracked) + 1
+
+
+def test_registry_carrier_hashes_match_a_clean_lf_checkout(tmp_path: Path):
+    archive = tmp_path / "release.tar"
+    clean = tmp_path / "clean-checkout"
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "archive",
+            "--format=tar",
+            f"--output={archive}",
+            "HEAD",
+        ],
+        check=True,
+    )
+    clean.mkdir()
+    with tarfile.open(archive) as package:
+        package.extractall(clean, filter="data")
+
+    with (ROOT / "data" / "dataset_registry.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        rows = list(csv.DictReader(handle))
+    for row in rows:
+        if row["stage_action"] not in {"copy", "existing"}:
+            continue
+        relative = Path(*row["public_path"].split("/"))
+        current = ROOT / relative
+        archived = clean / relative
+        assert current.is_file(), row["public_path"]
+        assert archived.is_file(), row["public_path"]
+        current_bytes = current.read_bytes()
+        archived_bytes = archived.read_bytes()
+        assert b"\r" not in current_bytes
+        assert b"\r" not in archived_bytes
+        assert current_bytes == archived_bytes
+        assert hashlib.sha256(current_bytes).hexdigest() == row["sha256"]
 
 
 def test_manifest_attributes_are_bound_to_dataset_registry():

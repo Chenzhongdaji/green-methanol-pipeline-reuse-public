@@ -5,6 +5,12 @@ that generates it and the dataset identifiers it consumes. The output
 registry is intentionally separate from the dataset registry so that output
 execution can validate provenance before running a command.
 
+The public release fixes the output identifier set to exactly
+`figure-01`, `figure-02a-d-f-h`, `figure-02e`, `figure-03`, `figure-04`, and
+`figure-05`. Every ID and required field must be nonempty; an empty, reduced,
+or expanded registry is invalid. The final audit and full orchestrator both
+require all six IDs to execute.
+
 | Column | Definition | Missing-value policy |
 | --- | --- | --- |
 | output_id | Stable identifier for one manuscript output. | Blank and duplicates forbidden. |

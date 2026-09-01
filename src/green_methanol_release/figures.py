@@ -22,7 +22,7 @@ from .safety import resolve_public_path
 
 
 FIGURE_DPI = 150
-FIGURE_FONT = "Microsoft YaHei"
+FIGURE_FONT = "DejaVu Sans"
 FIGURE_TEXT = "#233044"
 FIGURE_MUTED = "#667085"
 FIGURE_GRID = "#D0D5DD"

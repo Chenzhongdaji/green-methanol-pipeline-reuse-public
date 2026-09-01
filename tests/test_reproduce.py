@@ -12,7 +12,11 @@ import pytest
 
 from green_methanol_release import pipeline as pipeline_module
 from green_methanol_release import reproduce as reproduce_module
-from green_methanol_release.inventory import DATASET_REGISTRY_FIELDS, OUTPUT_REGISTRY_FIELDS
+from green_methanol_release.inventory import (
+    DATASET_REGISTRY_FIELDS,
+    OUTPUT_REGISTRY_FIELDS,
+    write_release_inventories,
+)
 from green_methanol_release.reproduce import run_reproduction
 
 
@@ -161,6 +165,54 @@ def test_full_real_release_repeats_with_identical_artifact_hashes(tmp_path):
     assert second["status"] == "PASS"
     assert first["executed_output_ids"] == second["executed_output_ids"]
     assert first["artifacts"] == second["artifacts"]
+
+
+def test_redact_paths_masks_unc_log_paths():
+    separator = chr(92)
+    unc_log = separator * 2 + "server" + separator + "share" + separator + "logs" + separator + "figure-01.log"
+    message = pipeline_module._redact_paths(
+        "builder failed at " + unc_log,
+        Path("release-root"),
+        Path("output-root"),
+    )
+
+    assert "server" not in message
+    assert "share" not in message
+    assert "<absolute-path>" in message
+
+
+def test_full_run_rejects_artifact_digest_drift_against_frozen_inventories(tmp_path):
+    release = tmp_path / "release"
+    shutil.copytree(
+        ROOT,
+        release,
+        ignore=shutil.ignore_patterns(".git", ".venv", "__pycache__", ".pytest_cache"),
+    )
+    write_release_inventories(release)
+    manifest = release / "FILE_MANIFEST.csv"
+    with manifest.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+        fields = reader.fieldnames
+    assert fields is not None
+    target = next(row for row in rows if row["path"] == "figures/figure-01.png")
+    target["sha256"] = "0" * 64
+    with manifest.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+    checksums = release / "CHECKSUMS.sha256"
+    checksum_rows = []
+    for line in checksums.read_text(encoding="utf-8").splitlines():
+        if line.endswith("  FILE_MANIFEST.csv"):
+            line = f"{hashlib.sha256(manifest.read_bytes()).hexdigest()}  FILE_MANIFEST.csv"
+        checksum_rows.append(line)
+    checksums.write_text("\n".join(checksum_rows) + "\n", encoding="utf-8", newline="\n")
+
+    report = run_reproduction(release, "full", tmp_path / "drift" / "full.json")
+
+    assert report["status"] == "FAIL"
+    assert "frozen manifest/checksum digest mismatch" in report["error"]
 
 
 def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_path):

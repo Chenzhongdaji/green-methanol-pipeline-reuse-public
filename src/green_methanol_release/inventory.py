@@ -70,6 +70,15 @@ OUTPUT_REGISTRY_FIELDS = (
     "secondary_artifacts",
 )
 
+EXPECTED_OUTPUT_IDS = (
+    "figure-01",
+    "figure-02a-d-f-h",
+    "figure-02e",
+    "figure-03",
+    "figure-04",
+    "figure-05",
+)
+
 _DATASET_REQUIRED_FIELDS = tuple(
     field
     for field in DATASET_REGISTRY_FIELDS
@@ -108,6 +117,7 @@ _INVENTORY_SKIP_NAMES = frozenset(
 )
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_SOURCE_ID_RE = re.compile(r"^source-id:[A-Za-z0-9][A-Za-z0-9._-]*$")
 _AUTHOR_SOURCE_TYPE = "author-generated aggregate"
 _ENGINEERING_SOURCE_TYPE = "engineering source"
 
@@ -225,6 +235,26 @@ def _normalize_registry_path(value: str, field: str, line_number: int) -> str:
     return relative.as_posix()
 
 
+def _normalize_source_reference(
+    value: str, dataset_id: str, line_number: int
+) -> str:
+    """Validate a stable source ID or a legacy external staging path.
+
+    Public releases use ``source-id:<dataset_id>`` so provenance does not
+    expose a contributor's machine workspace.  Unit fixtures may still use a
+    repository-relative staging path when exercising the staging helper.
+    """
+
+    if _SOURCE_ID_RE.fullmatch(value):
+        expected = f"source-id:{dataset_id}"
+        if value != expected:
+            raise ValueError(
+                f"source_relative_path stable source ID must match dataset {dataset_id!r}"
+            )
+        return value
+    return _normalize_registry_path(value, "source_relative_path", line_number)
+
+
 def _validate_sha256(value: str, dataset_id: str, line_number: int) -> None:
     if value and not _SHA256_RE.fullmatch(value):
         raise ValueError(
@@ -258,8 +288,8 @@ def load_dataset_registry(path: Path) -> list[dict[str, str]]:
             row["public_path"], "public_path", line_number
         )
         if row["source_relative_path"]:
-            row["source_relative_path"] = _normalize_registry_path(
-                row["source_relative_path"], "source_relative_path", line_number
+            row["source_relative_path"] = _normalize_source_reference(
+                row["source_relative_path"], row["dataset_id"], line_number
             )
         _validate_sha256(row["sha256"], row["dataset_id"], line_number)
 
@@ -328,7 +358,9 @@ def _validate_figure2e_contract(row: dict[str, str], line_number: int) -> None:
         raise ValueError(f"figure-02e expected_artifact must be a PNG target at row {line_number}")
 
 
-def load_output_registry(path: Path) -> list[dict[str, str]]:
+def load_output_registry(
+    path: Path, *, enforce_fixed_ids: bool = True
+) -> list[dict[str, str]]:
     """Load and validate the manuscript-output registry."""
 
     rows = _load_registry_csv(Path(path), OUTPUT_REGISTRY_FIELDS, "output_id")
@@ -357,6 +389,16 @@ def load_output_registry(path: Path) -> list[dict[str, str]]:
                 f"output {row['output_id']!r} repeats its primary artifact"
             )
         row["secondary_artifacts"] = ";".join(secondary)
+    if enforce_fixed_ids:
+        expected = set(EXPECTED_OUTPUT_IDS)
+        actual = {row["output_id"] for row in rows}
+        if len(rows) != len(EXPECTED_OUTPUT_IDS) or actual != expected:
+            missing = sorted(expected - actual)
+            unexpected = sorted(actual - expected)
+            raise ValueError(
+                "output registry must declare the six fixed output IDs "
+                f"(missing={missing}, unexpected={unexpected})"
+            )
     return rows
 
 
@@ -460,15 +502,20 @@ def _validate_generation_command(
                 )
 
 
-def validate_release_registry(root: Path) -> dict[str, int]:
+def validate_release_registry(
+    root: Path, *, enforce_fixed_ids: bool | None = None
+) -> dict[str, int]:
     """Validate registry schemas and output-to-dataset referential integrity."""
 
     release_root = ReleaseRoot(Path(root))
+    if enforce_fixed_ids is None:
+        enforce_fixed_ids = release_root.resolve("data/public_sources.csv").is_file()
     datasets = load_dataset_registry(
         release_root.resolve("data/dataset_registry.csv")
     )
     outputs = load_output_registry(
-        release_root.resolve("data/output_registry.csv")
+        release_root.resolve("data/output_registry.csv"),
+        enforce_fixed_ids=enforce_fixed_ids,
     )
 
     dataset_ids = {row["dataset_id"] for row in datasets}
@@ -578,7 +625,10 @@ def _registry_manifest_attributes(
                 raise ValueError(f"dataset registry maps one path to conflicting attributes: {public_path}")
             dataset_attributes[public_path] = attributes
     if output_path.is_file():
-        for row in load_output_registry(output_path):
+        enforce_fixed_ids = ReleaseRoot(root).resolve("data/public_sources.csv").is_file()
+        for row in load_output_registry(
+            output_path, enforce_fixed_ids=enforce_fixed_ids
+        ):
             attributes = (
                 f"manuscript output: {row['manuscript_location']}",
                 "generated artifact; see registered inputs",
@@ -731,6 +781,7 @@ def validate_inventory(root: Path) -> dict[str, int]:
 __all__ = [
     "CHECKSUMS_FILENAME",
     "DATASET_REGISTRY_FIELDS",
+    "EXPECTED_OUTPUT_IDS",
     "MANIFEST_FIELDS",
     "MANIFEST_FILENAME",
     "OUTPUT_REGISTRY_FIELDS",

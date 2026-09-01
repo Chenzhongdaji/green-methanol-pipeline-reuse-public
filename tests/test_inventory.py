@@ -7,6 +7,7 @@ import pytest
 import green_methanol_release.inventory as inventory_module
 from green_methanol_release.inventory import (
     DATASET_REGISTRY_FIELDS,
+    EXPECTED_OUTPUT_IDS,
     MANIFEST_FIELDS,
     PUBLIC_SOURCE_FIELDS,
     write_release_inventories,
@@ -314,6 +315,26 @@ def test_output_registry_rejects_duplicate_ids(tmp_path: Path):
     )
 
     with pytest.raises(ValueError, match="duplicate output_id"):
+        inventory_module.load_output_registry(root / "data" / "output_registry.csv")
+
+
+@pytest.mark.parametrize(
+    "output_rows",
+    [
+        [],
+        [
+            _output_row(output_id=output_id)
+            for output_id in EXPECTED_OUTPUT_IDS
+            if output_id != "figure-02e"
+        ],
+    ],
+)
+def test_output_registry_requires_the_fixed_six_nonempty_output_ids(
+    tmp_path: Path, output_rows: list[dict[str, str]]
+):
+    root = _write_registry(tmp_path, [_dataset_row()], output_rows)
+
+    with pytest.raises(ValueError, match="six fixed output IDs"):
         inventory_module.load_output_registry(root / "data" / "output_registry.csv")
 
 

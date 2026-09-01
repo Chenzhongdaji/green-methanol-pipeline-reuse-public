@@ -25,6 +25,7 @@ except ModuleNotFoundError:  # pragma: no cover - used by direct CLI execution
 _ALLOWED_ACTIONS = ("copy", "existing", "acquire")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _FORBIDDEN_COMPONENT = "管道数据"
+_SOURCE_ID_RE = re.compile(r"^source-id:[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 def _error(
@@ -78,6 +79,10 @@ def _relative_path(value: str, *, kind: str) -> str:
         raise ValueError(f"{kind} path must not be empty")
     assert_public_path(Path(value))
     return relative.as_posix()
+
+
+def _is_stable_source_id(value: str, dataset_id: str) -> bool:
+    return bool(_SOURCE_ID_RE.fullmatch(value)) and value == f"source-id:{dataset_id}"
 
 
 def _registry_error(exc: ValueError) -> dict[str, object]:
@@ -182,22 +187,29 @@ def stage_inputs(
 
         source_value = row["source_relative_path"]
         source_relative = ""
+        stable_source_id = _is_stable_source_id(source_value, str(entry["dataset_id"]))
         if source_value:
-            try:
-                source_relative = _relative_path(source_value, kind="source")
-            except (OSError, ValueError):
-                code = (
-                    "forbidden_source"
-                    if _FORBIDDEN_COMPONENT in source_value.replace("\\", "/").split("/")
-                    else "invalid_source"
-                )
-                _entry_error(entry, errors, code, path=source_value)
-                continue
+            if stable_source_id:
+                source_relative = source_value
+            else:
+                try:
+                    source_relative = _relative_path(source_value, kind="source")
+                except (OSError, ValueError):
+                    code = (
+                        "forbidden_source"
+                        if _FORBIDDEN_COMPONENT in source_value.replace("\\", "/").split("/")
+                        else "invalid_source"
+                    )
+                    _entry_error(entry, errors, code, path=source_value)
+                    continue
 
         if action == "copy" and not source_relative:
             _entry_error(entry, errors, "undeclared_source")
             continue
-        if action in {"existing", "acquire"} and source_relative:
+        if action == "acquire" and source_relative:
+            _entry_error(entry, errors, "source_not_empty", path=source_relative)
+            continue
+        if action == "existing" and source_relative and not stable_source_id:
             _entry_error(entry, errors, "source_not_empty", path=source_relative)
             continue
         if action == "acquire":
@@ -210,6 +222,30 @@ def stage_inputs(
         declared_hash = row["sha256"]
         if not declared_hash or not _SHA256_RE.fullmatch(declared_hash):
             _entry_error(entry, errors, "invalid_hash")
+            continue
+
+        try:
+            destination = ReleaseRoot(release_root).resolve(public_relative)
+            destination = resolve_public_path(release_root, destination)
+        except (OSError, ValueError):
+            _entry_error(entry, errors, "invalid_destination", path=public_relative)
+            continue
+
+        if action == "copy" and stable_source_id:
+            if not destination.is_file():
+                _entry_error(entry, errors, "missing_destination", path=public_relative)
+                continue
+            try:
+                actual_hash = _hash_file(destination)
+            except OSError:
+                _entry_error(entry, errors, "missing_destination", path=public_relative)
+                continue
+            entry["sha256"] = actual_hash
+            if actual_hash != declared_hash:
+                _entry_error(entry, errors, "hash_mismatch", path=public_relative)
+                continue
+            entry["bytes"] = destination.stat().st_size
+            entry["status"] = "PASS"
             continue
 
         if action == "copy":
@@ -231,13 +267,6 @@ def stage_inputs(
             if source_hash != declared_hash:
                 _entry_error(entry, errors, "hash_mismatch", path=source_relative)
                 continue
-
-        try:
-            destination = ReleaseRoot(release_root).resolve(public_relative)
-            destination = resolve_public_path(release_root, destination)
-        except (OSError, ValueError):
-            _entry_error(entry, errors, "invalid_destination", path=public_relative)
-            continue
 
         if action == "existing":
             if not destination.is_file():

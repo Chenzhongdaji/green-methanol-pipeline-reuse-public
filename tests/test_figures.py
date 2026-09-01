@@ -7,12 +7,19 @@ import subprocess
 import sys
 
 import pytest
+from matplotlib import font_manager
 
 import green_methanol_release.figures as figures_module
 import green_methanol_release.safety as safety_module
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_figure_font_is_pinned_to_matplotlib_bundled_dejavu():
+    assert figures_module.FIGURE_FONT == "DejaVu Sans"
+    font_path = font_manager.findfont(figures_module.FIGURE_FONT, fallback_to_default=False)
+    assert Path(font_path).is_file()
 
 
 def _run_builder(script: str, input_path: str, output_path: Path, *extra: str):

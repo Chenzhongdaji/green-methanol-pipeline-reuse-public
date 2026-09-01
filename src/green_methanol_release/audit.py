@@ -22,7 +22,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from .contracts import ReleaseRoot, safe_relative_path
-from .inventory import load_dataset_registry, load_output_registry, validate_inventory
+from .inventory import (
+    EXPECTED_OUTPUT_IDS,
+    load_dataset_registry,
+    load_output_registry,
+    validate_inventory,
+)
 from .reproduce import run_reproduction
 from .safety import assert_public_path, audit_tracked_paths, resolve_public_path
 
@@ -254,6 +259,25 @@ def _is_valid_acquire_metadata_payload(path: Path) -> bool:
     return not _contains_acquire_metadata_payload_fields(metadata)
 
 
+def _is_author_derived_public_carrier(row: dict[str, str]) -> bool:
+    """Require explicit author provenance before exempting a carrier.
+
+    Registered paths are not sufficient on their own: the restricted-payload
+    exemption is limited to deposited author-generated/author-controlled
+    carriers with repository access and an author-compatible rights statement.
+    """
+
+    origin = row["origin"].casefold()
+    route = row["access_route"].casefold()
+    license_text = row["license"].casefold()
+    author_origin = "author-generated" in origin or "author-controlled" in origin
+    deposited_route = any(
+        marker in route for marker in ("repository", "deposited", "deposit")
+    )
+    author_rights = "cc by 4.0" in license_text or "author-controlled" in license_text
+    return author_origin and deposited_route and author_rights
+
+
 def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
     """Return hash-verified deposited carriers eligible for narrow exemptions.
 
@@ -289,6 +313,9 @@ def _verified_registry_carriers(root: Path) -> tuple[set[str], list[str]]:
             errors.append(
                 "dataset registry acquire metadata carrier validation failed"
             )
+            continue
+        if stage_action in {"copy", "existing"} and not _is_author_derived_public_carrier(row):
+            errors.append("dataset registry carrier provenance is not author-derived")
             continue
         relative = row["public_path"]
         try:
@@ -1248,6 +1275,27 @@ def audit_release(root: Path, require_manifest: bool = True) -> dict[str, object
     except (OSError, ValueError, KeyError) as exc:
         report["offline_smoke"] = "FAIL"
         errors.append(f"offline smoke audit failed: {exc}")
+
+    if require_manifest:
+        try:
+            with tempfile.TemporaryDirectory(prefix="green-methanol-audit-full-") as temp_dir:
+                full_output = Path(temp_dir) / "full.json"
+                full_reproduction = run_reproduction(root, "full", full_output)
+            report["offline_full"] = full_reproduction.get("status")
+            report["full_reproduction"] = full_reproduction
+            if full_reproduction.get("status") != "PASS":
+                errors.append("offline full reproduction failed")
+            expected_ids = list(EXPECTED_OUTPUT_IDS)
+            if full_reproduction.get("executed_output_ids") != expected_ids:
+                errors.append("final audit requires all six registered output IDs")
+        except (OSError, ValueError, KeyError) as exc:
+            report["offline_full"] = "FAIL"
+            report["full_reproduction"] = {
+                "status": "FAIL",
+                "executed_output_ids": [],
+                "errors": [str(exc)],
+            }
+            errors.append(f"offline full audit failed: {exc}")
 
     # Freeze the non-manifest gate result before optionally adding closure
     # errors.  A mutated payload must not report a misleading pre-manifest

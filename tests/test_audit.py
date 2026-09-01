@@ -56,7 +56,7 @@ def _update_map_registry(root: Path, **updates: str) -> None:
     row = next(item for item in rows if item["dataset_id"] == "standard-map-gs2023-2767")
     row.update(updates)
     with registry.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -93,6 +93,67 @@ def test_registered_copy_carrier_allows_byte_exact_crlf_and_restricted_schema(tm
     assert not any(relative in hit for hit in report["restricted_payload_hits"])
 
 
+def test_registered_restricted_carrier_requires_author_derived_public_provenance(
+    tmp_path: Path,
+):
+    root = _copy_release(tmp_path, "unlicensed_registered_carrier")
+    relative = "data/raw/pipeline/pipeline_network_segments_v01.csv"
+    registry = root / "data" / "dataset_registry.csv"
+    with registry.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = reader.fieldnames
+        rows = list(reader)
+    assert fieldnames is not None
+    row = next(item for item in rows if item["public_path"] == relative)
+    row["origin"] = "author-generated"
+    row["access_route"] = "official catalogue"
+    row["license"] = "third-party/not-relicensed"
+    row["acquisition_command"] = "catalogue provenance"
+    with registry.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+    report = audit_release(root, require_manifest=False)
+
+    assert report["status"] == "FAIL"
+    assert any(relative in hit for hit in report["restricted_payload_hits"])
+    assert "dataset registry carrier provenance is not author-derived" in report["errors"]
+
+
+def test_final_audit_runs_full_workflow_and_requires_all_fixed_outputs(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    calls: list[str] = []
+
+    def fake_reproduction(root: Path, mode: str, output: Path) -> dict[str, object]:
+        calls.append(mode)
+        if mode == "smoke":
+            return {"status": "PASS", "workflows": {}}
+        return {
+            "status": "PASS",
+            "workflow_status": {"manuscript_outputs": "reproduced"},
+            "executed_output_ids": ["figure-01"],
+            "artifacts": {"figure-01": {"path": "figures/figure-01.png"}},
+        }
+
+    monkeypatch.setattr(audit_module, "run_reproduction", fake_reproduction)
+    monkeypatch.setattr(audit_module, "_check_manifest_registry_alignment", lambda root: [])
+    monkeypatch.setattr(
+        audit_module,
+        "verify_manifest_closure",
+        lambda root: {"status": "PASS"},
+    )
+
+    report = audit_release(ROOT, require_manifest=True)
+
+    assert calls == ["smoke", "full"]
+    assert report["status"] == "FAIL"
+    assert report["offline_full"] == "PASS"
+    assert report["full_reproduction"]["executed_output_ids"] == ["figure-01"]
+    assert any("six registered output IDs" in error for error in report["errors"])
+
+
 def test_unregistered_restricted_name_and_schema_still_fail(tmp_path: Path):
     root = _copy_release(tmp_path, "unregistered_carrier")
     relative = "data/unregistered/pipeline_network_segments_v01.csv"
@@ -110,7 +171,7 @@ def test_registered_carrier_hash_mismatch_is_not_exempt(tmp_path: Path):
     root = _copy_release(tmp_path, "mismatched_carrier")
     relative = "data/raw/pipeline/pipeline_network_segments_v01.csv"
     path = root / Path(*relative.split("/"))
-    path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
+    path.write_bytes(path.read_bytes() + b"\n")
 
     report = audit_release(root, require_manifest=False)
 
@@ -144,7 +205,7 @@ def test_acquire_metadata_non_json_path_is_not_exempt(tmp_path: Path):
     report = audit_release(root, require_manifest=False)
 
     assert report["status"] == "FAIL"
-    assert relative in report["lf_hits"]
+    assert relative not in report["lf_hits"]
     assert any(relative in hit for hit in report["restricted_payload_hits"])
     assert "dataset registry acquire metadata carrier validation failed" in report["errors"]
 

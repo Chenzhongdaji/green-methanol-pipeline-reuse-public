@@ -398,36 +398,54 @@ def test_extended_registry_loader_returns_stage_columns(tmp_path: Path):
     assert loaded == [row]
 
 
-REAL_COPY_MAPPINGS = {
-    "data/figure_source/figure-02.csv":
-        "727修改/.worktrees/city-topology-v01/outputs/manuscript_v117_figures/figure-02_source_data.csv",
-    "data/processed/dynamic_analyses_v08/c1_logistics.csv":
-        "727修改/data/derived/dynamic_analyses_v08/c1_logistics.csv",
-    "data/figure_source/figure-04.csv":
-        "727修改/.worktrees/city-topology-v01/outputs/manuscript_v115_figures/figure-04_source_data.csv",
-    "data/figure_source/figure-05.csv":
-        "727修改/.worktrees/city-topology-v01/outputs/manuscript_v115_figures/figure-05_source_data.csv",
-    "data/raw/pipeline/pipeline_network_segments_v01.csv":
-        "727修改/data/baseline/pipeline_network_segments_v01.csv",
-    "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv":
-        "_codex_pipeline_transport_correction_work/segment_transport_task_pipeline_adjusted_long.csv",
-    "data/raw/pipeline/pipeline_level_utilization_long.csv":
-        "_codex_pipeline_level_utilization_work/pipeline_level_utilization_long.csv",
-    "data/raw/pipeline/pipeline_nodes_geocoded.csv":
-        "_codex_node_clustering_work/pipeline_nodes_geocoded.csv",
-    "data/raw/pipeline/city_assignments.csv":
-        "_codex_node_clustering_work/city_assignments.csv",
-    "data/raw/pipeline/pipeline_edges_with_node_coords.csv":
-        "_codex_node_clustering_work/pipeline_edges_with_node_coords.csv",
-    "data/raw/supply/province_projection_nbs_generation.csv":
-        "_codex_methanol_supply_work/data/province_projection_nbs_generation.csv",
-    "data/raw/demand/province_demand_corrected_product_coeff.csv":
-        "_codex_sinopec_demand_work/province_demand_corrected_product_coeff.csv",
-    "data/raw/demand/province_origin_2024.csv":
-        "tmp/aviation_methanol/processed/province_origin_2024.csv",
-    "data/raw/official_sources/mot_2025_shipping_port_weights.csv":
-        "data/official_sources/mot_2025_port_throughput/mot_2025_shipping_port_weights.csv",
-}
+def test_stable_source_id_is_accepted_as_public_provenance(tmp_path: Path):
+    row = _row(dataset_id="stable-source", source_relative_path="source-id:stable-source")
+    registry = _write_registry(tmp_path, [row])
+
+    loaded = load_dataset_registry(registry)
+
+    assert loaded[0]["source_relative_path"] == "source-id:stable-source"
+
+
+def test_stable_source_id_verifies_deposited_copy_without_external_source(
+    tmp_path: Path,
+):
+    payload = b"public payload"
+    row = _row(
+        dataset_id="deposited-source",
+        public_path="data/staged/deposited.bin",
+        source_relative_path="source-id:deposited-source",
+        sha256=_digest(payload),
+    )
+    registry = _write_registry(tmp_path, [row])
+    release = tmp_path / "release"
+    destination = release / "data" / "staged" / "deposited.bin"
+    destination.parent.mkdir(parents=True)
+    destination.write_bytes(payload)
+
+    report = stage_inputs(registry, tmp_path / "not-exposed-source", release)
+
+    assert report["status"] == "PASS"
+    assert report["datasets"][0]["status"] == "PASS"
+    assert report["datasets"][0]["source_relative_path"] == "source-id:deposited-source"
+
+
+REAL_COPY_PATHS = (
+    "data/figure_source/figure-02.csv",
+    "data/processed/dynamic_analyses_v08/c1_logistics.csv",
+    "data/figure_source/figure-04.csv",
+    "data/figure_source/figure-05.csv",
+    "data/raw/pipeline/pipeline_network_segments_v01.csv",
+    "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv",
+    "data/raw/pipeline/pipeline_level_utilization_long.csv",
+    "data/raw/pipeline/pipeline_nodes_geocoded.csv",
+    "data/raw/pipeline/city_assignments.csv",
+    "data/raw/pipeline/pipeline_edges_with_node_coords.csv",
+    "data/raw/supply/province_projection_nbs_generation.csv",
+    "data/raw/demand/province_demand_corrected_product_coeff.csv",
+    "data/raw/demand/province_origin_2024.csv",
+    "data/raw/official_sources/mot_2025_shipping_port_weights.csv",
+)
 
 REAL_CITY_TOPOLOGY_FILES = (
     "city_master_2024.csv",
@@ -461,31 +479,15 @@ def _repo_relative(path: str) -> Path:
 
 def test_real_registry_declares_every_explicit_copy_and_map_record():
     rows = {row["public_path"]: row for row in _real_registry_rows()}
-    expected = dict(REAL_COPY_MAPPINGS)
+    expected = set(REAL_COPY_PATHS)
+    expected.update(f"data/raw/city_topology_v01/{name}" for name in REAL_CITY_TOPOLOGY_FILES)
+    expected.update(f"data/raw/topology/{name}" for name in REAL_TOPOLOGY_FILES)
     expected.update(
         {
-            f"data/raw/city_topology_v01/{name}":
-                f"727修改/.worktrees/city-topology-v01/data/baseline/city_topology_v01/{name}"
-            for name in REAL_CITY_TOPOLOGY_FILES
-        }
-    )
-    expected.update(
-        {
-            f"data/raw/topology/{name}":
-                f"727修改/.worktrees/city-topology-v01/data/baseline/submission_data_v038/topology/{name}"
-            for name in REAL_TOPOLOGY_FILES
-        }
-    )
-    expected.update(
-        {
-            "data/raw/topology/regional_connector_gain.csv":
-                "727修改/.worktrees/city-topology-v01/data/baseline/topology_increment/regional_connector_gain.csv",
-            "data/processed/dynamic_analyses_v08/c3_unlocking_cost.csv":
-                "727修改/.worktrees/city-topology-v01/data/derived/c3_unlocking_cost.csv",
-            "data/processed/dynamic_analyses_v08/regional_accounts.csv":
-                "727修改/.worktrees/city-topology-v01/data/derived/dynamic_analyses_v08/regional_accounts.csv",
-            "data/processed/dynamic_analyses_v08/aviation_nodes.csv":
-                "727修改/.worktrees/city-topology-v01/data/derived/dynamic_analyses_v08/aviation_nodes.csv",
+            "data/raw/topology/regional_connector_gain.csv",
+            "data/processed/dynamic_analyses_v08/c3_unlocking_cost.csv",
+            "data/processed/dynamic_analyses_v08/regional_accounts.csv",
+            "data/processed/dynamic_analyses_v08/aviation_nodes.csv",
         }
     )
 
@@ -494,7 +496,9 @@ def test_real_registry_declares_every_explicit_copy_and_map_record():
         for public_path in expected
         if public_path in rows
     } == {
-        public_path: source_path for public_path, source_path in expected.items()
+        public_path: f"source-id:{rows[public_path]['dataset_id']}"
+        for public_path in expected
+        if public_path in rows
     }
     assert all(rows[public_path]["stage_action"] == "copy" for public_path in expected)
 
@@ -511,6 +515,20 @@ def test_real_registry_declares_every_explicit_copy_and_map_record():
     assert json.loads(metadata.read_text(encoding="utf-8"))["source_url"] == (
         "http://bzdt.ch.mnr.gov.cn/download.html?searchText=GS(2023)2767"
     )
+
+
+def test_public_provenance_uses_stable_source_ids_without_machine_workspace_paths():
+    registry = (ROOT / "data" / "dataset_registry.csv").read_text(encoding="utf-8")
+    staging_report = (ROOT / "qa" / "staging_report.json").read_text(encoding="utf-8")
+    public_provenance = registry + staging_report
+
+    assert all(
+        marker not in public_provenance
+        for marker in ("727", "_codex", "tmp/aviation")
+    )
+    for row in _real_registry_rows():
+        if row["stage_action"] == "copy":
+            assert row["source_relative_path"] == f"source-id:{row['dataset_id']}"
 
 
 def test_real_copy_and_existing_hashes_match_deposited_bytes():
