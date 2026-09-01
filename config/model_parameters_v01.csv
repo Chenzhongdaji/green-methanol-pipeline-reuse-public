@@ -95,6 +95,6 @@ supply_scenario,,low,0,low,0,text,tier to public supply scenario
 supply_scenario,,mid,0,base,0,text,tier to public supply scenario
 supply_scenario,,high,0,high,0,text,tier to public supply scenario
 flow_scale,,0,0,,1000,integer,flow unit scale
+capacity_basis,,0,0,,same_pipeline_task_10kt,field,同管道运输任务_万吨 defines the occupied-capacity basis
 capacity_relaxation_factor,,0,0,,1.1,factor,counterfactual spare-capacity multiplier
 transport_cost_per_km,,0,0,,1,relative_cost,ranking cost on analytical coordinates
-transport_emission_per_km,,0,0,,1,relative_emission,screening metric only

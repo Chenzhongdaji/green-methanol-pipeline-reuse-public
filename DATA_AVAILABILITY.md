@@ -9,13 +9,23 @@ analysis tables, and source data for Figures 1-5. Figure 2e is reproduced from
 the public carrier at `data/figure_source/figure-02.csv`.
 
 `data/dataset_registry.csv` is the authoritative dataset-to-location register;
-it records 40 dataset records, including 39 deposited byte carriers and one
+it records 56 dataset records, including 55 deposited byte carriers and one
 metadata-only acquisition record. Each record states its origin, access route,
 source terms, SHA-256 value, processing information, and manuscript use.
 `data/output_registry.csv` maps each of the five public model stages and six
 manuscript figure outputs to its input dataset IDs and generating command.
 `FILE_MANIFEST.csv` and
 `CHECKSUMS.sha256` provide the final-tree inventory and byte checks.
+
+The deposited model-v01 carriers include the demand, directed-network,
+analysis, and Figure 4/5 diagnostic stages. The model-figure-04 and
+model-figure-05 artifacts are diagnostic/model-derived outputs, not formal
+manuscript figures and not numerical reproductions of v08. The directed
+network uses `同管道运输任务_万吨` as its occupied-capacity basis and WGS84
+haversine kilometres for `distance_km` and `pipeline_tonne_km`; candidate
+links are confined to Figure-5 sensitivity. Legacy pressure/cost details are
+not represented, and transport-emission accounting is reserved/not
+implemented.
 
 The public source register at `data/public_sources.csv` records stable source
 locators, versions, access dates, evidence boundaries, and source-specific

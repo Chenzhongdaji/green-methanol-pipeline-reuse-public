@@ -68,6 +68,18 @@ def write_json(payload: object, path: Path) -> None:
     )
 
 
+def read_json(root: Path, relative: str) -> object:
+    """Read one public JSON carrier through the release-relative boundary."""
+
+    path = release_path(root, relative)
+    if not path.is_file():
+        raise ValueError(f"public model input does not exist: {relative}")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"public model JSON is invalid: {relative}") from exc
+
+
 def sha256(path: Path) -> str:
     """Return a SHA-256 digest after applying the public boundary guard."""
 

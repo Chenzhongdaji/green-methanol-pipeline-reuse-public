@@ -5,16 +5,18 @@ inputs, processed and model-ready carriers, figure source data, configuration,
 tests, provenance records, and release inventories used for the green-methanol
 pipeline-reuse study. The repository is the reproducibility package for the
 registered manuscript outputs, including Figure 2e, which is reproduced from
-the deposited public carrier.
+the deposited public carrier. The separate `model-figure-04` and
+`model-figure-05` jobs are model-v01 diagnostic/model-derived outputs; they are
+not formal manuscript figures and are not numerical reproductions of v08.
 
 ## What this release reproduces
 
-The full workflow regenerates every output registered in
+The full workflow regenerates every artifact registered in
 `data/output_registry.csv`. It validates the deposited carriers, runs the
-public demand/preprocessing, directed-flow, dynamic-analysis, and model
-Figure 4/5 stages, then runs the six manuscript figure builders and checks all
-expected artifacts. Run it from a clean checkout with an output directory
-outside the repository:
+public demand/preprocessing, directed-flow, dynamic-analysis, and model-v01
+diagnostic Figure 4/5 stages, then runs the six manuscript figure builders and
+checks all expected artifacts. Run it from a clean checkout with an output
+directory outside the repository:
 
 ```text
 python scripts/reproduce.py --mode full --output <external-output>/green-methanol-full
@@ -37,8 +39,15 @@ The four remaining figure commands are recorded verbatim in
 versioned source carriers. The model stages additionally regenerate public
 demand nodes, directed NetworkX flow accounts, dynamic regional/logistics
 tables, and model-derived Figure 4/5 source tables under
-`data/processed/model_v01/`. Headline and model-ready carriers are retained
-in `data/raw/`, `data/processed/`, and `data/author_derived/`.
+`data/processed/model_v01/`. The network stage uses the original task-level
+occupied-capacity field `同管道运输任务_万吨`, and computes `distance_km` and
+`pipeline_tonne_km` on the WGS84 haversine-kilometre scale. Candidate links
+are loaded only by the Figure-5 sensitivity branch and are excluded from the
+base graph. The public analytical model omits legacy pressure/cost details
+that were not deposited; `transport_emission_per_km` is reserved/not
+implemented and no transport emissions are reported. Headline and model-ready
+carriers are retained in `data/raw/`, `data/processed/`, and
+`data/author_derived/`.
 
 ## Install, test and audit
 

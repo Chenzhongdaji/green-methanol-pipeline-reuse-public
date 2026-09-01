@@ -1049,10 +1049,33 @@ def _check_manifest_registry_alignment(root: Path) -> list[str]:
     except (OSError, ValueError) as exc:
         return [f"manifest registry alignment failed: {exc}"]
 
+    output_expected_by_path: dict[str, tuple[str, str, str]] = {}
+    for row in output_rows:
+        expected = (
+            f"manuscript output: {row['manuscript_location']}",
+            "generated artifact; see registered inputs",
+            "manuscript output",
+        )
+        artifacts = [row["expected_artifact"]]
+        artifacts.extend(
+            item for item in row["secondary_artifacts"].split(";") if item
+        )
+        for relative in artifacts:
+            previous = output_expected_by_path.get(relative)
+            if previous is not None and previous != expected:
+                errors.append(f"manifest registry attributes conflict for output artifact {relative!r}")
+            output_expected_by_path[relative] = expected
+
     for row in dataset_rows:
         relative = row["public_path"]
         manifest_row = manifest_by_path.get(relative)
-        expected = (row["role"], row["license"], row["origin"])
+        # A generated carrier may also be a registered stage artifact.  In
+        # that case the output registry owns the manifest classification;
+        # downstream stages still refer to the same file through the dataset
+        # registry for input closure.
+        expected = output_expected_by_path.get(
+            relative, (row["role"], row["license"], row["origin"])
+        )
         actual = (
             (manifest_row["purpose"], manifest_row["licence_scope"], manifest_row["data_class"])
             if manifest_row

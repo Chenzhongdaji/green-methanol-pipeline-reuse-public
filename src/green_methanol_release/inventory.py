@@ -656,10 +656,10 @@ def _manifest_attributes(
 ) -> tuple[str, str, str]:
     """Classify one payload path for the human-auditable manifest."""
 
-    if dataset_attributes and relative in dataset_attributes:
-        return dataset_attributes[relative]
     if output_attributes and relative in output_attributes:
         return output_attributes[relative]
+    if dataset_attributes and relative in dataset_attributes:
+        return dataset_attributes[relative]
     if relative in _CC_BY_CARRIERS:
         return "author-generated aggregate carrier", "CC BY 4.0", "author-generated aggregate data"
     if relative == "data/public_sources.csv":

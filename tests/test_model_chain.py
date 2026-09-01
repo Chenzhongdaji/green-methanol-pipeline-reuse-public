@@ -7,6 +7,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from green_methanol_release.model import network as network_module
+from green_methanol_release.model.analysis import run_dynamic_analysis
+from green_methanol_release.model.config import load_config
+from green_methanol_release.model.demand import preprocess_demand
+from green_methanol_release.model.analysis import load_analysis_outputs
+from green_methanol_release.model.network import load_network_outputs
 from green_methanol_release.model.workflow import (
     MODEL_OUTPUT_DIR,
     run_model_chain,
@@ -72,8 +78,29 @@ def test_public_model_chain_is_deterministic_under_repeated_in_memory_runs():
         (first.analysis.figure_04_source, second.analysis.figure_04_source),
         (first.analysis.figure_05_source, second.analysis.figure_05_source),
     ):
-        pd.testing.assert_frame_equal(left, right, check_dtype=True)
+        pd.testing.assert_frame_equal(left, right, check_dtype=True, check_exact=True)
     assert first.audit == second.audit
+
+
+def test_write_through_chain_matches_registered_stage_carriers():
+    """The convenience chain must use the same persisted carriers as full mode."""
+
+    result = run_model_chain(ROOT, write_outputs=True)
+    run_model_stage(ROOT, "demand_preprocessing")
+    run_model_stage(ROOT, "directed_network_flow")
+    run_model_stage(ROOT, "dynamic_analysis")
+    persisted_network = load_network_outputs(ROOT)
+    persisted_analysis = load_analysis_outputs(ROOT)
+
+    for left, right in (
+        (result.network.summary, persisted_network.summary),
+        (result.network.service, persisted_network.service),
+        (result.analysis.summary, persisted_analysis.summary),
+        (result.analysis.regional_accounts, persisted_analysis.regional_accounts),
+        (result.analysis.figure_04_source, persisted_analysis.figure_04_source),
+        (result.analysis.figure_05_source, persisted_analysis.figure_05_source),
+    ):
+        pd.testing.assert_frame_equal(left, right, check_dtype=True, check_exact=True)
 
 
 def test_model_stage_writes_release_relative_outputs_only(tmp_path: Path):
@@ -168,3 +195,78 @@ def test_model_carriers_are_hashable_and_have_schema_metadata():
 ])
 def test_model_cli_scripts_are_present(relative: str):
     assert (ROOT / relative).is_file()
+
+
+def test_network_capacity_uses_same_pipeline_task_and_haversine_distance():
+    segments = network_module._read_segments(ROOT)
+    tasks = network_module._read_segment_tasks(ROOT, segments)
+    task = tasks[(tasks["segment_id"] == "S012") & (tasks["year"] == 2025)].iloc[0]
+    assert task["same_pipeline_task_10kt"] == pytest.approx(563.0523474025721)
+    raw_tasks = pd.read_csv(
+        ROOT / "data" / "raw" / "pipeline" / "segment_transport_task_pipeline_adjusted_long.csv",
+        encoding="utf-8-sig",
+    )
+    raw_row = raw_tasks[(raw_tasks.iloc[:, 0] == "S012") & (raw_tasks.iloc[:, 4] == 2025)].iloc[0]
+    assert float(raw_row.iloc[10]) != pytest.approx(float(raw_row.iloc[6]))
+
+    result = run_model_chain(ROOT, write_outputs=False)
+    catalog = result.network.edge_catalog
+    known = catalog[(catalog["segment_id"] == "S012") & (catalog["year"] == 2025)].iloc[0]
+    assert known["capacity_basis"] == "同管道运输任务_万吨"
+    assert known["capacity_10kt"] == pytest.approx(1000.0 - 563.0523474025721)
+    segment = segments[segments["segment_id"] == "S012"].iloc[0]
+    assert known["distance_km"] == pytest.approx(
+        network_module.haversine_km(
+            segment["from_lon"],
+            segment["from_lat"],
+            segment["to_lon"],
+            segment["to_lat"],
+        )
+    )
+    assert known["distance_km"] > 1.0
+
+
+def test_model_config_exposes_capacity_basis_without_active_emission_control():
+    config = load_config(ROOT)
+    assert config.capacity_basis == "same_pipeline_task_10kt"
+    assert not hasattr(config, "transport_emission_per_km")
+    assert "transport_emission_per_km" not in (
+        ROOT / "config" / "model_parameters_v01.csv"
+    ).read_text(encoding="utf-8")
+
+
+def test_candidate_links_are_figure5_only_and_unknown_nodes_fail_fast():
+    assert "candidate_links" not in network_module.NETWORK_INPUTS
+    assert "selected_plans" not in network_module.NETWORK_INPUTS
+    result = run_model_chain(ROOT, write_outputs=False)
+    assert result.network.audit["network_variant"] == "base"
+    assert result.network.audit["candidate_scope"].startswith("Figure-5 sensitivity only")
+    assert not result.network.edge_flows["segment_id"].astype(str).str.startswith("C").any()
+    assert (result.network.summary["connector_count"] == 0).all()
+    with pytest.raises(ValueError, match="unknown public node"):
+        network_module._read_candidate_links(
+            ROOT,
+            {"N001": "public"},
+            {"N001": (87.0, 43.0)},
+        )
+
+
+def test_network_audit_hashes_declared_stage_inputs(tmp_path: Path):
+    result = run_model_stage(ROOT, "directed_network_flow", output_root=tmp_path)
+    expected = {
+        *(f"demand::{path}" for path in network_module.DEMAND_OUTPUTS.values()),
+        *(f"network::{path}" for path in network_module.NETWORK_INPUTS.values()),
+    }
+    assert set(result.audit["input_hashes"]) == expected
+    assert all(len(value) == 64 for value in result.audit["input_hashes"].values())
+
+
+def test_analysis_consumes_stage_carriers_without_recomputing_demand(monkeypatch):
+    def fail(*args, **kwargs):
+        raise AssertionError("analysis must consume stage carriers")
+
+    monkeypatch.setattr("green_methanol_release.model.analysis.preprocess_demand", fail)
+    demand = preprocess_demand(ROOT)
+    network = network_module.run_network(ROOT, demand)
+    result = run_dynamic_analysis(ROOT, demand, network)
+    assert result.audit["status"] == "PASS"

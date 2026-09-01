@@ -19,7 +19,16 @@ from .config import (
     load_config,
     pchip_interpolate,
 )
-from .io import finite_float, hashes_for_paths, normalize_province, read_csv, sorted_frame, write_csv, write_json
+from .io import (
+    finite_float,
+    hashes_for_paths,
+    normalize_province,
+    read_csv,
+    read_json,
+    sorted_frame,
+    write_csv,
+    write_json,
+)
 
 
 DEMAND_INPUTS = {
@@ -31,6 +40,36 @@ DEMAND_INPUTS = {
     "aviation_city_activity": "data/raw/city_topology_v01/aviation_refinery_city_activity.csv",
     "parameters": "config/model_parameters_v01.csv",
 }
+DEMAND_OUTPUTS = {
+    "nodes": "data/processed/model_v01/demand_nodes.csv",
+    "totals": "data/processed/model_v01/demand_totals.csv",
+    "supply": "data/processed/model_v01/supply_nodes.csv",
+    "components": "data/processed/model_v01/component_demand.csv",
+    "audit": "data/processed/model_v01/demand_preprocessing_audit.json",
+}
+
+DEMAND_NODE_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "sector",
+    "province_key",
+    "allocation_weight",
+    "component_demand_10kt",
+    "demand_10kt",
+    "allocation_basis",
+)
+DEMAND_TOTAL_COLUMNS = ("scenario", "tier", "year", "demand_10kt", "scenario_semantics")
+DEMAND_SUPPLY_COLUMNS = ("scenario", "tier", "year", "province_key", "supply_10kt")
+DEMAND_COMPONENT_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "sector",
+    "composition_share",
+    "component_demand_10kt",
+    "scenario_semantics",
+)
 
 
 @dataclass(frozen=True)
@@ -337,6 +376,31 @@ def preprocess_demand(root: Path) -> DemandResult:
     return DemandResult(nodes, totals, supply, component_totals, audit, input_hashes)
 
 
+def load_demand_outputs(root: Path) -> DemandResult:
+    """Load only the persisted demand-stage carriers for downstream stages."""
+
+    nodes = read_csv(root, DEMAND_OUTPUTS["nodes"], DEMAND_NODE_COLUMNS)
+    totals = read_csv(root, DEMAND_OUTPUTS["totals"], DEMAND_TOTAL_COLUMNS)
+    supply = read_csv(root, DEMAND_OUTPUTS["supply"], DEMAND_SUPPLY_COLUMNS)
+    components = read_csv(root, DEMAND_OUTPUTS["components"], DEMAND_COMPONENT_COLUMNS)
+    payload = read_json(root, DEMAND_OUTPUTS["audit"])
+    if not isinstance(payload, dict) or payload.get("stage") != "demand_preprocessing":
+        raise ValueError("demand-stage audit is missing or has the wrong stage")
+    input_hashes = payload.get("input_hashes")
+    if not isinstance(input_hashes, dict) or set(input_hashes) != set(DEMAND_INPUTS.values()):
+        raise ValueError("demand-stage audit input hashes do not match public demand inputs")
+    if any(not isinstance(value, str) or len(value) != 64 for value in input_hashes.values()):
+        raise ValueError("demand-stage audit contains invalid input hashes")
+    return DemandResult(
+        nodes,
+        totals,
+        supply,
+        components,
+        payload,
+        {str(key): str(value) for key, value in input_hashes.items()},
+    )
+
+
 def write_demand_outputs(result: DemandResult, root: Path) -> list[str]:
     """Persist the preprocessing stage to its release-relative carrier paths."""
 
@@ -355,4 +419,15 @@ def write_demand_outputs(result: DemandResult, root: Path) -> list[str]:
     ]
 
 
-__all__ = ["DEMAND_INPUTS", "DemandResult", "preprocess_demand", "write_demand_outputs"]
+__all__ = [
+    "DEMAND_COMPONENT_COLUMNS",
+    "DEMAND_INPUTS",
+    "DEMAND_NODE_COLUMNS",
+    "DEMAND_OUTPUTS",
+    "DEMAND_SUPPLY_COLUMNS",
+    "DEMAND_TOTAL_COLUMNS",
+    "DemandResult",
+    "load_demand_outputs",
+    "preprocess_demand",
+    "write_demand_outputs",
+]

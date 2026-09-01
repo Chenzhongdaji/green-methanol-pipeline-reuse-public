@@ -36,10 +36,10 @@ class ModelConfig:
     route_share: dict[tuple[str, str, int], float]
     structural_share: dict[tuple[str, str], float]
     supply_scenario: dict[str, str]
+    capacity_basis: str
     flow_scale: int
     capacity_relaxation_factor: float
     transport_cost_per_km: float
-    transport_emission_per_km: float
 
 
 def _required_single(
@@ -71,7 +71,11 @@ def load_config(root: Path, relative: str = "config/model_parameters_v01.csv") -
         frame[field] = frame[field].fillna("").astype(str).str.strip()
     frame["year"] = frame["year"].replace({"": "0"})
     frame["year"] = pd.to_numeric(frame["year"], errors="raise").astype(int)
-    frame["value"] = pd.to_numeric(frame["value"], errors="raise")
+    numeric_rows = ~frame["parameter"].eq("capacity_basis")
+    frame["value"] = frame["value"].astype(object)
+    frame.loc[numeric_rows, "value"] = pd.to_numeric(
+        frame.loc[numeric_rows, "value"], errors="raise"
+    )
 
     activity = _required_single(frame, "sector_activity_10kt", key_columns=("sector",))
     conversion = _required_single(frame, "conversion_factor", key_columns=("sector",))
@@ -147,6 +151,13 @@ def load_config(root: Path, relative: str = "config/model_parameters_v01.csv") -
     if set(supply_scenario) != set(TIERS):
         raise ValueError("model configuration must map every tier to a supply scenario")
 
+    basis_rows = frame[frame["parameter"].eq("capacity_basis")]
+    if len(basis_rows) != 1:
+        raise ValueError("model configuration must define one capacity_basis")
+    capacity_basis = str(basis_rows.iloc[0]["value"]).strip()
+    if capacity_basis != "same_pipeline_task_10kt":
+        raise ValueError("capacity_basis must select same_pipeline_task_10kt")
+
     flow_scale = int(round(scalar("flow_scale")))
     if flow_scale <= 0:
         raise ValueError("flow_scale must be positive")
@@ -157,10 +168,10 @@ def load_config(root: Path, relative: str = "config/model_parameters_v01.csv") -
         route_share=route_raw,
         structural_share=structural_raw,
         supply_scenario=supply_scenario,
+        capacity_basis=capacity_basis,
         flow_scale=flow_scale,
         capacity_relaxation_factor=scalar("capacity_relaxation_factor", 1.1),
         transport_cost_per_km=scalar("transport_cost_per_km", 1.0),
-        transport_emission_per_km=scalar("transport_emission_per_km", 1.0),
     )
 
 

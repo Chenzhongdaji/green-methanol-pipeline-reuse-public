@@ -128,16 +128,31 @@ def test_manifest_attributes_are_bound_to_dataset_registry():
     ) as handle:
         datasets = list(csv.DictReader(handle))
 
-    for row in datasets:
-        entry = manifest[row["public_path"]]
-        assert entry["purpose"] == row["role"]
-        assert entry["licence_scope"] == row["license"]
-        assert entry["data_class"] == row["origin"]
-
     with (ROOT / "data" / "output_registry.csv").open(
         encoding="utf-8", newline=""
     ) as handle:
         outputs = list(csv.DictReader(handle))
+    output_attributes = {}
+    for row in outputs:
+        expected = (
+            f"manuscript output: {row['manuscript_location']}",
+            "generated artifact; see registered inputs",
+            "manuscript output",
+        )
+        artifacts = [row["expected_artifact"]]
+        artifacts.extend(
+            item for item in row["secondary_artifacts"].split(";") if item
+        )
+        for artifact in artifacts:
+            output_attributes[artifact] = expected
+
+    for row in datasets:
+        entry = manifest[row["public_path"]]
+        expected = output_attributes.get(
+            row["public_path"], (row["role"], row["license"], row["origin"])
+        )
+        assert (entry["purpose"], entry["licence_scope"], entry["data_class"]) == expected
+
     for row in outputs:
         artifacts = [row["expected_artifact"]]
         artifacts.extend(

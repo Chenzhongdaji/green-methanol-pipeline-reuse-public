@@ -29,10 +29,30 @@ registered secondary `figures/figure-02e.pdf`; the full orchestrator checks and
 hashes both files on every run.
 
 The model rows run the public demand/supply preprocessing, directed NetworkX
-flow, dynamic regional/logistics analysis, and model-derived Figure 4/5
-source regeneration. Their inputs are the public raw carriers and
-`config/model_parameters_v01.csv`; their secondary artifacts retain the
-stage-level tables and audit JSON needed to inspect schemas and hashes.
+flow, dynamic regional/logistics analysis, and model-v01 diagnostic Figure 4/5
+source regeneration. These model-figure outputs are not formal manuscript
+figures and are not numerical reproductions of v08. Their inputs are public
+release-relative carriers and `config/model_parameters_v01.csv`; the
+dataset registry supplies a SHA-256 and schema-bearing carrier record for
+each input and output.
+
+The stage closure is intentionally strict:
+
+| Stage | Declared inputs | Writes |
+| --- | --- | --- |
+| `model-preprocess` | demand, supply, city-activity, and configuration carriers | five demand carriers, including the stage audit |
+| `model-network` | five persisted demand carriers plus four public base-network/configuration carriers | six network carriers, including base edge/node catalogs and the stage audit |
+| `model-analysis` | five demand carriers, six network carriers, two candidate-sensitivity carriers, and configuration | five analysis carriers, including Figure 4/5 sources and the stage audit |
+| `model-figure-04` | only the persisted Figure 4 analysis source | one diagnostic PNG |
+| `model-figure-05` | only the persisted Figure 5 analysis source | one diagnostic PNG |
+
+The network base graph never includes candidate links. Candidate links are
+read only for the Figure-5 sensitivity branch, where endpoints are validated
+against the public node catalog. The network uses
+`同管道运输任务_万吨` as its occupied-capacity basis and WGS84 haversine
+kilometres for `distance_km` and `pipeline_tonne_km`. Legacy pressure/cost
+details are omitted from this public analytical model; transport emissions
+are reserved/not implemented.
 
 The registry validator returns the number of declared datasets, output rows
 and distinct datasets referenced by outputs. It does not require physical

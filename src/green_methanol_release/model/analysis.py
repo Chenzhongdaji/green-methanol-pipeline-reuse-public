@@ -10,15 +10,97 @@ from typing import Any
 import pandas as pd
 
 from .config import YEARS, SCENARIOS, TIERS, load_config
-from .demand import DemandResult, DEMAND_INPUTS, preprocess_demand
-from .io import hashes_for_paths, sorted_frame, write_csv, write_json
-from .network import NETWORK_INPUTS, NetworkResult, _read_candidate_links, run_network
+from .demand import (
+    DEMAND_OUTPUTS,
+    DemandResult,
+    load_demand_outputs,
+    preprocess_demand,
+)
+from .io import hashes_for_paths, read_csv, read_json, sorted_frame, write_csv, write_json
+from .network import (
+    CANDIDATE_INPUTS,
+    NETWORK_OUTPUTS,
+    NetworkResult,
+    NetworkTopology,
+    _read_candidate_links,
+    load_network_outputs,
+    run_network,
+)
 
 
 ANALYSIS_INPUTS = {
-    **DEMAND_INPUTS,
-    **NETWORK_INPUTS,
+    "demand_nodes": DEMAND_OUTPUTS["nodes"],
+    "demand_totals": DEMAND_OUTPUTS["totals"],
+    "demand_supply": DEMAND_OUTPUTS["supply"],
+    "demand_components": DEMAND_OUTPUTS["components"],
+    "demand_audit": DEMAND_OUTPUTS["audit"],
+    "network_summary": NETWORK_OUTPUTS["summary"],
+    "network_edge_flows": NETWORK_OUTPUTS["edge_flows"],
+    "network_service": NETWORK_OUTPUTS["service"],
+    "network_edge_catalog": NETWORK_OUTPUTS["edge_catalog"],
+    "network_node_catalog": NETWORK_OUTPUTS["node_catalog"],
+    "network_audit": NETWORK_OUTPUTS["audit"],
+    "candidate_links": CANDIDATE_INPUTS["candidate_links"],
+    "selected_plans": CANDIDATE_INPUTS["selected_plans"],
+    "parameters": "config/model_parameters_v01.csv",
 }
+ANALYSIS_OUTPUTS = {
+    "summary": "data/processed/model_v01/analysis_summary.csv",
+    "regional_accounts": "data/processed/model_v01/regional_accounts.csv",
+    "figure_04_source": "data/processed/model_v01/figure_04_source.csv",
+    "figure_05_source": "data/processed/model_v01/figure_05_source.csv",
+    "audit": "data/processed/model_v01/dynamic_analysis_audit.json",
+}
+ANALYSIS_FIGURE_SOURCES = {
+    "figure_04": ANALYSIS_OUTPUTS["figure_04_source"],
+    "figure_05": ANALYSIS_OUTPUTS["figure_05_source"],
+}
+ANALYSIS_SUMMARY_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "demand_10kt",
+    "supply_10kt",
+    "local_direct_10kt",
+    "pipeline_served_10kt",
+    "served_10kt",
+    "unserved_10kt",
+    "demand_met_pct",
+    "pipeline_delivery_share_pct",
+    "pipeline_tonne_km",
+    "average_pipeline_distance_km",
+    "edges_used",
+    "max_edge_util_pct",
+    "min_cost_objective",
+)
+ANALYSIS_REGIONAL_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "region",
+    "demand_methanol_10kt",
+    "local_direct_methanol_10kt",
+    "pipeline_served_methanol_10kt",
+    "served_methanol_10kt",
+    "unserved_methanol_10kt",
+    "demand_met_pct",
+    "pipeline_share_pct",
+)
+ANALYSIS_FIGURE_04_COLUMNS = ANALYSIS_REGIONAL_COLUMNS
+ANALYSIS_FIGURE_05_COLUMNS = (
+    "panel",
+    "scenario",
+    "year",
+    "metric",
+    "value",
+    "unit",
+    "source_type",
+    "style",
+    "marker",
+    "capacity_relaxation_gain_mt_y",
+    "connector_gain_mt_y",
+    "capacity_reaches_connector",
+)
 
 REGION_BY_PROVINCE = {
     "北京": "NC",
@@ -146,13 +228,34 @@ def _figure_05_source(
     config_factor: float,
 ) -> pd.DataFrame:
     scenarios = tuple(sorted(baseline.summary["scenario"].unique(), key=lambda value: int(str(value)[1:])))
+    if baseline.node_catalog is None or baseline.topology is None:
+        raise ValueError("network result is missing the public base topology")
+    node_provinces = dict(
+        zip(
+            baseline.node_catalog["node_id"],
+            baseline.node_catalog["province_key"],
+            strict=True,
+        )
+    )
+    node_coordinates = dict(
+        zip(
+            baseline.node_catalog["node_id"],
+            zip(
+                baseline.node_catalog["longitude"],
+                baseline.node_catalog["latitude"],
+                strict=True,
+            ),
+            strict=True,
+        )
+    )
     relaxed = run_network(
         root,
         demand,
         capacity_factor=config_factor,
         scenarios=scenarios,
+        topology=baseline.topology,
     )
-    candidate_map, selected = _read_candidate_links(root)
+    candidate_map, selected = _read_candidate_links(root, node_provinces, node_coordinates)
     connector_specs = {
         scenario: [candidate_map[selected[scenario]]]
         for scenario in scenarios
@@ -163,6 +266,7 @@ def _figure_05_source(
         demand,
         connector_by_scenario=connector_specs,
         scenarios=scenarios,
+        topology=baseline.topology,
     )
     rows: list[dict[str, Any]] = []
     for scenario in scenarios:
@@ -197,7 +301,7 @@ def _figure_05_source(
                     "metric": metric,
                     "value": value,
                     "unit": "Mt/y",
-                    "source_type": "public_directed_model_counterfactual",
+                    "source_type": "public_directed_model_candidate_sensitivity",
                     "style": style,
                     "marker": marker,
                     "capacity_relaxation_gain_mt_y": capacity_gain,
@@ -258,13 +362,30 @@ def run_dynamic_analysis(
     config = load_config(root)
     demand_result = preprocess_demand(root) if demand is None else demand
     network_result = run_network(root, demand_result) if network is None else network
+    if network_result.topology is None:
+        raise ValueError("dynamic analysis requires a reusable public base topology")
     regional = _regional_accounts(network_result)
     figure_04 = _figure_04_source(regional)
     figure_05 = _figure_05_source(root, demand_result, network_result, config.capacity_relaxation_factor)
     summary = _analysis_summary(network_result)
     if (regional["demand_methanol_10kt"] - regional["served_methanol_10kt"] - regional["unserved_methanol_10kt"]).abs().max() > 1e-8:
         raise RuntimeError("regional demand accounts do not close")
-    input_hashes = hashes_for_paths(root, ANALYSIS_INPUTS.values())
+    analysis_paths = sorted(set(ANALYSIS_INPUTS.values()))
+    if all((root / Path(*relative.split("/"))).is_file() for relative in analysis_paths):
+        input_hashes = hashes_for_paths(root, analysis_paths)
+    else:
+        # In-memory composition is used by ``run_model_chain`` before stage
+        # carriers are written.  Preserve provenance without forcing an
+        # in-memory run to depend on stale or absent downstream files.
+        input_hashes = {
+            **demand_result.input_hashes,
+            **network_result.input_hashes,
+            **hashes_for_paths(root, CANDIDATE_INPUTS.values()),
+            "config/model_parameters_v01.csv": hashes_for_paths(
+                root, ("config/model_parameters_v01.csv",)
+            )["config/model_parameters_v01.csv"],
+        }
+    candidate_hashes = hashes_for_paths(root, CANDIDATE_INPUTS.values())
     audit = {
         "status": "PASS",
         "stage": "dynamic_analysis",
@@ -285,8 +406,11 @@ def run_dynamic_analysis(
         "counterfactuals": {
             "capacity_relaxation_factor": config.capacity_relaxation_factor,
             "connector_selection": "first public candidate in best_two_link_plans per scenario",
+            "candidate_scope": "Figure-5 sensitivity only; candidates are not base-network edges",
+            "candidate_input_hashes": candidate_hashes,
         },
-        "boundary": "regional and logistics metrics are model-derived accounts; they are not observations or segment qualification decisions",
+        "transport_emission": "reserved_not_implemented",
+        "boundary": "regional and logistics metrics are model-derived accounts; they are not observations or segment qualification decisions; legacy pressure/cost details are omitted",
     }
     return AnalysisResult(summary, regional, figure_04, figure_05, audit, input_hashes)
 
@@ -309,4 +433,39 @@ def write_analysis_outputs(result: AnalysisResult, root: Path) -> list[str]:
     ]
 
 
-__all__ = ["AnalysisResult", "run_dynamic_analysis", "write_analysis_outputs"]
+def load_analysis_outputs(root: Path) -> AnalysisResult:
+    """Load only analysis source carriers for the model-figure stages."""
+
+    summary = read_csv(root, ANALYSIS_OUTPUTS["summary"], ANALYSIS_SUMMARY_COLUMNS)
+    regional = read_csv(root, ANALYSIS_OUTPUTS["regional_accounts"], ANALYSIS_REGIONAL_COLUMNS)
+    figure_04 = read_csv(root, ANALYSIS_OUTPUTS["figure_04_source"], ANALYSIS_FIGURE_04_COLUMNS)
+    figure_05 = read_csv(root, ANALYSIS_OUTPUTS["figure_05_source"], ANALYSIS_FIGURE_05_COLUMNS)
+    payload = read_json(root, ANALYSIS_OUTPUTS["audit"])
+    if not isinstance(payload, dict) or payload.get("stage") != "dynamic_analysis":
+        raise ValueError("analysis-stage audit is missing or has the wrong stage")
+    input_hashes = payload.get("input_hashes")
+    if not isinstance(input_hashes, dict) or not input_hashes:
+        raise ValueError("analysis-stage audit is missing input hashes")
+    return AnalysisResult(
+        summary,
+        regional,
+        figure_04,
+        figure_05,
+        payload,
+        {str(key): str(value) for key, value in input_hashes.items()},
+    )
+
+
+__all__ = [
+    "ANALYSIS_FIGURE_SOURCES",
+    "ANALYSIS_FIGURE_04_COLUMNS",
+    "ANALYSIS_FIGURE_05_COLUMNS",
+    "ANALYSIS_INPUTS",
+    "ANALYSIS_OUTPUTS",
+    "ANALYSIS_REGIONAL_COLUMNS",
+    "ANALYSIS_SUMMARY_COLUMNS",
+    "AnalysisResult",
+    "load_analysis_outputs",
+    "run_dynamic_analysis",
+    "write_analysis_outputs",
+]

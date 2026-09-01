@@ -15,7 +15,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from green_methanol_release.model.workflow import run_model_stage
-from green_methanol_release.model.analysis import ANALYSIS_INPUTS
+from green_methanol_release.model.analysis import ANALYSIS_FIGURE_SOURCES
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -24,8 +24,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        if sorted(set(args.input)) != sorted(set(ANALYSIS_INPUTS.values())):
-            raise ValueError("Figure 5 model inputs must match the public model registry")
+        if args.input != [ANALYSIS_FIGURE_SOURCES["figure_05"]]:
+            raise ValueError("Figure 5 model input must be the registered analysis source")
         result = run_model_stage(ROOT, "figure_05")
         expected = ROOT / "figures" / "model-figure-05.png"
         if args.output.resolve() != expected.resolve():

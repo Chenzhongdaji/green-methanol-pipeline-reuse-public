@@ -15,8 +15,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from green_methanol_release.model.workflow import run_model_stage
-from green_methanol_release.model.demand import DEMAND_INPUTS
-from green_methanol_release.model.network import NETWORK_INPUTS
+from green_methanol_release.model.network import NETWORK_STAGE_INPUTS
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        expected_inputs = set(DEMAND_INPUTS.values()) | set(NETWORK_INPUTS.values())
+        expected_inputs = set(NETWORK_STAGE_INPUTS.values())
         if sorted(set(args.input)) != sorted(expected_inputs):
             raise ValueError("directed network inputs must match the public model registry")
         result = run_model_stage(ROOT, "directed_network_flow")

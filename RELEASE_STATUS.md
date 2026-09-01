@@ -7,8 +7,10 @@ This repository contains the checked public reproducibility package at version
 figure-source data, tests, provenance records, and release inventories. The
 full workflow has been exercised against the five public model stages and
 six manuscript figure output jobs and records PASS for all eleven outputs,
-including Figure 2e. Figure 2e is
-reproduced from the deposited public carrier.
+including Figure 2e. The two model-figure jobs are model-v01
+diagnostic/model-derived outputs; they are not formal manuscript figures and
+are not numerical reproductions of v08. Figure 2e is reproduced from the
+deposited public carrier.
 
 The repository URL is
 <https://github.com/Chenzhongdaji/green-methanol-pipeline-reuse-public>.
@@ -29,7 +31,12 @@ an official basemap.
 The final-tree inventory is regenerated with `python scripts/build_manifest.py`
 and checked with
 `python scripts/audit_release.py --output <external-output>/green-methanol-audit.json`.
-The public repository's CI repeats the test and audit contract.
+The public repository's CI repeats the test and audit contract. The directed
+network uses `同管道运输任务_万吨` as the occupied-capacity basis and WGS84
+haversine kilometres for `distance_km` and `pipeline_tonne_km`. Candidate
+links are confined to Figure-5 sensitivity. Legacy pressure/cost details are
+omitted from this public analytical model; transport emissions are reserved
+and not implemented.
 
 ## Data and rights boundary
 

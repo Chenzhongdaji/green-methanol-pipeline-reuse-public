@@ -51,9 +51,9 @@ def test_public_source_register_is_complete_and_non_redistributive():
 
 def test_public_registry_exposes_current_dataset_and_output_counts():
     result = validate_inventory(ROOT)
-    assert result["dataset_rows"] == 40
+    assert result["dataset_rows"] == 56
     assert result["output_rows"] == 11
-    assert result["referenced_dataset_rows"] == 17
+    assert result["referenced_dataset_rows"] == 30
 
 
 def test_third_party_sources_are_not_cc_by_relicensed():
@@ -271,9 +271,9 @@ def test_registry_loads_and_validates_current_counts():
     datasets = inventory_module.load_dataset_registry(ROOT / "data" / "dataset_registry.csv")
     outputs = inventory_module.load_output_registry(ROOT / "data" / "output_registry.csv")
 
-    assert len(datasets) == 40
+    assert len(datasets) == 56
     assert sum(row["stage_action"] == "copy" for row in datasets) == 33
-    assert sum(row["stage_action"] == "existing" for row in datasets) == 6
+    assert sum(row["stage_action"] == "existing" for row in datasets) == 22
     assert sum(row["stage_action"] == "acquire" for row in datasets) == 1
     seed_ids = {
         "figure-01-source",
@@ -283,7 +283,25 @@ def test_registry_loads_and_validates_current_counts():
         "figure-05-source",
         "model-parameters-v01",
     }
-    assert {row["dataset_id"] for row in datasets if row["stage_action"] == "existing"} == seed_ids
+    model_ids = {
+        "model-demand-nodes-v01",
+        "model-demand-totals-v01",
+        "model-supply-nodes-v01",
+        "model-component-demand-v01",
+        "model-demand-audit-v01",
+        "model-network-summary-v01",
+        "model-network-edge-flows-v01",
+        "model-network-service-v01",
+        "model-network-edge-catalog-v01",
+        "model-network-node-catalog-v01",
+        "model-network-audit-v01",
+        "model-analysis-summary-v01",
+        "model-regional-accounts-v01",
+        "model-figure-04-source-v01",
+        "model-figure-05-source-v01",
+        "model-analysis-audit-v01",
+    }
+    assert {row["dataset_id"] for row in datasets if row["stage_action"] == "existing"} == seed_ids | model_ids
     assert all(
         row["source_relative_path"] == "" or row["source_relative_path"] == f"source-id:{row['dataset_id']}"
         for row in datasets
@@ -291,9 +309,9 @@ def test_registry_loads_and_validates_current_counts():
     )
     assert len(outputs) == 11
     assert inventory_module.validate_release_registry(ROOT) == {
-        "datasets": 40,
+        "datasets": 56,
         "outputs": 11,
-        "referenced_datasets": 17,
+        "referenced_datasets": 30,
     }
 
 
@@ -472,9 +490,9 @@ def test_release_registry_rejects_incomplete_figure2e_contract(
 
 def test_output_commands_use_declared_inputs_and_exact_artifact_targets():
     assert inventory_module.validate_release_registry(ROOT) == {
-        "datasets": 40,
+        "datasets": 56,
         "outputs": 11,
-        "referenced_datasets": 17,
+        "referenced_datasets": 30,
     }
 
 

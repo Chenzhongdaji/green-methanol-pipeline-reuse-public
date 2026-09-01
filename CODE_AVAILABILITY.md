@@ -5,8 +5,10 @@ Package version `1.0.0` provides the Python package under
 `scripts/`, the pinned environment in `environment/`, configuration and
 registries, tests, and the expected release inventories. The code reproduces
 the public demand/preprocessing, directed NetworkX flow, dynamic-analysis,
-model Figure 4/5 source, and six manuscript figure outputs, including Figure
-2e. Figure 2e is reproduced from its deposited public carrier.
+model-v01 Figure 4/5 diagnostic sources, and six manuscript figure outputs,
+including Figure 2e. Figure 2e is reproduced from its deposited public
+carrier. `model-figure-04` and `model-figure-05` are model-derived
+diagnostics, not formal manuscript figures or v08 numerical reproductions.
 
 From a clean checkout, install Python 3.12 and the pinned requirements, then
 run:
@@ -25,7 +27,11 @@ registered carrier and its hash, executes the registered builders in registry
 order, checks the expected artifacts, and writes sanitized logs plus
 `full_reproduction.json` to the external output directory. The model rows run
 from public raw carriers through demand allocation, directed flow, dynamic
-accounts, and Figure 4/5 source regeneration. Figure 2e is
+accounts, and model-v01 Figure 4/5 source regeneration. The network model
+uses `同管道运输任务_万吨` for occupied capacity and WGS84 haversine
+kilometres for `distance_km` and `pipeline_tonne_km`; candidate links are
+Figure-5 sensitivity inputs only. Legacy pressure/cost details are not
+represented, and transport emissions are reserved/not implemented. Figure 2e is
 explicitly bound to:
 
 ```text

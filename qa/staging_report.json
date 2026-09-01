@@ -181,11 +181,155 @@
       "status": "PASS"
     },
     {
-      "bytes": 5774,
+      "bytes": 4737,
+      "dataset_id": "model-analysis-audit-v01",
+      "public_path": "data/processed/model_v01/dynamic_analysis_audit.json",
+      "sha256": "b0816d789e25462b4040ab918b4dd26e42e8b7a1fdc8ef8f1abf00c9128db508",
+      "source_relative_path": "source-id:model-analysis-audit-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 36314,
+      "dataset_id": "model-analysis-summary-v01",
+      "public_path": "data/processed/model_v01/analysis_summary.csv",
+      "sha256": "5a31d6554f917303fdb50e43ca8277bca92551b3fe418d686e647f5123a09bf4",
+      "source_relative_path": "source-id:model-analysis-summary-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 47880,
+      "dataset_id": "model-component-demand-v01",
+      "public_path": "data/processed/model_v01/component_demand.csv",
+      "sha256": "c327260505c0cea313826b763e0f367e5ed9d16ca5ae7cb5fc5e5b8f0f93cd62",
+      "source_relative_path": "source-id:model-component-demand-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 2656,
+      "dataset_id": "model-demand-audit-v01",
+      "public_path": "data/processed/model_v01/demand_preprocessing_audit.json",
+      "sha256": "d26702725be5114dd7d7a3f3fc124780f324f314691c04a29dc1ab560d43f7b8",
+      "source_relative_path": "source-id:model-demand-audit-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 1527313,
+      "dataset_id": "model-demand-nodes-v01",
+      "public_path": "data/processed/model_v01/demand_nodes.csv",
+      "sha256": "e84eb9cf7b6bb9d03ba17e64dc8036e3210fba7bcb825b9300d7b20f0e3b6cda",
+      "source_relative_path": "source-id:model-demand-nodes-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 11230,
+      "dataset_id": "model-demand-totals-v01",
+      "public_path": "data/processed/model_v01/demand_totals.csv",
+      "sha256": "16ef018f11d96ba3a7fa00850527db9ea9ec0895a73c85e120cf0bffd23af887",
+      "source_relative_path": "source-id:model-demand-totals-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 6256,
+      "dataset_id": "model-figure-04-source-v01",
+      "public_path": "data/processed/model_v01/figure_04_source.csv",
+      "sha256": "ec7f69d27559d7675d17f9f9ea69699af8eb464fdb4bc73ebf41c75d11302791",
+      "source_relative_path": "source-id:model-figure-04-source-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 2771,
+      "dataset_id": "model-figure-05-source-v01",
+      "public_path": "data/processed/model_v01/figure_05_source.csv",
+      "sha256": "735325f056c7b7ce7569010c14dd4df79ad5e4a04fca87f542ea344f651ecb26",
+      "source_relative_path": "source-id:model-figure-05-source-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 3781,
+      "dataset_id": "model-network-audit-v01",
+      "public_path": "data/processed/model_v01/network_model_audit.json",
+      "sha256": "daf7aecfa8dd593c44f981e356a571527596b4ea72738ffe1510ba201570ed26",
+      "source_relative_path": "source-id:model-network-audit-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 130117,
+      "dataset_id": "model-network-edge-catalog-v01",
+      "public_path": "data/processed/model_v01/network_edge_catalog.csv",
+      "sha256": "b5e840a2456b8ff43d191c102189ae80cc70fa433851d51e050e3e69a4b04551",
+      "source_relative_path": "source-id:model-network-edge-catalog-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 52592,
+      "dataset_id": "model-network-edge-flows-v01",
+      "public_path": "data/processed/model_v01/network_edge_flows.csv",
+      "sha256": "e9f93be99eac7150a5f1f85657933aca66dc3b31fa02d3f65bacd0c48d0d8537",
+      "source_relative_path": "source-id:model-network-edge-flows-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 5527,
+      "dataset_id": "model-network-node-catalog-v01",
+      "public_path": "data/processed/model_v01/network_node_catalog.csv",
+      "sha256": "fcd4046a5074877b159728119b068284369c2d63cdc40c3d330e90b3a6272800",
+      "source_relative_path": "source-id:model-network-node-catalog-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 525983,
+      "dataset_id": "model-network-service-v01",
+      "public_path": "data/processed/model_v01/network_service.csv",
+      "sha256": "f88bea75761c7205346434e4ccf9d4b97bfcd7b587ca683a0e251a6f904fc150",
+      "source_relative_path": "source-id:model-network-service-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 33227,
+      "dataset_id": "model-network-summary-v01",
+      "public_path": "data/processed/model_v01/network_summary.csv",
+      "sha256": "bedcb228df3f575aa127f41662515a4f0f77cb228d60cbf89f15b50e0d84168a",
+      "source_relative_path": "source-id:model-network-summary-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 5816,
       "dataset_id": "model-parameters-v01",
       "public_path": "config/model_parameters_v01.csv",
-      "sha256": "2125cf9ab5e87d673f7650b642ceea871a70d1e8e4a038a577ebac43a8670f7d",
+      "sha256": "8ff309ee7484f6b4311061d5f682134135b6baff881fa0cbcef6b5fa2bf14406",
       "source_relative_path": "source-id:model-parameters-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 135869,
+      "dataset_id": "model-regional-accounts-v01",
+      "public_path": "data/processed/model_v01/regional_accounts.csv",
+      "sha256": "a8ccf2623976edd21c75398f3302ca47b15b6a6f2bd3d675095199a89d87828d",
+      "source_relative_path": "source-id:model-regional-accounts-v01",
+      "stage_action": "existing",
+      "status": "PASS"
+    },
+    {
+      "bytes": 28302,
+      "dataset_id": "model-supply-nodes-v01",
+      "public_path": "data/processed/model_v01/supply_nodes.csv",
+      "sha256": "2017a9c2293c4da74196db84e0317a460997488a85bb55a8ac7cb6263aa729f4",
+      "source_relative_path": "source-id:model-supply-nodes-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
@@ -366,10 +510,10 @@
   "totals": {
     "acquire": 1,
     "copy": 33,
-    "datasets": 40,
+    "datasets": 56,
     "errors": 0,
-    "existing": 6,
+    "existing": 22,
     "failed": 0,
-    "passed": 40
+    "passed": 56
   }
 }

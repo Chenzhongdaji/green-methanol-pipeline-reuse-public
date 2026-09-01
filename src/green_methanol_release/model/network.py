@@ -11,18 +11,121 @@ import networkx as nx
 import pandas as pd
 
 from .config import YEARS, ModelConfig, load_config
-from .demand import DemandResult, DEMAND_INPUTS, preprocess_demand
-from .io import finite_float, hashes_for_paths, normalize_province, read_csv, sorted_frame, write_csv, write_json
+from .demand import DEMAND_OUTPUTS, DemandResult, preprocess_demand
+from .io import (
+    finite_float,
+    hashes_for_paths,
+    normalize_province,
+    read_csv,
+    read_json,
+    sorted_frame,
+    write_csv,
+    write_json,
+)
 
 
 NETWORK_INPUTS = {
     "pipeline_segments": "data/raw/pipeline/pipeline_network_segments_v01.csv",
     "pipeline_nodes": "data/raw/pipeline/pipeline_nodes_geocoded.csv",
     "segment_tasks": "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv",
-    "candidate_links": "data/raw/topology/candidate_links.csv",
-    "selected_plans": "data/raw/topology/best_two_link_plans.csv",
     "parameters": "config/model_parameters_v01.csv",
 }
+NETWORK_STAGE_INPUTS = {
+    **{
+        "demand_nodes": DEMAND_OUTPUTS["nodes"],
+        "demand_totals": DEMAND_OUTPUTS["totals"],
+        "demand_supply": DEMAND_OUTPUTS["supply"],
+        "demand_components": DEMAND_OUTPUTS["components"],
+        "demand_audit": DEMAND_OUTPUTS["audit"],
+    },
+    **NETWORK_INPUTS,
+}
+CANDIDATE_INPUTS = {
+    "candidate_links": "data/raw/topology/candidate_links.csv",
+    "selected_plans": "data/raw/topology/best_two_link_plans.csv",
+}
+NETWORK_OUTPUTS = {
+    "summary": "data/processed/model_v01/network_summary.csv",
+    "edge_flows": "data/processed/model_v01/network_edge_flows.csv",
+    "service": "data/processed/model_v01/network_service.csv",
+    "edge_catalog": "data/processed/model_v01/network_edge_catalog.csv",
+    "node_catalog": "data/processed/model_v01/network_node_catalog.csv",
+    "audit": "data/processed/model_v01/network_model_audit.json",
+}
+
+NETWORK_NODE_COLUMNS = (
+    "node_id",
+    "province_key",
+    "longitude",
+    "latitude",
+)
+NETWORK_EDGE_CATALOG_COLUMNS = (
+    "year",
+    "segment_id",
+    "from_node_id",
+    "to_node_id",
+    "from_province",
+    "to_province",
+    "design_throughput_10kt_y",
+    "same_pipeline_task_10kt",
+    "capacity_10kt",
+    "distance_km",
+    "capacity_basis",
+)
+NETWORK_SUMMARY_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "demand_10kt",
+    "supply_10kt",
+    "local_direct_10kt",
+    "pipeline_served_10kt",
+    "served_10kt",
+    "unserved_10kt",
+    "demand_met_pct",
+    "pipeline_tonne_km",
+    "edges_used",
+    "max_edge_util_pct",
+    "min_cost_objective",
+    "active_segments",
+    "capacity_factor",
+    "connector_count",
+)
+NETWORK_EDGE_FLOW_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "segment_id",
+    "from_node_id",
+    "to_node_id",
+    "flow_10kt",
+    "capacity_10kt",
+    "flow_to_capacity_pct",
+    "distance_km",
+    "capacity_basis",
+)
+NETWORK_SERVICE_COLUMNS = (
+    "scenario",
+    "tier",
+    "year",
+    "province_key",
+    "demand_10kt",
+    "supply_10kt",
+    "local_direct_10kt",
+    "pipeline_served_10kt",
+    "served_10kt",
+    "unserved_10kt",
+)
+SEGMENT_TASK_CAPACITY_COLUMN = "同管道运输任务_万吨"
+
+
+@dataclass(frozen=True)
+class NetworkTopology:
+    """Persistable base topology used by analysis-stage counterfactuals."""
+
+    nodes: pd.DataFrame
+    edges: pd.DataFrame
+    input_hashes: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -32,6 +135,34 @@ class NetworkResult:
     service: pd.DataFrame
     audit: dict[str, Any]
     input_hashes: dict[str, str]
+    edge_catalog: pd.DataFrame | None = None
+    node_catalog: pd.DataFrame | None = None
+    topology: NetworkTopology | None = None
+
+
+def haversine_km(lon1: object, lat1: object, lon2: object, lat2: object) -> float:
+    """Return WGS84 great-circle distance in kilometres."""
+
+    first_lon = finite_float(lon1, "longitude")
+    first_lat = finite_float(lat1, "latitude")
+    second_lon = finite_float(lon2, "longitude")
+    second_lat = finite_float(lat2, "latitude")
+    if not all(-180.0 <= value <= 180.0 for value in (first_lon, second_lon)):
+        raise ValueError("longitude must lie in [-180, 180]")
+    if not all(-90.0 <= value <= 90.0 for value in (first_lat, second_lat)):
+        raise ValueError("latitude must lie in [-90, 90]")
+    radius_km = 6371.0088
+    first_lat_rad = math.radians(first_lat)
+    second_lat_rad = math.radians(second_lat)
+    delta_lat = math.radians(second_lat - first_lat)
+    delta_lon = math.radians(second_lon - first_lon)
+    hav = (
+        math.sin(delta_lat / 2.0) ** 2
+        + math.cos(first_lat_rad)
+        * math.cos(second_lat_rad)
+        * math.sin(delta_lon / 2.0) ** 2
+    )
+    return 2.0 * radius_km * math.atan2(math.sqrt(hav), math.sqrt(max(0.0, 1.0 - hav)))
 
 
 def _read_segments(root: Path) -> pd.DataFrame:
@@ -54,37 +185,65 @@ def _read_segments(root: Path) -> pd.DataFrame:
     )
     if tuple(frame.columns) != expected:
         raise ValueError("pipeline segment carrier schema is not the public English schema")
-    for field in ("from_lon", "from_lat", "to_lon", "to_lat", "design_throughput_10kt_y", "commissioning_year"):
+    for field in (
+        "from_lon",
+        "from_lat",
+        "to_lon",
+        "to_lat",
+        "design_throughput_10kt_y",
+        "commissioning_year",
+    ):
         frame[field] = pd.to_numeric(frame[field], errors="raise")
     if frame["segment_id"].duplicated().any():
         raise ValueError("pipeline segment IDs must be unique")
     if (frame["design_throughput_10kt_y"] < 0).any():
         raise ValueError("pipeline design throughput must be non-negative")
+    frame["distance_km"] = frame.apply(
+        lambda row: haversine_km(
+            row["from_lon"], row["from_lat"], row["to_lon"], row["to_lat"]
+        ),
+        axis=1,
+    )
     return frame.sort_values("segment_id", kind="mergesort").reset_index(drop=True)
 
 
-def _read_node_provinces(root: Path) -> dict[str, str]:
+def _read_node_catalog(root: Path) -> pd.DataFrame:
     frame = read_csv(root, NETWORK_INPUTS["pipeline_nodes"])
-    if frame.shape[1] < 5:
-        raise ValueError("pipeline node carrier has fewer than five columns")
-    node_ids = frame.iloc[:, 0].astype(str).str.strip()
-    provinces = frame.iloc[:, 4].map(normalize_province)
-    if node_ids.eq("").any() or provinces.eq("").any():
+    if frame.shape[1] < 7:
+        raise ValueError("pipeline node carrier has fewer than seven columns")
+    catalog = pd.DataFrame(
+        {
+            "node_id": frame.iloc[:, 0].astype(str).str.strip(),
+            "province_key": frame.iloc[:, 4].map(normalize_province),
+            "longitude": pd.to_numeric(frame.iloc[:, 5], errors="raise"),
+            "latitude": pd.to_numeric(frame.iloc[:, 6], errors="raise"),
+        }
+    )
+    if catalog["node_id"].eq("").any() or catalog["province_key"].eq("").any():
         raise ValueError("pipeline node carrier has blank node or province")
-    if node_ids.duplicated().any():
+    if catalog["node_id"].duplicated().any():
         raise ValueError("pipeline node IDs must be unique")
-    return {node: province for node, province in zip(node_ids, provinces, strict=True)}
+    for row in catalog.itertuples(index=False):
+        haversine_km(row.longitude, row.latitude, row.longitude, row.latitude)
+    return sorted_frame(catalog, ("node_id",))
+
+
+def _read_node_provinces(root: Path) -> dict[str, str]:
+    catalog = _read_node_catalog(root)
+    return dict(zip(catalog["node_id"], catalog["province_key"], strict=True))
 
 
 def _read_segment_tasks(root: Path, segments: pd.DataFrame) -> pd.DataFrame:
     frame = read_csv(root, NETWORK_INPUTS["segment_tasks"])
-    if frame.shape[1] < 11:
-        raise ValueError("segment task carrier has fewer than eleven columns")
+    if frame.shape[1] < 11 or frame.columns[6] != SEGMENT_TASK_CAPACITY_COLUMN:
+        raise ValueError(
+            "segment task carrier must expose 同管道运输任务_万吨 at the public schema position"
+        )
     tasks = pd.DataFrame(
         {
             "segment_id": frame.iloc[:, 0].astype(str).str.strip(),
             "year": pd.to_numeric(frame.iloc[:, 4], errors="raise").astype(int),
-            "network_task_10kt": pd.to_numeric(frame.iloc[:, 10], errors="raise"),
+            "same_pipeline_task_10kt": pd.to_numeric(frame.iloc[:, 6], errors="raise"),
         }
     )
     if tasks.duplicated(["segment_id", "year"]).any():
@@ -94,14 +253,26 @@ def _read_segment_tasks(root: Path, segments: pd.DataFrame) -> pd.DataFrame:
     if actual != expected:
         missing = sorted(expected - actual)[:5]
         extra = sorted(actual - expected)[:5]
-        raise ValueError(f"segment task carrier does not cover every segment/year: missing={missing}, extra={extra}")
-    if tasks["network_task_10kt"].isna().any() or (tasks["network_task_10kt"] < 0).any():
-        raise ValueError("segment task carrier has invalid network task values")
+        raise ValueError(
+            f"segment task carrier does not cover every segment/year: missing={missing}, extra={extra}"
+        )
+    if (
+        tasks["same_pipeline_task_10kt"].isna().any()
+        or ~tasks["same_pipeline_task_10kt"].map(math.isfinite).all()
+        or (tasks["same_pipeline_task_10kt"] < 0).any()
+    ):
+        raise ValueError("segment task carrier has invalid same-pipeline task values")
     return tasks.sort_values(["segment_id", "year"], kind="mergesort").reset_index(drop=True)
 
 
-def _read_candidate_links(root: Path) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
-    candidates = read_csv(root, NETWORK_INPUTS["candidate_links"])
+def _read_candidate_links(
+    root: Path,
+    node_provinces: dict[str, str] | None = None,
+    node_coordinates: dict[str, tuple[float, float]] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """Read Figure-5 candidates and validate endpoints against the base nodes."""
+
+    candidates = read_csv(root, CANDIDATE_INPUTS["candidate_links"])
     required = {
         "candidate_id",
         "from_node_id",
@@ -112,42 +283,114 @@ def _read_candidate_links(root: Path) -> tuple[dict[str, dict[str, Any]], dict[s
     if not required.issubset(candidates.columns):
         raise ValueError("candidate-link carrier is missing required columns")
     candidates = candidates.copy()
+    candidates["candidate_id"] = candidates["candidate_id"].astype(str).str.strip()
+    candidates["from_node_id"] = candidates["from_node_id"].astype(str).str.strip()
+    candidates["to_node_id"] = candidates["to_node_id"].astype(str).str.strip()
     candidates["distance_km"] = pd.to_numeric(candidates["distance_km"], errors="raise")
     candidates["capacity_10kt"] = pd.to_numeric(candidates["capacity_10kt"], errors="raise")
-    if candidates["candidate_id"].duplicated().any() or (candidates[["distance_km", "capacity_10kt"]] < 0).any().any():
+    if candidates["candidate_id"].duplicated().any() or (
+        candidates[["distance_km", "capacity_10kt"]] < 0
+    ).any().any():
         raise ValueError("candidate-link carrier has duplicate IDs or negative values")
-    mapping = {
-        str(row.candidate_id): {
+    if node_provinces is not None:
+        known_nodes = set(node_provinces)
+        unknown = sorted(
+            (set(candidates["from_node_id"]) | set(candidates["to_node_id"])) - known_nodes
+        )
+        if unknown:
+            raise ValueError(f"candidate link references unknown public node(s): {unknown[:5]}")
+    if node_coordinates is not None:
+        for row in candidates.itertuples(index=False):
+            try:
+                from_coord = node_coordinates[str(row.from_node_id)]
+                to_coord = node_coordinates[str(row.to_node_id)]
+            except KeyError as exc:
+                raise ValueError(
+                    f"candidate link references unknown public node: {exc.args[0]}"
+                ) from exc
+            # A one-kilometre floor preserves the original v08 routing-cost
+            # convention for coincident analytical node coordinates while
+            # keeping all non-coincident candidates on the haversine km scale.
+            derived = max(haversine_km(*from_coord, *to_coord), 1.0)
+            if abs(float(row.distance_km) - derived) > 0.01:
+                raise ValueError(
+                    f"candidate {row.candidate_id} distance_km is not the haversine distance"
+                )
+
+    mapping: dict[str, dict[str, Any]] = {}
+    for row in candidates.sort_values("candidate_id", kind="mergesort").itertuples(index=False):
+        distance = float(row.distance_km)
+        if node_coordinates is not None:
+            distance = max(haversine_km(
+                *node_coordinates[str(row.from_node_id)],
+                *node_coordinates[str(row.to_node_id)],
+            ), 1.0)
+        mapping[str(row.candidate_id)] = {
             "candidate_id": str(row.candidate_id),
             "from_node_id": str(row.from_node_id),
             "to_node_id": str(row.to_node_id),
-            "distance_km": float(row.distance_km),
+            "distance_km": distance,
             "capacity_10kt": float(row.capacity_10kt),
         }
-        for row in candidates.sort_values("candidate_id", kind="mergesort").itertuples(index=False)
-    }
-    plans = read_csv(root, NETWORK_INPUTS["selected_plans"])
+    plans = read_csv(root, CANDIDATE_INPUTS["selected_plans"])
     if not {"scenario", "first_candidate_id"}.issubset(plans.columns):
         raise ValueError("selected-plan carrier is missing scenario/candidate columns")
     selected: dict[str, str] = {}
-    for row in plans.sort_values(["scenario", "first_candidate_id"], kind="mergesort").itertuples(index=False):
+    for row in plans.sort_values(
+        ["scenario", "first_candidate_id"], kind="mergesort"
+    ).itertuples(index=False):
         scenario = str(row.scenario)
         candidate = str(row.first_candidate_id)
         if scenario in selected:
             continue
-        if candidate != "" and candidate != "nan":
+        if candidate and candidate != "nan":
             if candidate not in mapping:
                 raise ValueError(f"selected plan references unknown candidate {candidate}")
             selected[scenario] = candidate
     return mapping, selected
 
 
+def _build_edge_catalog(
+    segments: pd.DataFrame,
+    tasks: pd.DataFrame,
+    node_catalog: pd.DataFrame,
+) -> pd.DataFrame:
+    node_provinces = dict(zip(node_catalog["node_id"], node_catalog["province_key"], strict=True))
+    task_lookup = tasks.set_index(["segment_id", "year"])["same_pipeline_task_10kt"]
+    rows: list[dict[str, Any]] = []
+    for segment in segments.sort_values("segment_id", kind="mergesort").itertuples(index=False):
+        from_node = str(segment.from_node_id)
+        to_node = str(segment.to_node_id)
+        if from_node not in node_provinces or to_node not in node_provinces:
+            raise ValueError(f"segment {segment.segment_id} references unknown public node")
+        for year in YEARS:
+            if int(segment.commissioning_year) > year:
+                continue
+            same_task = float(task_lookup.loc[(str(segment.segment_id), year)])
+            design = float(segment.design_throughput_10kt_y)
+            rows.append(
+                {
+                    "year": year,
+                    "segment_id": str(segment.segment_id),
+                    "from_node_id": from_node,
+                    "to_node_id": to_node,
+                    "from_province": node_provinces[from_node],
+                    "to_province": node_provinces[to_node],
+                    "design_throughput_10kt_y": design,
+                    "same_pipeline_task_10kt": same_task,
+                    "capacity_10kt": max(0.0, design - same_task),
+                    "distance_km": float(segment.distance_km),
+                    "capacity_basis": SEGMENT_TASK_CAPACITY_COLUMN,
+                }
+            )
+    return sorted_frame(
+        pd.DataFrame(rows, columns=NETWORK_EDGE_CATALOG_COLUMNS), ("year", "segment_id")
+    )
+
+
 def _units(value: float, scale: int) -> int:
     if value <= 0:
         return 0
-    # Flooring preserves the physical upper bound after fixed-point scaling:
-    # a rounded residual can otherwise exceed a province's unserved demand by
-    # a fraction of one model unit and break the served-account closure.
     return max(0, int(math.floor(value * scale + 1e-9)))
 
 
@@ -156,8 +399,7 @@ def _from_units(value: int, scale: int) -> float:
 
 
 def _graph_for_case(
-    segments: pd.DataFrame,
-    tasks: pd.DataFrame,
+    edge_catalog: pd.DataFrame,
     node_provinces: dict[str, str],
     supply: dict[str, float],
     demand: dict[str, float],
@@ -166,7 +408,13 @@ def _graph_for_case(
     year: int,
     capacity_factor: float,
     candidate_links: Iterable[dict[str, Any]] = (),
-) -> tuple[nx.DiGraph, dict[str, str], dict[str, str], dict[str, dict[str, Any]]]:
+) -> tuple[
+    nx.DiGraph,
+    dict[str, str],
+    dict[str, str],
+    dict[str, dict[str, Any]],
+    dict[str, dict[str, Any]],
+]:
     graph = nx.DiGraph()
     source = "__source__"
     sink = "__sink__"
@@ -174,23 +422,21 @@ def _graph_for_case(
     supply_aggregates: dict[str, str] = {}
     demand_aggregates: dict[str, str] = {}
     segment_edges: dict[str, dict[str, Any]] = {}
-    task_lookup = tasks[tasks["year"].eq(year)].set_index("segment_id")
-    active = segments[segments["commissioning_year"].le(year)].copy()
+    connector_edges: dict[str, dict[str, Any]] = {}
+    active = edge_catalog[edge_catalog["year"].eq(year)]
     for row in active.sort_values("segment_id", kind="mergesort").itertuples(index=False):
         segment_id = str(row.segment_id)
         from_node = str(row.from_node_id)
         to_node = str(row.to_node_id)
-        baseline_task = float(task_lookup.loc[segment_id, "network_task_10kt"])
-        spare = max(0.0, float(row.design_throughput_10kt_y) - baseline_task) * capacity_factor
-        capacity = _units(spare, config.flow_scale)
+        base_capacity = float(row.capacity_10kt)
+        capacity_10kt = base_capacity * capacity_factor
+        capacity = _units(capacity_10kt, config.flow_scale)
         if capacity <= 0:
             continue
         pipe_from = f"PIPE::{from_node}"
         pipe_to = f"PIPE::{to_node}"
         segment_node = f"SEG::{segment_id}"
-        distance = math.hypot(float(row.to_lon) - float(row.from_lon), float(row.to_lat) - float(row.from_lat))
-        # Use an analytical coordinate distance converted to a positive integer
-        # routing cost. It is a ranking cost, not a geographic distance claim.
+        distance = float(row.distance_km)
         weight = max(1, int(round(distance * 1000.0 * config.transport_cost_per_km)))
         graph.add_edge(pipe_from, segment_node, capacity=capacity, weight=0)
         graph.add_edge(segment_node, pipe_to, capacity=capacity, weight=weight)
@@ -198,25 +444,39 @@ def _graph_for_case(
             "segment_node": segment_node,
             "to_node": pipe_to,
             "capacity_units": capacity,
-            "capacity_10kt": spare,
+            "capacity_10kt": capacity_10kt,
             "distance_km": distance,
             "weight": weight,
             "from_node_id": from_node,
             "to_node_id": to_node,
+            "capacity_basis": str(row.capacity_basis),
         }
 
     for candidate in sorted(candidate_links, key=lambda item: str(item["candidate_id"])):
         from_node = str(candidate["from_node_id"])
         to_node = str(candidate["to_node_id"])
-        capacity = _units(float(candidate["capacity_10kt"]) * capacity_factor, config.flow_scale)
-        if capacity <= 0 or from_node not in node_provinces or to_node not in node_provinces:
+        if from_node not in node_provinces or to_node not in node_provinces:
+            raise ValueError("candidate link references unknown public node")
+        capacity_10kt = float(candidate["capacity_10kt"]) * capacity_factor
+        capacity = _units(capacity_10kt, config.flow_scale)
+        if capacity <= 0:
             continue
         pipe_from = f"PIPE::{from_node}"
         pipe_to = f"PIPE::{to_node}"
-        candidate_node = f"CAND::{candidate['candidate_id']}"
-        weight = max(1, int(round(float(candidate["distance_km"]) * 1000.0 * config.transport_cost_per_km)))
+        candidate_id = str(candidate["candidate_id"])
+        candidate_node = f"CAND::{candidate_id}"
+        distance = float(candidate["distance_km"])
+        weight = max(1, int(round(distance * 1000.0 * config.transport_cost_per_km)))
         graph.add_edge(pipe_from, candidate_node, capacity=capacity, weight=0)
         graph.add_edge(candidate_node, pipe_to, capacity=capacity, weight=weight)
+        connector_edges[candidate_id] = {
+            "segment_node": candidate_node,
+            "to_node": pipe_to,
+            "capacity_10kt": capacity_10kt,
+            "distance_km": distance,
+            "from_node_id": from_node,
+            "to_node_id": to_node,
+        }
 
     nodes_by_province: dict[str, list[str]] = {}
     for node_id, province in sorted(node_provinces.items()):
@@ -243,10 +503,10 @@ def _graph_for_case(
         for node_id in pipeline_nodes:
             graph.add_edge(f"PIPE::{node_id}", aggregate, capacity=amount, weight=0)
         graph.add_edge(aggregate, sink, capacity=amount, weight=0)
-    return graph, supply_aggregates, demand_aggregates, segment_edges
+    return graph, supply_aggregates, demand_aggregates, segment_edges, connector_edges
 
 
-def _solve_graph(graph: nx.DiGraph, config: ModelConfig) -> tuple[int, int, dict[str, dict[str, int]]]:
+def _solve_graph(graph: nx.DiGraph) -> tuple[int, int, dict[str, dict[str, int]]]:
     if not graph.has_node("__source__") or not graph.has_node("__sink__"):
         return 0, 0, {}
     maximum = int(nx.maximum_flow_value(graph, "__source__", "__sink__", capacity="capacity"))
@@ -279,7 +539,10 @@ def _case_inputs(
         str(key): float(value)
         for key, value in supply_frame.groupby("province_key", sort=True)["supply_10kt"].sum().items()
     }
-    local = math.fsum(min(supply_by_province.get(province, 0.0), amount) for province, amount in demand_by_province.items())
+    local = math.fsum(
+        min(supply_by_province.get(province, 0.0), amount)
+        for province, amount in demand_by_province.items()
+    )
     residual_demand = {
         province: max(0.0, amount - min(amount, supply_by_province.get(province, 0.0)))
         for province, amount in demand_by_province.items()
@@ -291,6 +554,16 @@ def _case_inputs(
     return residual_supply, residual_demand, local
 
 
+def _raw_topology(root: Path) -> tuple[NetworkTopology, dict[str, str]]:
+    segments = _read_segments(root)
+    node_catalog = _read_node_catalog(root)
+    tasks = _read_segment_tasks(root, segments)
+    edge_catalog = _build_edge_catalog(segments, tasks, node_catalog)
+    input_hashes = hashes_for_paths(root, NETWORK_INPUTS.values())
+    topology = NetworkTopology(node_catalog, edge_catalog, input_hashes)
+    return topology, input_hashes
+
+
 def run_network(
     root: Path,
     demand: DemandResult | None = None,
@@ -298,27 +571,34 @@ def run_network(
     capacity_factor: float = 1.0,
     connector_by_scenario: dict[str, list[dict[str, Any]]] | None = None,
     scenarios: Iterable[str] | None = None,
+    topology: NetworkTopology | None = None,
+    config: ModelConfig | None = None,
 ) -> NetworkResult:
-    """Solve all requested scenario/tier/year cases on the public directed graph."""
+    """Solve requested cases on the public directed base topology."""
 
     root = Path(root).resolve()
-    config = load_config(root)
+    config = load_config(root) if config is None else config
     demand_result = preprocess_demand(root) if demand is None else demand
-    segments = _read_segments(root)
-    node_provinces = _read_node_provinces(root)
-    tasks = _read_segment_tasks(root, segments)
-    requested = tuple(scenarios) if scenarios is not None else tuple(sorted(demand_result.nodes["scenario"].unique()))
+    if topology is None:
+        topology, topology_hashes = _raw_topology(root)
+    else:
+        topology_hashes = topology.input_hashes
+    node_catalog = topology.nodes
+    edge_catalog = topology.edges
+    node_provinces = dict(zip(node_catalog["node_id"], node_catalog["province_key"], strict=True))
+    requested = tuple(scenarios) if scenarios is not None else tuple(
+        sorted(demand_result.nodes["scenario"].unique(), key=lambda value: int(str(value)[1:]))
+    )
+    connector_by_scenario = connector_by_scenario or {}
     rows: list[dict[str, Any]] = []
     edge_rows: list[dict[str, Any]] = []
     service_rows: list[dict[str, Any]] = []
-    connector_by_scenario = connector_by_scenario or {}
     for scenario in requested:
         for tier in sorted(demand_result.nodes["tier"].unique(), key=("low", "mid", "high").index):
             for year in YEARS:
                 residual_supply, residual_demand, local = _case_inputs(demand_result, scenario, tier, year)
-                graph, supply_aggs, demand_aggs, segment_edges = _graph_for_case(
-                    segments,
-                    tasks,
+                graph, supply_aggs, demand_aggs, segment_edges, connector_edges = _graph_for_case(
+                    edge_catalog,
                     node_provinces,
                     residual_supply,
                     residual_demand,
@@ -327,12 +607,8 @@ def run_network(
                     capacity_factor=capacity_factor,
                     candidate_links=connector_by_scenario.get(scenario, []),
                 )
-                maximum, objective, flow = _solve_graph(graph, config)
+                maximum, objective, flow = _solve_graph(graph)
                 pipeline_served = _from_units(maximum, config.flow_scale)
-                supply_used = {
-                    province: _from_units(int(flow.get("__source__", {}).get(aggregate, 0)), config.flow_scale)
-                    for province, aggregate in supply_aggs.items()
-                }
                 served_by_province = {
                     province: _from_units(int(flow.get(aggregate, {}).get("__sink__", 0)), config.flow_scale)
                     for province, aggregate in demand_aggs.items()
@@ -379,8 +655,14 @@ def run_network(
                             "capacity_10kt": capacity,
                             "flow_to_capacity_pct": utilization,
                             "distance_km": metadata["distance_km"],
+                            "capacity_basis": metadata["capacity_basis"],
                         }
                     )
+                for candidate_id in sorted(connector_edges):
+                    metadata = connector_edges[candidate_id]
+                    flow_units = int(flow.get(metadata["segment_node"], {}).get(metadata["to_node"], 0))
+                    amount = _from_units(flow_units, config.flow_scale)
+                    flow_tonne_km += amount * metadata["distance_km"] * 10000.0
                 for province in sorted(demand_by_province):
                     demand_amount = demand_by_province[province]
                     local_amount = min(demand_amount, supply_by_province.get(province, 0.0))
@@ -419,31 +701,20 @@ def run_network(
                         "edges_used": used_edges,
                         "max_edge_util_pct": max_util,
                         "min_cost_objective": objective,
-                        "active_segments": len(segment_edges),
+                        "active_segments": int(len(edge_catalog[edge_catalog["year"].eq(year)])),
                         "capacity_factor": capacity_factor,
                         "connector_count": len(connector_by_scenario.get(scenario, [])),
                     }
                 )
-    summary = sorted_frame(pd.DataFrame(rows), ("scenario", "tier", "year"))
+    summary = sorted_frame(pd.DataFrame(rows, columns=NETWORK_SUMMARY_COLUMNS), ("scenario", "tier", "year"))
     edge_flows = sorted_frame(
-        pd.DataFrame(
-            edge_rows,
-            columns=[
-                "scenario",
-                "tier",
-                "year",
-                "segment_id",
-                "from_node_id",
-                "to_node_id",
-                "flow_10kt",
-                "capacity_10kt",
-                "flow_to_capacity_pct",
-                "distance_km",
-            ],
-        ),
+        pd.DataFrame(edge_rows, columns=NETWORK_EDGE_FLOW_COLUMNS),
         ("scenario", "tier", "year", "segment_id"),
     )
-    service = sorted_frame(pd.DataFrame(service_rows), ("scenario", "tier", "year", "province_key"))
+    service = sorted_frame(
+        pd.DataFrame(service_rows, columns=NETWORK_SERVICE_COLUMNS),
+        ("scenario", "tier", "year", "province_key"),
+    )
     if summary.empty or service.empty:
         raise RuntimeError("directed network model returned no cases")
     served_error = summary["served_10kt"] - summary["local_direct_10kt"] - summary["pipeline_served_10kt"]
@@ -457,45 +728,129 @@ def run_network(
         )
     if (summary["demand_10kt"] - summary["served_10kt"] - summary["unserved_10kt"]).abs().max() > 1e-8:
         raise RuntimeError("network demand account does not close")
-    input_paths = {**NETWORK_INPUTS, **{key: value for key, value in DEMAND_INPUTS.items() if key not in {"candidate_links", "selected_plans"}}}
-    input_hashes = hashes_for_paths(root, input_paths.values())
+    demand_stage_files = tuple(DEMAND_OUTPUTS.values())
+    if all((root / Path(*relative.split("/"))).is_file() for relative in demand_stage_files):
+        demand_hashes = hashes_for_paths(root, demand_stage_files)
+    else:
+        # ``run_network`` also supports in-memory composition before the
+        # demand writer runs.  The registered stage path is always hashed by
+        # ``run_model_stage`` and by the write-through full chain.
+        demand_hashes = demand_result.input_hashes
+    input_hashes = {
+        **{f"demand::{key}": value for key, value in demand_hashes.items()},
+        **{f"network::{key}": value for key, value in topology_hashes.items()},
+    }
+    variant = "base" if capacity_factor == 1.0 and not connector_by_scenario else "candidate_sensitivity"
     audit = {
         "status": "PASS",
         "stage": "directed_network_flow",
         "solver": "NetworkX maximum-flow followed by max-flow-min-cost",
-        "network_variant": "base" if capacity_factor == 1.0 and not connector_by_scenario else "counterfactual_capacity_or_connector",
+        "network_variant": variant,
+        "candidate_scope": "Figure-5 sensitivity only; candidate links are excluded from the base graph",
         "capacity_factor": capacity_factor,
-        "input_paths": sorted(input_paths.values()),
+        "capacity_basis": SEGMENT_TASK_CAPACITY_COLUMN,
+        "distance_method": "haversine WGS84 great-circle kilometres",
+        "transport_emission": "reserved_not_implemented",
+        "input_paths": sorted(set(DEMAND_OUTPUTS.values()) | set(NETWORK_INPUTS.values())),
         "input_hashes": input_hashes,
         "schema": {
             "summary": list(summary.columns),
             "edge_flows": list(edge_flows.columns),
             "service": list(service.columns),
+            "edge_catalog": list(edge_catalog.columns),
+            "node_catalog": list(node_catalog.columns),
         },
         "rows": {
             "summary": int(len(summary)),
             "edge_flows": int(len(edge_flows)),
             "service": int(len(service)),
+            "edge_catalog": int(len(edge_catalog)),
+            "node_catalog": int(len(node_catalog)),
         },
-        "boundary": "capacity-constrained directed model on author-derived segment and node carriers; no engineering qualification is inferred",
+        "boundary": "capacity-constrained directed model on author-derived segment and node carriers; no engineering qualification is inferred; legacy pressure/cost details are omitted",
     }
-    return NetworkResult(summary, edge_flows, service, audit, input_hashes)
+    return NetworkResult(
+        summary,
+        edge_flows,
+        service,
+        audit,
+        input_hashes,
+        edge_catalog=edge_catalog,
+        node_catalog=node_catalog,
+        topology=topology,
+    )
+
+
+def load_network_outputs(root: Path) -> NetworkResult:
+    """Load only persisted network-stage carriers for the analysis stage."""
+
+    summary = read_csv(root, NETWORK_OUTPUTS["summary"], NETWORK_SUMMARY_COLUMNS)
+    edge_flows = read_csv(root, NETWORK_OUTPUTS["edge_flows"], NETWORK_EDGE_FLOW_COLUMNS)
+    service = read_csv(root, NETWORK_OUTPUTS["service"], NETWORK_SERVICE_COLUMNS)
+    edge_catalog = read_csv(root, NETWORK_OUTPUTS["edge_catalog"], NETWORK_EDGE_CATALOG_COLUMNS)
+    node_catalog = read_csv(root, NETWORK_OUTPUTS["node_catalog"], NETWORK_NODE_COLUMNS)
+    payload = read_json(root, NETWORK_OUTPUTS["audit"])
+    if not isinstance(payload, dict) or payload.get("stage") != "directed_network_flow":
+        raise ValueError("network-stage audit is missing or has the wrong stage")
+    input_hashes = payload.get("input_hashes")
+    expected_hash_keys = {
+        *(f"demand::{path}" for path in DEMAND_OUTPUTS.values()),
+        *(f"network::{path}" for path in NETWORK_INPUTS.values()),
+    }
+    if not isinstance(input_hashes, dict) or set(input_hashes) != expected_hash_keys:
+        raise ValueError("network-stage audit is missing input hashes")
+    if any(not isinstance(value, str) or len(value) != 64 for value in input_hashes.values()):
+        raise ValueError("network-stage audit contains invalid input hashes")
+    raw_network_hashes = {
+        str(key).removeprefix("network::"): str(value)
+        for key, value in input_hashes.items()
+        if str(key).startswith("network::")
+    }
+    topology = NetworkTopology(node_catalog, edge_catalog, raw_network_hashes)
+    return NetworkResult(
+        summary,
+        edge_flows,
+        service,
+        payload,
+        {str(key): str(value) for key, value in input_hashes.items()},
+        edge_catalog=edge_catalog,
+        node_catalog=node_catalog,
+        topology=topology,
+    )
 
 
 def write_network_outputs(result: NetworkResult, root: Path) -> list[str]:
-    """Persist the base directed-flow stage to release-relative paths."""
+    """Persist the base directed-flow stage and reusable topology carriers."""
 
     output_dir = Path(root).resolve() / "data" / "processed" / "model_v01"
+    if result.edge_catalog is None or result.node_catalog is None:
+        raise ValueError("network result is missing reusable topology carriers")
     write_csv(result.summary, output_dir / "network_summary.csv")
     write_csv(result.edge_flows, output_dir / "network_edge_flows.csv")
     write_csv(result.service, output_dir / "network_service.csv")
+    write_csv(result.edge_catalog, output_dir / "network_edge_catalog.csv")
+    write_csv(result.node_catalog, output_dir / "network_node_catalog.csv")
     write_json(result.audit, output_dir / "network_model_audit.json")
-    return [
-        "data/processed/model_v01/network_summary.csv",
-        "data/processed/model_v01/network_edge_flows.csv",
-        "data/processed/model_v01/network_service.csv",
-        "data/processed/model_v01/network_model_audit.json",
-    ]
+    return list(NETWORK_OUTPUTS.values())
 
 
-__all__ = ["NETWORK_INPUTS", "NetworkResult", "run_network", "write_network_outputs"]
+__all__ = [
+    "CANDIDATE_INPUTS",
+    "NETWORK_EDGE_CATALOG_COLUMNS",
+    "NETWORK_EDGE_FLOW_COLUMNS",
+    "NETWORK_INPUTS",
+    "NETWORK_STAGE_INPUTS",
+    "NETWORK_NODE_COLUMNS",
+    "NETWORK_OUTPUTS",
+    "NETWORK_SERVICE_COLUMNS",
+    "NETWORK_SUMMARY_COLUMNS",
+    "NetworkResult",
+    "NetworkTopology",
+    "haversine_km",
+    "load_network_outputs",
+    "run_network",
+    "write_network_outputs",
+    "_read_candidate_links",
+    "_read_segments",
+    "_read_segment_tasks",
+]

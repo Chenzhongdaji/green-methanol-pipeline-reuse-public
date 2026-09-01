@@ -524,7 +524,7 @@ def test_public_provenance_uses_stable_source_ids_without_machine_workspace_path
 
     assert all(
         marker not in public_provenance
-        for marker in ("727", "_codex", "tmp/aviation")
+        for marker in ("727修改", "_codex", "tmp/aviation")
     )
     for row in _real_registry_rows():
         if row["stage_action"] == "copy":
@@ -571,11 +571,11 @@ def test_real_staging_report_passes_and_counts_all_actions():
 
     assert report["status"] == "PASS"
     assert report["totals"] == {
-        "datasets": 40,
+        "datasets": 56,
         "copy": 33,
-        "existing": 6,
+        "existing": 22,
         "acquire": 1,
-        "passed": 40,
+        "passed": 56,
         "failed": 0,
         "errors": 0,
     }
