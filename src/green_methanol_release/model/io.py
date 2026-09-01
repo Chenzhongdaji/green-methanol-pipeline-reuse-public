@@ -14,6 +14,7 @@ from ..safety import assert_public_path, resolve_public_path
 
 
 CSV_ENCODING = "utf-8-sig"
+CSV_FLOAT_FORMAT = "%.13g"
 
 
 def release_path(root: Path, relative: str) -> Path:
@@ -52,7 +53,13 @@ def write_csv(frame: pd.DataFrame, path: Path) -> None:
     path = Path(path).resolve(strict=False)
     assert_public_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(path, index=False, encoding="utf-8", lineterminator="\n")
+    frame.to_csv(
+        path,
+        index=False,
+        encoding="utf-8",
+        lineterminator="\n",
+        float_format=CSV_FLOAT_FORMAT,
+    )
 
 
 def write_json(payload: object, path: Path) -> None:

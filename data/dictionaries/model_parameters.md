@@ -20,3 +20,10 @@ The public configuration intentionally has no active `transport_emission_per_km`
 parameter. Transport-emission accounting is reserved/not implemented; the
 network and analysis outputs do not report emissions. The public analytical
 model also omits legacy pressure/cost details that were not deposited.
+
+Model CSV carriers serialize floating-point values with 13 significant digits
+at the persistence boundary. Computation retains full in-memory precision; the
+canonical text format suppresses platform-specific last-bit differences while
+retaining substantially more precision than the model's scientific reporting
+requires. Persisted carriers are reloaded before downstream stages so that
+audits and figures use the same values distributed in the release.

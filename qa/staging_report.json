@@ -184,25 +184,25 @@
       "bytes": 5333,
       "dataset_id": "model-analysis-audit-v01",
       "public_path": "data/processed/model_v01/dynamic_analysis_audit.json",
-      "sha256": "0e65d461714886ce31368deceec6f2d24fb6cd7095b5349d62814b4bae10a47c",
+      "sha256": "e2b8fd83a3746e365070a1a36ca74b951fed87f042b7db8f2cf7977836755dac",
       "source_relative_path": "source-id:model-analysis-audit-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 36314,
+      "bytes": 30054,
       "dataset_id": "model-analysis-summary-v01",
       "public_path": "data/processed/model_v01/analysis_summary.csv",
-      "sha256": "5a31d6554f917303fdb50e43ca8277bca92551b3fe418d686e647f5123a09bf4",
+      "sha256": "69dd0ee789f2d9621bd77f9df0e8ab815f44174dda580140b660f88c9da69482",
       "source_relative_path": "source-id:model-analysis-summary-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 47880,
+      "bytes": 44453,
       "dataset_id": "model-component-demand-v01",
       "public_path": "data/processed/model_v01/component_demand.csv",
-      "sha256": "c327260505c0cea313826b763e0f367e5ed9d16ca5ae7cb5fc5e5b8f0f93cd62",
+      "sha256": "fc8b36233b89b8644d1d9b3291e95465a1e0269e2415422e2ee4d61d457ea456",
       "source_relative_path": "source-id:model-component-demand-v01",
       "stage_action": "existing",
       "status": "PASS"
@@ -211,43 +211,43 @@
       "bytes": 3240,
       "dataset_id": "model-demand-audit-v01",
       "public_path": "data/processed/model_v01/demand_preprocessing_audit.json",
-      "sha256": "c70eea825f4fffe84317b81c11cfb61a23fab797231e8d631c3942a866ab1c9f",
+      "sha256": "74fb82308dddebd9fec39c9d6f5cbaaca50ca99ca18619b77ee32fd45437498f",
       "source_relative_path": "source-id:model-demand-audit-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 1527313,
+      "bytes": 1385155,
       "dataset_id": "model-demand-nodes-v01",
       "public_path": "data/processed/model_v01/demand_nodes.csv",
-      "sha256": "e84eb9cf7b6bb9d03ba17e64dc8036e3210fba7bcb825b9300d7b20f0e3b6cda",
+      "sha256": "6ce29241c6a12d7c46f3cba6d19d6f0878a250b9ba89ab4488c3578bf6969a84",
       "source_relative_path": "source-id:model-demand-nodes-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 11230,
+      "bytes": 10553,
       "dataset_id": "model-demand-totals-v01",
       "public_path": "data/processed/model_v01/demand_totals.csv",
-      "sha256": "16ef018f11d96ba3a7fa00850527db9ea9ec0895a73c85e120cf0bffd23af887",
+      "sha256": "de5662fe297830c502af47c3a7f080ba2803cda6a632152f1ba4a5a25cbfb4c2",
       "source_relative_path": "source-id:model-demand-totals-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 6256,
+      "bytes": 5155,
       "dataset_id": "model-figure-04-source-v01",
       "public_path": "data/processed/model_v01/figure_04_source.csv",
-      "sha256": "ec7f69d27559d7675d17f9f9ea69699af8eb464fdb4bc73ebf41c75d11302791",
+      "sha256": "ba885e7cdae7b83e3419a4f1b13338b1c6430db84fd076e605558b8053dd5b13",
       "source_relative_path": "source-id:model-figure-04-source-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 2771,
+      "bytes": 2696,
       "dataset_id": "model-figure-05-source-v01",
       "public_path": "data/processed/model_v01/figure_05_source.csv",
-      "sha256": "735325f056c7b7ce7569010c14dd4df79ad5e4a04fca87f542ea344f651ecb26",
+      "sha256": "f830bfef30cbc4db851804bd12527e526e612bf5a1d72928125c44421842cc58",
       "source_relative_path": "source-id:model-figure-05-source-v01",
       "stage_action": "existing",
       "status": "PASS"
@@ -256,25 +256,25 @@
       "bytes": 4653,
       "dataset_id": "model-network-audit-v01",
       "public_path": "data/processed/model_v01/network_model_audit.json",
-      "sha256": "58156806625430ce36a9fd8e7b3c8c2347bf09a708327c602880333986dcab17",
+      "sha256": "a7ee86932652accf3364690f1cdae072318281a36b8873eeff5fd379836394ee",
       "source_relative_path": "source-id:model-network-audit-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 130117,
+      "bytes": 117548,
       "dataset_id": "model-network-edge-catalog-v01",
       "public_path": "data/processed/model_v01/network_edge_catalog.csv",
-      "sha256": "ff2eb5cfcf57472ca7f996f6c0c726d5a39d84a8bece88a1c7a6ce3d40a8a13e",
+      "sha256": "c556b61f4c7481b5c47e37dc73a60ba08810eed23ed2d57ab99cef4b1f7a31a4",
       "source_relative_path": "source-id:model-network-edge-catalog-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 52592,
+      "bytes": 48197,
       "dataset_id": "model-network-edge-flows-v01",
       "public_path": "data/processed/model_v01/network_edge_flows.csv",
-      "sha256": "e9f93be99eac7150a5f1f85657933aca66dc3b31fa02d3f65bacd0c48d0d8537",
+      "sha256": "533cbaf3eb146482cb7fd69bbda95307b9295a0999bca6b7181c58433ed2fa95",
       "source_relative_path": "source-id:model-network-edge-flows-v01",
       "stage_action": "existing",
       "status": "PASS"
@@ -289,19 +289,19 @@
       "status": "PASS"
     },
     {
-      "bytes": 525983,
+      "bytes": 435260,
       "dataset_id": "model-network-service-v01",
       "public_path": "data/processed/model_v01/network_service.csv",
-      "sha256": "f88bea75761c7205346434e4ccf9d4b97bfcd7b587ca683a0e251a6f904fc150",
+      "sha256": "de09db2a8c2121bbbeee35c3e3a2edf8deb5bce2d45cbf324322d38e26f5fc3d",
       "source_relative_path": "source-id:model-network-service-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 33227,
+      "bytes": 27513,
       "dataset_id": "model-network-summary-v01",
       "public_path": "data/processed/model_v01/network_summary.csv",
-      "sha256": "bedcb228df3f575aa127f41662515a4f0f77cb228d60cbf89f15b50e0d84168a",
+      "sha256": "f4e33045884b8834bf0d5bb2ef2e19f38934c2ca2289d41dd18975eb5bcf55ab",
       "source_relative_path": "source-id:model-network-summary-v01",
       "stage_action": "existing",
       "status": "PASS"
@@ -316,19 +316,19 @@
       "status": "PASS"
     },
     {
-      "bytes": 135869,
+      "bytes": 109204,
       "dataset_id": "model-regional-accounts-v01",
       "public_path": "data/processed/model_v01/regional_accounts.csv",
-      "sha256": "a8ccf2623976edd21c75398f3302ca47b15b6a6f2bd3d675095199a89d87828d",
+      "sha256": "f959a09ee98823a3ff26227ead30bfe22758e720303da686f997353506a7947e",
       "source_relative_path": "source-id:model-regional-accounts-v01",
       "stage_action": "existing",
       "status": "PASS"
     },
     {
-      "bytes": 28302,
+      "bytes": 25977,
       "dataset_id": "model-supply-nodes-v01",
       "public_path": "data/processed/model_v01/supply_nodes.csv",
-      "sha256": "2017a9c2293c4da74196db84e0317a460997488a85bb55a8ac7cb6263aa729f4",
+      "sha256": "4e0858fde7e4377f5a478121484d7005baf3618da0639cd6b60b7ea456354924",
       "source_relative_path": "source-id:model-supply-nodes-v01",
       "stage_action": "existing",
       "status": "PASS"

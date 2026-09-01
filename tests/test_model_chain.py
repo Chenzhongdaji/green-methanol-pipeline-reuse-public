@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -13,6 +14,7 @@ from green_methanol_release.model.config import load_config
 from green_methanol_release.model.demand import preprocess_demand
 from green_methanol_release.model.analysis import load_analysis_outputs
 from green_methanol_release.model.network import load_network_outputs
+from green_methanol_release.model.io import write_csv
 from green_methanol_release.model.workflow import (
     MODEL_OUTPUT_DIR,
     run_model_chain,
@@ -21,6 +23,18 @@ from green_methanol_release.model.workflow import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_model_csv_writer_canonicalizes_platform_ulp_noise(tmp_path: Path):
+    first = tmp_path / "first.csv"
+    second = tmp_path / "second.csv"
+    value = 626.2609051227721
+
+    write_csv(pd.DataFrame({"value": [value]}), first)
+    write_csv(pd.DataFrame({"value": [math.nextafter(value, math.inf)]}), second)
+
+    assert first.read_bytes() == second.read_bytes()
+    assert first.read_text(encoding="utf-8") == "value\n626.2609051228\n"
 
 
 def test_public_model_chain_closes_demand_flow_and_analysis_accounts():

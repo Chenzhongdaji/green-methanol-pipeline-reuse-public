@@ -1,769 +1,769 @@
 scenario,tier,year,sector,composition_share,component_demand_10kt,scenario_semantics
-S1,high,2025,A,1.0,59.400000000000006,single-sector dynamic demand
-S1,high,2025,B,0.0,0.0,single-sector dynamic demand
-S1,high,2025,C,0.0,0.0,single-sector dynamic demand
-S1,high,2025,D,0.0,0.0,single-sector dynamic demand
-S1,high,2030,A,1.0,396.00000000000006,single-sector dynamic demand
-S1,high,2030,B,0.0,0.0,single-sector dynamic demand
-S1,high,2030,C,0.0,0.0,single-sector dynamic demand
-S1,high,2030,D,0.0,0.0,single-sector dynamic demand
-S1,high,2035,A,1.0,780.7664711524275,single-sector dynamic demand
-S1,high,2035,B,0.0,0.0,single-sector dynamic demand
-S1,high,2035,C,0.0,0.0,single-sector dynamic demand
-S1,high,2035,D,0.0,0.0,single-sector dynamic demand
-S1,high,2040,A,1.0,1236.8590231665928,single-sector dynamic demand
-S1,high,2040,B,0.0,0.0,single-sector dynamic demand
-S1,high,2040,C,0.0,0.0,single-sector dynamic demand
-S1,high,2040,D,0.0,0.0,single-sector dynamic demand
-S1,high,2045,A,1.0,1752.4666903813322,single-sector dynamic demand
-S1,high,2045,B,0.0,0.0,single-sector dynamic demand
-S1,high,2045,C,0.0,0.0,single-sector dynamic demand
-S1,high,2045,D,0.0,0.0,single-sector dynamic demand
-S1,high,2050,A,1.0,2301.6746052825733,single-sector dynamic demand
-S1,high,2050,B,0.0,0.0,single-sector dynamic demand
-S1,high,2050,C,0.0,0.0,single-sector dynamic demand
-S1,high,2050,D,0.0,0.0,single-sector dynamic demand
-S1,high,2055,A,1.0,2840.077354602753,single-sector dynamic demand
-S1,high,2055,B,0.0,0.0,single-sector dynamic demand
-S1,high,2055,C,0.0,0.0,single-sector dynamic demand
-S1,high,2055,D,0.0,0.0,single-sector dynamic demand
-S1,high,2060,A,1.0,3300.0000000000005,single-sector dynamic demand
-S1,high,2060,B,0.0,0.0,single-sector dynamic demand
-S1,high,2060,C,0.0,0.0,single-sector dynamic demand
-S1,high,2060,D,0.0,0.0,single-sector dynamic demand
-S1,low,2025,A,1.0,6.6000000000000005,single-sector dynamic demand
-S1,low,2025,B,0.0,0.0,single-sector dynamic demand
-S1,low,2025,C,0.0,0.0,single-sector dynamic demand
-S1,low,2025,D,0.0,0.0,single-sector dynamic demand
-S1,low,2030,A,1.0,66.0,single-sector dynamic demand
-S1,low,2030,B,0.0,0.0,single-sector dynamic demand
-S1,low,2030,C,0.0,0.0,single-sector dynamic demand
-S1,low,2030,D,0.0,0.0,single-sector dynamic demand
-S1,low,2035,A,1.0,135.3445945945946,single-sector dynamic demand
-S1,low,2035,B,0.0,0.0,single-sector dynamic demand
-S1,low,2035,C,0.0,0.0,single-sector dynamic demand
-S1,low,2035,D,0.0,0.0,single-sector dynamic demand
-S1,low,2040,A,1.0,215.48108108108107,single-sector dynamic demand
-S1,low,2040,B,0.0,0.0,single-sector dynamic demand
-S1,low,2040,C,0.0,0.0,single-sector dynamic demand
-S1,low,2040,D,0.0,0.0,single-sector dynamic demand
-S1,low,2045,A,1.0,307.2121621621622,single-sector dynamic demand
-S1,low,2045,B,0.0,0.0,single-sector dynamic demand
-S1,low,2045,C,0.0,0.0,single-sector dynamic demand
-S1,low,2045,D,0.0,0.0,single-sector dynamic demand
-S1,low,2050,A,1.0,411.3405405405406,single-sector dynamic demand
-S1,low,2050,B,0.0,0.0,single-sector dynamic demand
-S1,low,2050,C,0.0,0.0,single-sector dynamic demand
-S1,low,2050,D,0.0,0.0,single-sector dynamic demand
-S1,low,2055,A,1.0,528.668918918919,single-sector dynamic demand
-S1,low,2055,B,0.0,0.0,single-sector dynamic demand
-S1,low,2055,C,0.0,0.0,single-sector dynamic demand
-S1,low,2055,D,0.0,0.0,single-sector dynamic demand
-S1,low,2060,A,1.0,660.0,single-sector dynamic demand
-S1,low,2060,B,0.0,0.0,single-sector dynamic demand
-S1,low,2060,C,0.0,0.0,single-sector dynamic demand
-S1,low,2060,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2025,A,1.0,26.400000000000002,single-sector dynamic demand
-S1,mid,2025,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2025,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2025,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2030,A,1.0,198.00000000000003,single-sector dynamic demand
-S1,mid,2030,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2030,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2030,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2035,A,1.0,395.8921062511733,single-sector dynamic demand
-S1,mid,2035,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2035,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2035,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2040,A,1.0,630.4447531443589,single-sector dynamic demand
-S1,mid,2040,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2040,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2040,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2045,A,1.0,903.8949033226958,single-sector dynamic demand
-S1,mid,2045,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2045,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2045,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2050,A,1.0,1218.4795194293224,single-sector dynamic demand
-S1,mid,2050,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2050,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2050,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2055,A,1.0,1576.4355641073778,single-sector dynamic demand
-S1,mid,2055,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2055,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2055,D,0.0,0.0,single-sector dynamic demand
-S1,mid,2060,A,1.0,1980.0000000000002,single-sector dynamic demand
-S1,mid,2060,B,0.0,0.0,single-sector dynamic demand
-S1,mid,2060,C,0.0,0.0,single-sector dynamic demand
-S1,mid,2060,D,0.0,0.0,single-sector dynamic demand
-S2,high,2025,A,0.0,0.0,single-sector dynamic demand
-S2,high,2025,B,1.0,80.0,single-sector dynamic demand
-S2,high,2025,C,0.0,0.0,single-sector dynamic demand
-S2,high,2025,D,0.0,0.0,single-sector dynamic demand
-S2,high,2030,A,0.0,0.0,single-sector dynamic demand
-S2,high,2030,B,1.0,400.0,single-sector dynamic demand
-S2,high,2030,C,0.0,0.0,single-sector dynamic demand
-S2,high,2030,D,0.0,0.0,single-sector dynamic demand
-S2,high,2035,A,0.0,0.0,single-sector dynamic demand
-S2,high,2035,B,1.0,857.8519218541271,single-sector dynamic demand
-S2,high,2035,C,0.0,0.0,single-sector dynamic demand
-S2,high,2035,D,0.0,0.0,single-sector dynamic demand
-S2,high,2040,A,0.0,0.0,single-sector dynamic demand
-S2,high,2040,B,1.0,1419.5742694970918,single-sector dynamic demand
-S2,high,2040,C,0.0,0.0,single-sector dynamic demand
-S2,high,2040,D,0.0,0.0,single-sector dynamic demand
-S2,high,2045,A,0.0,0.0,single-sector dynamic demand
-S2,high,2045,B,1.0,2089.9086470310285,single-sector dynamic demand
-S2,high,2045,C,0.0,0.0,single-sector dynamic demand
-S2,high,2045,D,0.0,0.0,single-sector dynamic demand
-S2,high,2050,A,0.0,0.0,single-sector dynamic demand
-S2,high,2050,B,1.0,2873.59665855807,single-sector dynamic demand
-S2,high,2050,C,0.0,0.0,single-sector dynamic demand
-S2,high,2050,D,0.0,0.0,single-sector dynamic demand
-S2,high,2055,A,0.0,0.0,single-sector dynamic demand
-S2,high,2055,B,1.0,3775.3799081803486,single-sector dynamic demand
-S2,high,2055,C,0.0,0.0,single-sector dynamic demand
-S2,high,2055,D,0.0,0.0,single-sector dynamic demand
-S2,high,2060,A,0.0,0.0,single-sector dynamic demand
-S2,high,2060,B,1.0,4800.0,single-sector dynamic demand
-S2,high,2060,C,0.0,0.0,single-sector dynamic demand
-S2,high,2060,D,0.0,0.0,single-sector dynamic demand
-S2,low,2025,A,0.0,0.0,single-sector dynamic demand
-S2,low,2025,B,1.0,8.0,single-sector dynamic demand
-S2,low,2025,C,0.0,0.0,single-sector dynamic demand
-S2,low,2025,D,0.0,0.0,single-sector dynamic demand
-S2,low,2030,A,0.0,0.0,single-sector dynamic demand
-S2,low,2030,B,1.0,80.0,single-sector dynamic demand
-S2,low,2030,C,0.0,0.0,single-sector dynamic demand
-S2,low,2030,D,0.0,0.0,single-sector dynamic demand
-S2,low,2035,A,0.0,0.0,single-sector dynamic demand
-S2,low,2035,B,1.0,204.56579844588111,single-sector dynamic demand
-S2,low,2035,C,0.0,0.0,single-sector dynamic demand
-S2,low,2035,D,0.0,0.0,single-sector dynamic demand
-S2,low,2040,A,0.0,0.0,single-sector dynamic demand
-S2,low,2040,B,1.0,380.3966029631088,single-sector dynamic demand
-S2,low,2040,C,0.0,0.0,single-sector dynamic demand
-S2,low,2040,D,0.0,0.0,single-sector dynamic demand
-S2,low,2045,A,0.0,0.0,single-sector dynamic demand
-S2,low,2045,B,1.0,607.673919464409,single-sector dynamic demand
-S2,low,2045,C,0.0,0.0,single-sector dynamic demand
-S2,low,2045,D,0.0,0.0,single-sector dynamic demand
-S2,low,2050,A,0.0,0.0,single-sector dynamic demand
-S2,low,2050,B,1.0,886.5792538625069,single-sector dynamic demand
-S2,low,2050,C,0.0,0.0,single-sector dynamic demand
-S2,low,2050,D,0.0,0.0,single-sector dynamic demand
-S2,low,2055,A,0.0,0.0,single-sector dynamic demand
-S2,low,2055,B,1.0,1217.2941120701287,single-sector dynamic demand
-S2,low,2055,C,0.0,0.0,single-sector dynamic demand
-S2,low,2055,D,0.0,0.0,single-sector dynamic demand
-S2,low,2060,A,0.0,0.0,single-sector dynamic demand
-S2,low,2060,B,1.0,1600.0,single-sector dynamic demand
-S2,low,2060,C,0.0,0.0,single-sector dynamic demand
-S2,low,2060,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2025,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2025,B,1.0,40.0,single-sector dynamic demand
-S2,mid,2025,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2025,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2030,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2030,B,1.0,240.0,single-sector dynamic demand
-S2,mid,2030,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2030,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2035,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2035,B,1.0,535.3819471955911,single-sector dynamic demand
-S2,mid,2035,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2035,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2040,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2040,B,1.0,906.2412733627376,single-sector dynamic demand
-S2,mid,2040,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2040,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2045,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2045,B,1.0,1355.3553601140957,single-sector dynamic demand
-S2,mid,2045,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2045,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2050,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2050,B,1.0,1885.5015890623215,single-sector dynamic demand
-S2,mid,2050,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2050,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2055,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2055,B,1.0,2499.4573418200707,single-sector dynamic demand
-S2,mid,2055,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2055,D,0.0,0.0,single-sector dynamic demand
-S2,mid,2060,A,0.0,0.0,single-sector dynamic demand
-S2,mid,2060,B,1.0,3200.0,single-sector dynamic demand
-S2,mid,2060,C,0.0,0.0,single-sector dynamic demand
-S2,mid,2060,D,0.0,0.0,single-sector dynamic demand
-S3,high,2025,A,0.0,0.0,single-sector dynamic demand
-S3,high,2025,B,0.0,0.0,single-sector dynamic demand
-S3,high,2025,C,1.0,0.0,single-sector dynamic demand
-S3,high,2025,D,0.0,0.0,single-sector dynamic demand
-S3,high,2030,A,0.0,0.0,single-sector dynamic demand
-S3,high,2030,B,0.0,0.0,single-sector dynamic demand
-S3,high,2030,C,1.0,405.0,single-sector dynamic demand
-S3,high,2030,D,0.0,0.0,single-sector dynamic demand
-S3,high,2035,A,0.0,0.0,single-sector dynamic demand
-S3,high,2035,B,0.0,0.0,single-sector dynamic demand
-S3,high,2035,C,1.0,777.4992098609356,single-sector dynamic demand
-S3,high,2035,D,0.0,0.0,single-sector dynamic demand
-S3,high,2040,A,0.0,0.0,single-sector dynamic demand
-S3,high,2040,B,0.0,0.0,single-sector dynamic demand
-S3,high,2040,C,1.0,1140.2275600505684,single-sector dynamic demand
-S3,high,2040,D,0.0,0.0,single-sector dynamic demand
-S3,high,2045,A,0.0,0.0,single-sector dynamic demand
-S3,high,2045,B,0.0,0.0,single-sector dynamic demand
-S3,high,2045,C,1.0,1490.0134323640962,single-sector dynamic demand
-S3,high,2045,D,0.0,0.0,single-sector dynamic demand
-S3,high,2050,A,0.0,0.0,single-sector dynamic demand
-S3,high,2050,B,0.0,0.0,single-sector dynamic demand
-S3,high,2050,C,1.0,1823.6852085967132,single-sector dynamic demand
-S3,high,2050,D,0.0,0.0,single-sector dynamic demand
-S3,high,2055,A,0.0,0.0,single-sector dynamic demand
-S3,high,2055,B,0.0,0.0,single-sector dynamic demand
-S3,high,2055,C,1.0,2138.0712705436154,single-sector dynamic demand
-S3,high,2055,D,0.0,0.0,single-sector dynamic demand
-S3,high,2060,A,0.0,0.0,single-sector dynamic demand
-S3,high,2060,B,0.0,0.0,single-sector dynamic demand
-S3,high,2060,C,1.0,2430.0,single-sector dynamic demand
-S3,high,2060,D,0.0,0.0,single-sector dynamic demand
-S3,low,2025,A,0.0,0.0,single-sector dynamic demand
-S3,low,2025,B,0.0,0.0,single-sector dynamic demand
-S3,low,2025,C,1.0,0.0,single-sector dynamic demand
-S3,low,2025,D,0.0,0.0,single-sector dynamic demand
-S3,low,2030,A,0.0,0.0,single-sector dynamic demand
-S3,low,2030,B,0.0,0.0,single-sector dynamic demand
-S3,low,2030,C,1.0,27.0,single-sector dynamic demand
-S3,low,2030,D,0.0,0.0,single-sector dynamic demand
-S3,low,2035,A,0.0,0.0,single-sector dynamic demand
-S3,low,2035,B,0.0,0.0,single-sector dynamic demand
-S3,low,2035,C,1.0,49.321428571428584,single-sector dynamic demand
-S3,low,2035,D,0.0,0.0,single-sector dynamic demand
-S3,low,2040,A,0.0,0.0,single-sector dynamic demand
-S3,low,2040,B,0.0,0.0,single-sector dynamic demand
-S3,low,2040,C,1.0,70.58857142857141,single-sector dynamic demand
-S3,low,2040,D,0.0,0.0,single-sector dynamic demand
-S3,low,2045,A,0.0,0.0,single-sector dynamic demand
-S3,low,2045,B,0.0,0.0,single-sector dynamic demand
-S3,low,2045,C,1.0,90.2957142857143,single-sector dynamic demand
-S3,low,2045,D,0.0,0.0,single-sector dynamic demand
-S3,low,2050,A,0.0,0.0,single-sector dynamic demand
-S3,low,2050,B,0.0,0.0,single-sector dynamic demand
-S3,low,2050,C,1.0,107.93714285714286,single-sector dynamic demand
-S3,low,2050,D,0.0,0.0,single-sector dynamic demand
-S3,low,2055,A,0.0,0.0,single-sector dynamic demand
-S3,low,2055,B,0.0,0.0,single-sector dynamic demand
-S3,low,2055,C,1.0,123.00714285714287,single-sector dynamic demand
-S3,low,2055,D,0.0,0.0,single-sector dynamic demand
-S3,low,2060,A,0.0,0.0,single-sector dynamic demand
-S3,low,2060,B,0.0,0.0,single-sector dynamic demand
-S3,low,2060,C,1.0,135.0,single-sector dynamic demand
-S3,low,2060,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2025,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2025,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2025,C,1.0,0.0,single-sector dynamic demand
-S3,mid,2025,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2030,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2030,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2030,C,1.0,162.0,single-sector dynamic demand
-S3,mid,2030,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2035,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2035,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2035,C,1.0,295.9285714285714,single-sector dynamic demand
-S3,mid,2035,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2040,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2040,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2040,C,1.0,423.5314285714284,single-sector dynamic demand
-S3,mid,2040,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2045,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2045,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2045,C,1.0,541.7742857142857,single-sector dynamic demand
-S3,mid,2045,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2050,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2050,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2050,C,1.0,647.6228571428571,single-sector dynamic demand
-S3,mid,2050,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2055,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2055,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2055,C,1.0,738.042857142857,single-sector dynamic demand
-S3,mid,2055,D,0.0,0.0,single-sector dynamic demand
-S3,mid,2060,A,0.0,0.0,single-sector dynamic demand
-S3,mid,2060,B,0.0,0.0,single-sector dynamic demand
-S3,mid,2060,C,1.0,810.0,single-sector dynamic demand
-S3,mid,2060,D,0.0,0.0,single-sector dynamic demand
-S4,high,2025,A,0.0,0.0,single-sector dynamic demand
-S4,high,2025,B,0.0,0.0,single-sector dynamic demand
-S4,high,2025,C,0.0,0.0,single-sector dynamic demand
-S4,high,2025,D,1.0,12.600000000000001,single-sector dynamic demand
-S4,high,2030,A,0.0,0.0,single-sector dynamic demand
-S4,high,2030,B,0.0,0.0,single-sector dynamic demand
-S4,high,2030,C,0.0,0.0,single-sector dynamic demand
-S4,high,2030,D,1.0,252.0,single-sector dynamic demand
-S4,high,2035,A,0.0,0.0,single-sector dynamic demand
-S4,high,2035,B,0.0,0.0,single-sector dynamic demand
-S4,high,2035,C,0.0,0.0,single-sector dynamic demand
-S4,high,2035,D,1.0,523.6494297184414,single-sector dynamic demand
-S4,high,2040,A,0.0,0.0,single-sector dynamic demand
-S4,high,2040,B,0.0,0.0,single-sector dynamic demand
-S4,high,2040,C,0.0,0.0,single-sector dynamic demand
-S4,high,2040,D,1.0,840.3483539624553,single-sector dynamic demand
-S4,high,2045,A,0.0,0.0,single-sector dynamic demand
-S4,high,2045,B,0.0,0.0,single-sector dynamic demand
-S4,high,2045,C,0.0,0.0,single-sector dynamic demand
-S4,high,2045,D,1.0,1177.4029423126447,single-sector dynamic demand
-S4,high,2050,A,0.0,0.0,single-sector dynamic demand
-S4,high,2050,B,0.0,0.0,single-sector dynamic demand
-S4,high,2050,C,0.0,0.0,single-sector dynamic demand
-S4,high,2050,D,1.0,1512.4340392700485,single-sector dynamic demand
-S4,high,2055,A,0.0,0.0,single-sector dynamic demand
-S4,high,2055,B,0.0,0.0,single-sector dynamic demand
-S4,high,2055,C,0.0,0.0,single-sector dynamic demand
-S4,high,2055,D,1.0,1825.6382262452453,single-sector dynamic demand
-S4,high,2060,A,0.0,0.0,single-sector dynamic demand
-S4,high,2060,B,0.0,0.0,single-sector dynamic demand
-S4,high,2060,C,0.0,0.0,single-sector dynamic demand
-S4,high,2060,D,1.0,2100.0,single-sector dynamic demand
-S4,low,2025,A,0.0,0.0,single-sector dynamic demand
-S4,low,2025,B,0.0,0.0,single-sector dynamic demand
-S4,low,2025,C,0.0,0.0,single-sector dynamic demand
-S4,low,2025,D,1.0,0.0,single-sector dynamic demand
-S4,low,2030,A,0.0,0.0,single-sector dynamic demand
-S4,low,2030,B,0.0,0.0,single-sector dynamic demand
-S4,low,2030,C,0.0,0.0,single-sector dynamic demand
-S4,low,2030,D,1.0,42.0,single-sector dynamic demand
-S4,low,2035,A,0.0,0.0,single-sector dynamic demand
-S4,low,2035,B,0.0,0.0,single-sector dynamic demand
-S4,low,2035,C,0.0,0.0,single-sector dynamic demand
-S4,low,2035,D,1.0,101.33633363967415,single-sector dynamic demand
-S4,low,2040,A,0.0,0.0,single-sector dynamic demand
-S4,low,2040,B,0.0,0.0,single-sector dynamic demand
-S4,low,2040,C,0.0,0.0,single-sector dynamic demand
-S4,low,2040,D,1.0,177.37675606641122,single-sector dynamic demand
-S4,low,2045,A,0.0,0.0,single-sector dynamic demand
-S4,low,2045,B,0.0,0.0,single-sector dynamic demand
-S4,low,2045,C,0.0,0.0,single-sector dynamic demand
-S4,low,2045,D,1.0,259.81659191519105,single-sector dynamic demand
-S4,low,2050,A,0.0,0.0,single-sector dynamic demand
-S4,low,2050,B,0.0,0.0,single-sector dynamic demand
-S4,low,2050,C,0.0,0.0,single-sector dynamic demand
-S4,low,2050,D,1.0,336.2668875772324,single-sector dynamic demand
-S4,low,2055,A,0.0,0.0,single-sector dynamic demand
-S4,low,2055,B,0.0,0.0,single-sector dynamic demand
-S4,low,2055,C,0.0,0.0,single-sector dynamic demand
-S4,low,2055,D,1.0,393.65837982378923,single-sector dynamic demand
-S4,low,2060,A,0.0,0.0,single-sector dynamic demand
-S4,low,2060,B,0.0,0.0,single-sector dynamic demand
-S4,low,2060,C,0.0,0.0,single-sector dynamic demand
-S4,low,2060,D,1.0,420.0,single-sector dynamic demand
-S4,mid,2025,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2025,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2025,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2025,D,1.0,4.2,single-sector dynamic demand
-S4,mid,2030,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2030,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2030,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2030,D,1.0,126.0,single-sector dynamic demand
-S4,mid,2035,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2035,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2035,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2035,D,1.0,292.5066965451967,single-sector dynamic demand
-S4,mid,2040,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2040,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2040,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2040,D,1.0,505.0362478155477,single-sector dynamic demand
-S4,mid,2045,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2045,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2045,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2045,D,1.0,738.1557227280322,single-sector dynamic demand
-S4,mid,2050,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2050,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2050,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2050,D,1.0,962.267771576752,single-sector dynamic demand
-S4,mid,2055,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2055,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2055,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2055,D,1.0,1146.141338126582,single-sector dynamic demand
-S4,mid,2060,A,0.0,0.0,single-sector dynamic demand
-S4,mid,2060,B,0.0,0.0,single-sector dynamic demand
-S4,mid,2060,C,0.0,0.0,single-sector dynamic demand
-S4,mid,2060,D,1.0,1260.0,single-sector dynamic demand
-S5,high,2025,A,0.3907894736842106,23.21289473684211,exact sum of S1-S4; no second weighting
-S5,high,2025,B,0.5263157894736842,42.10526315789473,exact sum of S1-S4; no second weighting
-S5,high,2025,C,0.0,0.0,exact sum of S1-S4; no second weighting
-S5,high,2025,D,0.08289473684210527,1.0444736842105264,exact sum of S1-S4; no second weighting
-S5,high,2030,A,0.2725395732966277,107.92567102546458,exact sum of S1-S4; no second weighting
-S5,high,2030,B,0.27529249827942187,110.11699931176875,exact sum of S1-S4; no second weighting
-S5,high,2030,C,0.27873365450791465,112.88713007570543,exact sum of S1-S4; no second weighting
-S5,high,2030,D,0.17343427391603577,43.70543702684102,exact sum of S1-S4; no second weighting
-S5,high,2035,A,0.2655878722694687,207.36210581271476,exact sum of S1-S4; no second weighting
-S5,high,2035,B,0.29180949114172755,250.32933279120587,exact sum of S1-S4; no second weighting
-S5,high,2035,C,0.2644764708368804,205.6302471024833,exact sum of S1-S4; no second weighting
-S5,high,2035,D,0.1781261657519233,93.2756651139272,exact sum of S1-S4; no second weighting
-S5,high,2040,A,0.2667363742529715,329.915291301529,exact sum of S1-S4; no second weighting
-S5,high,2040,B,0.306140058435313,434.58854981710647,exact sum of S1-S4; no second weighting
-S5,high,2040,C,0.24589719563394105,280.37875940096586,exact sum of S1-S4; no second weighting
-S5,high,2040,D,0.18122637167777447,152.29328313400592,exact sum of S1-S4; no second weighting
-S5,high,2045,A,0.26920472541800206,471.7723141883014,exact sum of S1-S4; no second weighting
-S5,high,2045,B,0.32104078585954354,670.9459144174969,exact sum of S1-S4; no second weighting
-S5,high,2045,C,0.22888803486554654,341.04624645708594,exact sum of S1-S4; no second weighting
-S5,high,2045,D,0.18086645385690786,212.9526949367775,exact sum of S1-S4; no second weighting
-S5,high,2050,A,0.27042286476182986,622.4254405100675,exact sum of S1-S4; no second weighting
-S5,high,2050,B,0.3376177669918261,970.1772870975485,exact sum of S1-S4; no second weighting
-S5,high,2050,C,0.2142640742529951,390.750222948855,exact sum of S1-S4; no second weighting
-S5,high,2050,D,0.17769529399334902,268.75241125363965,exact sum of S1-S4; no second weighting
-S5,high,2055,A,0.26845945613184224,762.4456219890163,exact sum of S1-S4; no second weighting
-S5,high,2055,B,0.3568693068160977,1347.3172107997436,exact sum of S1-S4; no second weighting
-S5,high,2055,C,0.20210204821746497,432.10858301178234,exact sum of S1-S4; no second weighting
-S5,high,2055,D,0.17256918883459507,315.04890780857096,exact sum of S1-S4; no second weighting
-S5,high,2060,A,0.2612826603325416,862.2327790973874,exact sum of S1-S4; no second weighting
-S5,high,2060,B,0.38004750593824227,1824.2280285035629,exact sum of S1-S4; no second weighting
-S5,high,2060,C,0.19239904988123516,467.5296912114014,exact sum of S1-S4; no second weighting
-S5,high,2060,D,0.166270783847981,349.1686460807601,exact sum of S1-S4; no second weighting
-S5,low,2025,A,0.4520547945205479,2.9835616438356167,exact sum of S1-S4; no second weighting
-S5,low,2025,B,0.547945205479452,4.383561643835616,exact sum of S1-S4; no second weighting
-S5,low,2025,C,0.0,0.0,exact sum of S1-S4; no second weighting
-S5,low,2025,D,0.0,0.0,exact sum of S1-S4; no second weighting
-S5,low,2030,A,0.30697674418604654,20.26046511627907,exact sum of S1-S4; no second weighting
-S5,low,2030,B,0.37209302325581395,29.767441860465116,exact sum of S1-S4; no second weighting
-S5,low,2030,C,0.12558139534883722,3.390697674418605,exact sum of S1-S4; no second weighting
-S5,low,2030,D,0.19534883720930232,8.204651162790698,exact sum of S1-S4; no second weighting
-S5,low,2035,A,0.27589355963227113,37.34070197968935,exact sum of S1-S4; no second weighting
-S5,low,2035,B,0.4169977122566659,85.30346995789064,exact sum of S1-S4; no second weighting
-S5,low,2035,C,0.10053940118908664,4.958746894361738,exact sum of S1-S4; no second weighting
-S5,low,2035,D,0.20656932692197633,20.932978232688317,exact sum of S1-S4; no second weighting
-S5,low,2040,A,0.2553568354948426,55.02456697387246,exact sum of S1-S4; no second weighting
-S5,low,2040,B,0.4507907250061408,171.47926043961291,exact sum of S1-S4; no second weighting
-S5,low,2040,C,0.08365130772348,5.904826310332276,exact sum of S1-S4; no second weighting
-S5,low,2040,D,0.21020113177553656,37.28479487583291,exact sum of S1-S4; no second weighting
-S5,low,2045,A,0.2428557736660614,74.60824732151542,exact sum of S1-S4; no second weighting
-S5,low,2045,B,0.4803752521044991,291.91151226004456,exact sum of S1-S4; no second weighting
-S5,low,2045,C,0.07138010226304654,6.445317319629119,exact sum of S1-S4; no second weighting
-S5,low,2045,D,0.20538887196639294,53.36343673161374,exact sum of S1-S4; no second weighting
-S5,low,2050,A,0.2361144108564886,97.1234293911193,exact sum of S1-S4; no second weighting
-S5,low,2050,B,0.5089071403665831,451.18651279150737,exact sum of S1-S4; no second weighting
-S5,low,2050,C,0.061957216426459065,6.68748492045363,exact sum of S1-S4; no second weighting
-S5,low,2050,D,0.19302123235046928,64.90664903881411,exact sum of S1-S4; no second weighting
-S5,low,2055,A,0.23365254454224,123.52483812580057,exact sum of S1-S4; no second weighting
-S5,low,2055,B,0.5379999779882914,654.9042054990059,exact sum of S1-S4; no second weighting
-S5,low,2055,C,0.0543647089831097,6.687247524272373,exact sum of S1-S4; no second weighting
-S5,low,2055,D,0.17398276848635894,68.48977475959747,exact sum of S1-S4; no second weighting
-S5,low,2060,A,0.2344582593250444,154.7424511545293,exact sum of S1-S4; no second weighting
-S5,low,2060,B,0.5683836589698046,909.4138543516873,exact sum of S1-S4; no second weighting
-S5,low,2060,C,0.047957371225577264,6.474245115452931,exact sum of S1-S4; no second weighting
-S5,low,2060,D,0.1492007104795737,62.66429840142096,exact sum of S1-S4; no second weighting
-S5,mid,2025,A,0.37393767705382436,9.871954674220964,exact sum of S1-S4; no second weighting
-S5,mid,2025,B,0.5665722379603398,22.662889518413593,exact sum of S1-S4; no second weighting
-S5,mid,2025,C,0.0,0.0,exact sum of S1-S4; no second weighting
-S5,mid,2025,D,0.05949008498583569,0.2498583569405099,exact sum of S1-S4; no second weighting
-S5,mid,2030,A,0.27272727272727276,54.000000000000014,exact sum of S1-S4; no second weighting
-S5,mid,2030,B,0.3305785123966942,79.33884297520662,exact sum of S1-S4; no second weighting
-S5,mid,2030,C,0.2231404958677686,36.14876033057851,exact sum of S1-S4; no second weighting
-S5,mid,2030,D,0.17355371900826447,21.867768595041323,exact sum of S1-S4; no second weighting
-S5,mid,2035,A,0.2605051509989537,103.13193291825573,exact sum of S1-S4; no second weighting
-S5,mid,2035,B,0.3522923362048924,188.61095693945916,exact sum of S1-S4; no second weighting
-S5,mid,2035,C,0.1947270884355406,57.625309099174615,exact sum of S1-S4; no second weighting
-S5,mid,2035,D,0.19247542436061332,56.30035054585788,exact sum of S1-S4; no second weighting
-S5,mid,2040,A,0.25573220005886266,161.22502373717347,exact sum of S1-S4; no second weighting
-S5,mid,2040,B,0.3676056838689098,333.1394430447408,exact sum of S1-S4; no second weighting
-S5,mid,2040,C,0.1718003417150234,72.76284415562343,exact sum of S1-S4; no second weighting
-S5,mid,2040,D,0.20486177435720426,103.46262184219783,exact sum of S1-S4; no second weighting
-S5,mid,2045,A,0.25539668338023863,230.85176043291793,exact sum of S1-S4; no second weighting
-S5,mid,2045,B,0.3829574240349381,519.04339736124,exact sum of S1-S4; no second weighting
-S5,mid,2045,C,0.15307903076285895,82.93428254938307,exact sum of S1-S4; no second weighting
-S5,mid,2045,D,0.20856686182196427,153.95482262530965,exact sum of S1-S4; no second weighting
-S5,mid,2050,A,0.25848805129988117,314.96239652610126,exact sum of S1-S4; no second weighting
-S5,mid,2050,B,0.3999900069783809,754.1817937667862,exact sum of S1-S4; no second weighting
-S5,mid,2050,C,0.13738660982871664,88.97470879044441,exact sum of S1-S4; no second weighting
-S5,mid,2050,D,0.2041353318930213,196.4328509207783,exact sum of S1-S4; no second weighting
-S5,mid,2055,A,0.2644991897488712,416.96592939770613,exact sum of S1-S4; no second weighting
-S5,mid,2055,B,0.41936661210609777,1048.1889575427958,exact sum of S1-S4; no second weighting
-S5,mid,2055,C,0.12383109221769045,91.39265310346487,exact sum of S1-S4; no second weighting
-S5,mid,2055,D,0.1923031059273406,220.40653915346,exact sum of S1-S4; no second weighting
-S5,mid,2060,A,0.2731034482758621,540.744827586207,exact sum of S1-S4; no second weighting
-S5,mid,2060,B,0.4413793103448276,1412.4137931034484,exact sum of S1-S4; no second weighting
-S5,mid,2060,C,0.11172413793103449,90.49655172413793,exact sum of S1-S4; no second weighting
-S5,mid,2060,D,0.17379310344827587,218.97931034482758,exact sum of S1-S4; no second weighting
-S6,high,2025,A,0.17,10.098000000000003,fixed composition at S5 total
-S6,high,2025,B,0.5,40.0,fixed composition at S5 total
-S6,high,2025,C,0.17,0.0,fixed composition at S5 total
-S6,high,2025,D,0.16,2.0160000000000005,fixed composition at S5 total
-S6,high,2030,A,0.17,67.32000000000002,fixed composition at S5 total
-S6,high,2030,B,0.5,200.0,fixed composition at S5 total
-S6,high,2030,C,0.17,68.85000000000001,fixed composition at S5 total
+S1,high,2025,A,1,59.4,single-sector dynamic demand
+S1,high,2025,B,0,0,single-sector dynamic demand
+S1,high,2025,C,0,0,single-sector dynamic demand
+S1,high,2025,D,0,0,single-sector dynamic demand
+S1,high,2030,A,1,396,single-sector dynamic demand
+S1,high,2030,B,0,0,single-sector dynamic demand
+S1,high,2030,C,0,0,single-sector dynamic demand
+S1,high,2030,D,0,0,single-sector dynamic demand
+S1,high,2035,A,1,780.7664711524,single-sector dynamic demand
+S1,high,2035,B,0,0,single-sector dynamic demand
+S1,high,2035,C,0,0,single-sector dynamic demand
+S1,high,2035,D,0,0,single-sector dynamic demand
+S1,high,2040,A,1,1236.859023167,single-sector dynamic demand
+S1,high,2040,B,0,0,single-sector dynamic demand
+S1,high,2040,C,0,0,single-sector dynamic demand
+S1,high,2040,D,0,0,single-sector dynamic demand
+S1,high,2045,A,1,1752.466690381,single-sector dynamic demand
+S1,high,2045,B,0,0,single-sector dynamic demand
+S1,high,2045,C,0,0,single-sector dynamic demand
+S1,high,2045,D,0,0,single-sector dynamic demand
+S1,high,2050,A,1,2301.674605283,single-sector dynamic demand
+S1,high,2050,B,0,0,single-sector dynamic demand
+S1,high,2050,C,0,0,single-sector dynamic demand
+S1,high,2050,D,0,0,single-sector dynamic demand
+S1,high,2055,A,1,2840.077354603,single-sector dynamic demand
+S1,high,2055,B,0,0,single-sector dynamic demand
+S1,high,2055,C,0,0,single-sector dynamic demand
+S1,high,2055,D,0,0,single-sector dynamic demand
+S1,high,2060,A,1,3300,single-sector dynamic demand
+S1,high,2060,B,0,0,single-sector dynamic demand
+S1,high,2060,C,0,0,single-sector dynamic demand
+S1,high,2060,D,0,0,single-sector dynamic demand
+S1,low,2025,A,1,6.6,single-sector dynamic demand
+S1,low,2025,B,0,0,single-sector dynamic demand
+S1,low,2025,C,0,0,single-sector dynamic demand
+S1,low,2025,D,0,0,single-sector dynamic demand
+S1,low,2030,A,1,66,single-sector dynamic demand
+S1,low,2030,B,0,0,single-sector dynamic demand
+S1,low,2030,C,0,0,single-sector dynamic demand
+S1,low,2030,D,0,0,single-sector dynamic demand
+S1,low,2035,A,1,135.3445945946,single-sector dynamic demand
+S1,low,2035,B,0,0,single-sector dynamic demand
+S1,low,2035,C,0,0,single-sector dynamic demand
+S1,low,2035,D,0,0,single-sector dynamic demand
+S1,low,2040,A,1,215.4810810811,single-sector dynamic demand
+S1,low,2040,B,0,0,single-sector dynamic demand
+S1,low,2040,C,0,0,single-sector dynamic demand
+S1,low,2040,D,0,0,single-sector dynamic demand
+S1,low,2045,A,1,307.2121621622,single-sector dynamic demand
+S1,low,2045,B,0,0,single-sector dynamic demand
+S1,low,2045,C,0,0,single-sector dynamic demand
+S1,low,2045,D,0,0,single-sector dynamic demand
+S1,low,2050,A,1,411.3405405405,single-sector dynamic demand
+S1,low,2050,B,0,0,single-sector dynamic demand
+S1,low,2050,C,0,0,single-sector dynamic demand
+S1,low,2050,D,0,0,single-sector dynamic demand
+S1,low,2055,A,1,528.6689189189,single-sector dynamic demand
+S1,low,2055,B,0,0,single-sector dynamic demand
+S1,low,2055,C,0,0,single-sector dynamic demand
+S1,low,2055,D,0,0,single-sector dynamic demand
+S1,low,2060,A,1,660,single-sector dynamic demand
+S1,low,2060,B,0,0,single-sector dynamic demand
+S1,low,2060,C,0,0,single-sector dynamic demand
+S1,low,2060,D,0,0,single-sector dynamic demand
+S1,mid,2025,A,1,26.4,single-sector dynamic demand
+S1,mid,2025,B,0,0,single-sector dynamic demand
+S1,mid,2025,C,0,0,single-sector dynamic demand
+S1,mid,2025,D,0,0,single-sector dynamic demand
+S1,mid,2030,A,1,198,single-sector dynamic demand
+S1,mid,2030,B,0,0,single-sector dynamic demand
+S1,mid,2030,C,0,0,single-sector dynamic demand
+S1,mid,2030,D,0,0,single-sector dynamic demand
+S1,mid,2035,A,1,395.8921062512,single-sector dynamic demand
+S1,mid,2035,B,0,0,single-sector dynamic demand
+S1,mid,2035,C,0,0,single-sector dynamic demand
+S1,mid,2035,D,0,0,single-sector dynamic demand
+S1,mid,2040,A,1,630.4447531444,single-sector dynamic demand
+S1,mid,2040,B,0,0,single-sector dynamic demand
+S1,mid,2040,C,0,0,single-sector dynamic demand
+S1,mid,2040,D,0,0,single-sector dynamic demand
+S1,mid,2045,A,1,903.8949033227,single-sector dynamic demand
+S1,mid,2045,B,0,0,single-sector dynamic demand
+S1,mid,2045,C,0,0,single-sector dynamic demand
+S1,mid,2045,D,0,0,single-sector dynamic demand
+S1,mid,2050,A,1,1218.479519429,single-sector dynamic demand
+S1,mid,2050,B,0,0,single-sector dynamic demand
+S1,mid,2050,C,0,0,single-sector dynamic demand
+S1,mid,2050,D,0,0,single-sector dynamic demand
+S1,mid,2055,A,1,1576.435564107,single-sector dynamic demand
+S1,mid,2055,B,0,0,single-sector dynamic demand
+S1,mid,2055,C,0,0,single-sector dynamic demand
+S1,mid,2055,D,0,0,single-sector dynamic demand
+S1,mid,2060,A,1,1980,single-sector dynamic demand
+S1,mid,2060,B,0,0,single-sector dynamic demand
+S1,mid,2060,C,0,0,single-sector dynamic demand
+S1,mid,2060,D,0,0,single-sector dynamic demand
+S2,high,2025,A,0,0,single-sector dynamic demand
+S2,high,2025,B,1,80,single-sector dynamic demand
+S2,high,2025,C,0,0,single-sector dynamic demand
+S2,high,2025,D,0,0,single-sector dynamic demand
+S2,high,2030,A,0,0,single-sector dynamic demand
+S2,high,2030,B,1,400,single-sector dynamic demand
+S2,high,2030,C,0,0,single-sector dynamic demand
+S2,high,2030,D,0,0,single-sector dynamic demand
+S2,high,2035,A,0,0,single-sector dynamic demand
+S2,high,2035,B,1,857.8519218541,single-sector dynamic demand
+S2,high,2035,C,0,0,single-sector dynamic demand
+S2,high,2035,D,0,0,single-sector dynamic demand
+S2,high,2040,A,0,0,single-sector dynamic demand
+S2,high,2040,B,1,1419.574269497,single-sector dynamic demand
+S2,high,2040,C,0,0,single-sector dynamic demand
+S2,high,2040,D,0,0,single-sector dynamic demand
+S2,high,2045,A,0,0,single-sector dynamic demand
+S2,high,2045,B,1,2089.908647031,single-sector dynamic demand
+S2,high,2045,C,0,0,single-sector dynamic demand
+S2,high,2045,D,0,0,single-sector dynamic demand
+S2,high,2050,A,0,0,single-sector dynamic demand
+S2,high,2050,B,1,2873.596658558,single-sector dynamic demand
+S2,high,2050,C,0,0,single-sector dynamic demand
+S2,high,2050,D,0,0,single-sector dynamic demand
+S2,high,2055,A,0,0,single-sector dynamic demand
+S2,high,2055,B,1,3775.37990818,single-sector dynamic demand
+S2,high,2055,C,0,0,single-sector dynamic demand
+S2,high,2055,D,0,0,single-sector dynamic demand
+S2,high,2060,A,0,0,single-sector dynamic demand
+S2,high,2060,B,1,4800,single-sector dynamic demand
+S2,high,2060,C,0,0,single-sector dynamic demand
+S2,high,2060,D,0,0,single-sector dynamic demand
+S2,low,2025,A,0,0,single-sector dynamic demand
+S2,low,2025,B,1,8,single-sector dynamic demand
+S2,low,2025,C,0,0,single-sector dynamic demand
+S2,low,2025,D,0,0,single-sector dynamic demand
+S2,low,2030,A,0,0,single-sector dynamic demand
+S2,low,2030,B,1,80,single-sector dynamic demand
+S2,low,2030,C,0,0,single-sector dynamic demand
+S2,low,2030,D,0,0,single-sector dynamic demand
+S2,low,2035,A,0,0,single-sector dynamic demand
+S2,low,2035,B,1,204.5657984459,single-sector dynamic demand
+S2,low,2035,C,0,0,single-sector dynamic demand
+S2,low,2035,D,0,0,single-sector dynamic demand
+S2,low,2040,A,0,0,single-sector dynamic demand
+S2,low,2040,B,1,380.3966029631,single-sector dynamic demand
+S2,low,2040,C,0,0,single-sector dynamic demand
+S2,low,2040,D,0,0,single-sector dynamic demand
+S2,low,2045,A,0,0,single-sector dynamic demand
+S2,low,2045,B,1,607.6739194644,single-sector dynamic demand
+S2,low,2045,C,0,0,single-sector dynamic demand
+S2,low,2045,D,0,0,single-sector dynamic demand
+S2,low,2050,A,0,0,single-sector dynamic demand
+S2,low,2050,B,1,886.5792538625,single-sector dynamic demand
+S2,low,2050,C,0,0,single-sector dynamic demand
+S2,low,2050,D,0,0,single-sector dynamic demand
+S2,low,2055,A,0,0,single-sector dynamic demand
+S2,low,2055,B,1,1217.29411207,single-sector dynamic demand
+S2,low,2055,C,0,0,single-sector dynamic demand
+S2,low,2055,D,0,0,single-sector dynamic demand
+S2,low,2060,A,0,0,single-sector dynamic demand
+S2,low,2060,B,1,1600,single-sector dynamic demand
+S2,low,2060,C,0,0,single-sector dynamic demand
+S2,low,2060,D,0,0,single-sector dynamic demand
+S2,mid,2025,A,0,0,single-sector dynamic demand
+S2,mid,2025,B,1,40,single-sector dynamic demand
+S2,mid,2025,C,0,0,single-sector dynamic demand
+S2,mid,2025,D,0,0,single-sector dynamic demand
+S2,mid,2030,A,0,0,single-sector dynamic demand
+S2,mid,2030,B,1,240,single-sector dynamic demand
+S2,mid,2030,C,0,0,single-sector dynamic demand
+S2,mid,2030,D,0,0,single-sector dynamic demand
+S2,mid,2035,A,0,0,single-sector dynamic demand
+S2,mid,2035,B,1,535.3819471956,single-sector dynamic demand
+S2,mid,2035,C,0,0,single-sector dynamic demand
+S2,mid,2035,D,0,0,single-sector dynamic demand
+S2,mid,2040,A,0,0,single-sector dynamic demand
+S2,mid,2040,B,1,906.2412733627,single-sector dynamic demand
+S2,mid,2040,C,0,0,single-sector dynamic demand
+S2,mid,2040,D,0,0,single-sector dynamic demand
+S2,mid,2045,A,0,0,single-sector dynamic demand
+S2,mid,2045,B,1,1355.355360114,single-sector dynamic demand
+S2,mid,2045,C,0,0,single-sector dynamic demand
+S2,mid,2045,D,0,0,single-sector dynamic demand
+S2,mid,2050,A,0,0,single-sector dynamic demand
+S2,mid,2050,B,1,1885.501589062,single-sector dynamic demand
+S2,mid,2050,C,0,0,single-sector dynamic demand
+S2,mid,2050,D,0,0,single-sector dynamic demand
+S2,mid,2055,A,0,0,single-sector dynamic demand
+S2,mid,2055,B,1,2499.45734182,single-sector dynamic demand
+S2,mid,2055,C,0,0,single-sector dynamic demand
+S2,mid,2055,D,0,0,single-sector dynamic demand
+S2,mid,2060,A,0,0,single-sector dynamic demand
+S2,mid,2060,B,1,3200,single-sector dynamic demand
+S2,mid,2060,C,0,0,single-sector dynamic demand
+S2,mid,2060,D,0,0,single-sector dynamic demand
+S3,high,2025,A,0,0,single-sector dynamic demand
+S3,high,2025,B,0,0,single-sector dynamic demand
+S3,high,2025,C,1,0,single-sector dynamic demand
+S3,high,2025,D,0,0,single-sector dynamic demand
+S3,high,2030,A,0,0,single-sector dynamic demand
+S3,high,2030,B,0,0,single-sector dynamic demand
+S3,high,2030,C,1,405,single-sector dynamic demand
+S3,high,2030,D,0,0,single-sector dynamic demand
+S3,high,2035,A,0,0,single-sector dynamic demand
+S3,high,2035,B,0,0,single-sector dynamic demand
+S3,high,2035,C,1,777.4992098609,single-sector dynamic demand
+S3,high,2035,D,0,0,single-sector dynamic demand
+S3,high,2040,A,0,0,single-sector dynamic demand
+S3,high,2040,B,0,0,single-sector dynamic demand
+S3,high,2040,C,1,1140.227560051,single-sector dynamic demand
+S3,high,2040,D,0,0,single-sector dynamic demand
+S3,high,2045,A,0,0,single-sector dynamic demand
+S3,high,2045,B,0,0,single-sector dynamic demand
+S3,high,2045,C,1,1490.013432364,single-sector dynamic demand
+S3,high,2045,D,0,0,single-sector dynamic demand
+S3,high,2050,A,0,0,single-sector dynamic demand
+S3,high,2050,B,0,0,single-sector dynamic demand
+S3,high,2050,C,1,1823.685208597,single-sector dynamic demand
+S3,high,2050,D,0,0,single-sector dynamic demand
+S3,high,2055,A,0,0,single-sector dynamic demand
+S3,high,2055,B,0,0,single-sector dynamic demand
+S3,high,2055,C,1,2138.071270544,single-sector dynamic demand
+S3,high,2055,D,0,0,single-sector dynamic demand
+S3,high,2060,A,0,0,single-sector dynamic demand
+S3,high,2060,B,0,0,single-sector dynamic demand
+S3,high,2060,C,1,2430,single-sector dynamic demand
+S3,high,2060,D,0,0,single-sector dynamic demand
+S3,low,2025,A,0,0,single-sector dynamic demand
+S3,low,2025,B,0,0,single-sector dynamic demand
+S3,low,2025,C,1,0,single-sector dynamic demand
+S3,low,2025,D,0,0,single-sector dynamic demand
+S3,low,2030,A,0,0,single-sector dynamic demand
+S3,low,2030,B,0,0,single-sector dynamic demand
+S3,low,2030,C,1,27,single-sector dynamic demand
+S3,low,2030,D,0,0,single-sector dynamic demand
+S3,low,2035,A,0,0,single-sector dynamic demand
+S3,low,2035,B,0,0,single-sector dynamic demand
+S3,low,2035,C,1,49.32142857143,single-sector dynamic demand
+S3,low,2035,D,0,0,single-sector dynamic demand
+S3,low,2040,A,0,0,single-sector dynamic demand
+S3,low,2040,B,0,0,single-sector dynamic demand
+S3,low,2040,C,1,70.58857142857,single-sector dynamic demand
+S3,low,2040,D,0,0,single-sector dynamic demand
+S3,low,2045,A,0,0,single-sector dynamic demand
+S3,low,2045,B,0,0,single-sector dynamic demand
+S3,low,2045,C,1,90.29571428571,single-sector dynamic demand
+S3,low,2045,D,0,0,single-sector dynamic demand
+S3,low,2050,A,0,0,single-sector dynamic demand
+S3,low,2050,B,0,0,single-sector dynamic demand
+S3,low,2050,C,1,107.9371428571,single-sector dynamic demand
+S3,low,2050,D,0,0,single-sector dynamic demand
+S3,low,2055,A,0,0,single-sector dynamic demand
+S3,low,2055,B,0,0,single-sector dynamic demand
+S3,low,2055,C,1,123.0071428571,single-sector dynamic demand
+S3,low,2055,D,0,0,single-sector dynamic demand
+S3,low,2060,A,0,0,single-sector dynamic demand
+S3,low,2060,B,0,0,single-sector dynamic demand
+S3,low,2060,C,1,135,single-sector dynamic demand
+S3,low,2060,D,0,0,single-sector dynamic demand
+S3,mid,2025,A,0,0,single-sector dynamic demand
+S3,mid,2025,B,0,0,single-sector dynamic demand
+S3,mid,2025,C,1,0,single-sector dynamic demand
+S3,mid,2025,D,0,0,single-sector dynamic demand
+S3,mid,2030,A,0,0,single-sector dynamic demand
+S3,mid,2030,B,0,0,single-sector dynamic demand
+S3,mid,2030,C,1,162,single-sector dynamic demand
+S3,mid,2030,D,0,0,single-sector dynamic demand
+S3,mid,2035,A,0,0,single-sector dynamic demand
+S3,mid,2035,B,0,0,single-sector dynamic demand
+S3,mid,2035,C,1,295.9285714286,single-sector dynamic demand
+S3,mid,2035,D,0,0,single-sector dynamic demand
+S3,mid,2040,A,0,0,single-sector dynamic demand
+S3,mid,2040,B,0,0,single-sector dynamic demand
+S3,mid,2040,C,1,423.5314285714,single-sector dynamic demand
+S3,mid,2040,D,0,0,single-sector dynamic demand
+S3,mid,2045,A,0,0,single-sector dynamic demand
+S3,mid,2045,B,0,0,single-sector dynamic demand
+S3,mid,2045,C,1,541.7742857143,single-sector dynamic demand
+S3,mid,2045,D,0,0,single-sector dynamic demand
+S3,mid,2050,A,0,0,single-sector dynamic demand
+S3,mid,2050,B,0,0,single-sector dynamic demand
+S3,mid,2050,C,1,647.6228571429,single-sector dynamic demand
+S3,mid,2050,D,0,0,single-sector dynamic demand
+S3,mid,2055,A,0,0,single-sector dynamic demand
+S3,mid,2055,B,0,0,single-sector dynamic demand
+S3,mid,2055,C,1,738.0428571429,single-sector dynamic demand
+S3,mid,2055,D,0,0,single-sector dynamic demand
+S3,mid,2060,A,0,0,single-sector dynamic demand
+S3,mid,2060,B,0,0,single-sector dynamic demand
+S3,mid,2060,C,1,810,single-sector dynamic demand
+S3,mid,2060,D,0,0,single-sector dynamic demand
+S4,high,2025,A,0,0,single-sector dynamic demand
+S4,high,2025,B,0,0,single-sector dynamic demand
+S4,high,2025,C,0,0,single-sector dynamic demand
+S4,high,2025,D,1,12.6,single-sector dynamic demand
+S4,high,2030,A,0,0,single-sector dynamic demand
+S4,high,2030,B,0,0,single-sector dynamic demand
+S4,high,2030,C,0,0,single-sector dynamic demand
+S4,high,2030,D,1,252,single-sector dynamic demand
+S4,high,2035,A,0,0,single-sector dynamic demand
+S4,high,2035,B,0,0,single-sector dynamic demand
+S4,high,2035,C,0,0,single-sector dynamic demand
+S4,high,2035,D,1,523.6494297184,single-sector dynamic demand
+S4,high,2040,A,0,0,single-sector dynamic demand
+S4,high,2040,B,0,0,single-sector dynamic demand
+S4,high,2040,C,0,0,single-sector dynamic demand
+S4,high,2040,D,1,840.3483539625,single-sector dynamic demand
+S4,high,2045,A,0,0,single-sector dynamic demand
+S4,high,2045,B,0,0,single-sector dynamic demand
+S4,high,2045,C,0,0,single-sector dynamic demand
+S4,high,2045,D,1,1177.402942313,single-sector dynamic demand
+S4,high,2050,A,0,0,single-sector dynamic demand
+S4,high,2050,B,0,0,single-sector dynamic demand
+S4,high,2050,C,0,0,single-sector dynamic demand
+S4,high,2050,D,1,1512.43403927,single-sector dynamic demand
+S4,high,2055,A,0,0,single-sector dynamic demand
+S4,high,2055,B,0,0,single-sector dynamic demand
+S4,high,2055,C,0,0,single-sector dynamic demand
+S4,high,2055,D,1,1825.638226245,single-sector dynamic demand
+S4,high,2060,A,0,0,single-sector dynamic demand
+S4,high,2060,B,0,0,single-sector dynamic demand
+S4,high,2060,C,0,0,single-sector dynamic demand
+S4,high,2060,D,1,2100,single-sector dynamic demand
+S4,low,2025,A,0,0,single-sector dynamic demand
+S4,low,2025,B,0,0,single-sector dynamic demand
+S4,low,2025,C,0,0,single-sector dynamic demand
+S4,low,2025,D,1,0,single-sector dynamic demand
+S4,low,2030,A,0,0,single-sector dynamic demand
+S4,low,2030,B,0,0,single-sector dynamic demand
+S4,low,2030,C,0,0,single-sector dynamic demand
+S4,low,2030,D,1,42,single-sector dynamic demand
+S4,low,2035,A,0,0,single-sector dynamic demand
+S4,low,2035,B,0,0,single-sector dynamic demand
+S4,low,2035,C,0,0,single-sector dynamic demand
+S4,low,2035,D,1,101.3363336397,single-sector dynamic demand
+S4,low,2040,A,0,0,single-sector dynamic demand
+S4,low,2040,B,0,0,single-sector dynamic demand
+S4,low,2040,C,0,0,single-sector dynamic demand
+S4,low,2040,D,1,177.3767560664,single-sector dynamic demand
+S4,low,2045,A,0,0,single-sector dynamic demand
+S4,low,2045,B,0,0,single-sector dynamic demand
+S4,low,2045,C,0,0,single-sector dynamic demand
+S4,low,2045,D,1,259.8165919152,single-sector dynamic demand
+S4,low,2050,A,0,0,single-sector dynamic demand
+S4,low,2050,B,0,0,single-sector dynamic demand
+S4,low,2050,C,0,0,single-sector dynamic demand
+S4,low,2050,D,1,336.2668875772,single-sector dynamic demand
+S4,low,2055,A,0,0,single-sector dynamic demand
+S4,low,2055,B,0,0,single-sector dynamic demand
+S4,low,2055,C,0,0,single-sector dynamic demand
+S4,low,2055,D,1,393.6583798238,single-sector dynamic demand
+S4,low,2060,A,0,0,single-sector dynamic demand
+S4,low,2060,B,0,0,single-sector dynamic demand
+S4,low,2060,C,0,0,single-sector dynamic demand
+S4,low,2060,D,1,420,single-sector dynamic demand
+S4,mid,2025,A,0,0,single-sector dynamic demand
+S4,mid,2025,B,0,0,single-sector dynamic demand
+S4,mid,2025,C,0,0,single-sector dynamic demand
+S4,mid,2025,D,1,4.2,single-sector dynamic demand
+S4,mid,2030,A,0,0,single-sector dynamic demand
+S4,mid,2030,B,0,0,single-sector dynamic demand
+S4,mid,2030,C,0,0,single-sector dynamic demand
+S4,mid,2030,D,1,126,single-sector dynamic demand
+S4,mid,2035,A,0,0,single-sector dynamic demand
+S4,mid,2035,B,0,0,single-sector dynamic demand
+S4,mid,2035,C,0,0,single-sector dynamic demand
+S4,mid,2035,D,1,292.5066965452,single-sector dynamic demand
+S4,mid,2040,A,0,0,single-sector dynamic demand
+S4,mid,2040,B,0,0,single-sector dynamic demand
+S4,mid,2040,C,0,0,single-sector dynamic demand
+S4,mid,2040,D,1,505.0362478155,single-sector dynamic demand
+S4,mid,2045,A,0,0,single-sector dynamic demand
+S4,mid,2045,B,0,0,single-sector dynamic demand
+S4,mid,2045,C,0,0,single-sector dynamic demand
+S4,mid,2045,D,1,738.155722728,single-sector dynamic demand
+S4,mid,2050,A,0,0,single-sector dynamic demand
+S4,mid,2050,B,0,0,single-sector dynamic demand
+S4,mid,2050,C,0,0,single-sector dynamic demand
+S4,mid,2050,D,1,962.2677715768,single-sector dynamic demand
+S4,mid,2055,A,0,0,single-sector dynamic demand
+S4,mid,2055,B,0,0,single-sector dynamic demand
+S4,mid,2055,C,0,0,single-sector dynamic demand
+S4,mid,2055,D,1,1146.141338127,single-sector dynamic demand
+S4,mid,2060,A,0,0,single-sector dynamic demand
+S4,mid,2060,B,0,0,single-sector dynamic demand
+S4,mid,2060,C,0,0,single-sector dynamic demand
+S4,mid,2060,D,1,1260,single-sector dynamic demand
+S5,high,2025,A,0.3907894736842,23.21289473684,exact sum of S1-S4; no second weighting
+S5,high,2025,B,0.5263157894737,42.10526315789,exact sum of S1-S4; no second weighting
+S5,high,2025,C,0,0,exact sum of S1-S4; no second weighting
+S5,high,2025,D,0.08289473684211,1.044473684211,exact sum of S1-S4; no second weighting
+S5,high,2030,A,0.2725395732966,107.9256710255,exact sum of S1-S4; no second weighting
+S5,high,2030,B,0.2752924982794,110.1169993118,exact sum of S1-S4; no second weighting
+S5,high,2030,C,0.2787336545079,112.8871300757,exact sum of S1-S4; no second weighting
+S5,high,2030,D,0.173434273916,43.70543702684,exact sum of S1-S4; no second weighting
+S5,high,2035,A,0.2655878722695,207.3621058127,exact sum of S1-S4; no second weighting
+S5,high,2035,B,0.2918094911417,250.3293327912,exact sum of S1-S4; no second weighting
+S5,high,2035,C,0.2644764708369,205.6302471025,exact sum of S1-S4; no second weighting
+S5,high,2035,D,0.1781261657519,93.27566511393,exact sum of S1-S4; no second weighting
+S5,high,2040,A,0.266736374253,329.9152913015,exact sum of S1-S4; no second weighting
+S5,high,2040,B,0.3061400584353,434.5885498171,exact sum of S1-S4; no second weighting
+S5,high,2040,C,0.2458971956339,280.378759401,exact sum of S1-S4; no second weighting
+S5,high,2040,D,0.1812263716778,152.293283134,exact sum of S1-S4; no second weighting
+S5,high,2045,A,0.269204725418,471.7723141883,exact sum of S1-S4; no second weighting
+S5,high,2045,B,0.3210407858595,670.9459144175,exact sum of S1-S4; no second weighting
+S5,high,2045,C,0.2288880348655,341.0462464571,exact sum of S1-S4; no second weighting
+S5,high,2045,D,0.1808664538569,212.9526949368,exact sum of S1-S4; no second weighting
+S5,high,2050,A,0.2704228647618,622.4254405101,exact sum of S1-S4; no second weighting
+S5,high,2050,B,0.3376177669918,970.1772870975,exact sum of S1-S4; no second weighting
+S5,high,2050,C,0.214264074253,390.7502229489,exact sum of S1-S4; no second weighting
+S5,high,2050,D,0.1776952939933,268.7524112536,exact sum of S1-S4; no second weighting
+S5,high,2055,A,0.2684594561318,762.445621989,exact sum of S1-S4; no second weighting
+S5,high,2055,B,0.3568693068161,1347.3172108,exact sum of S1-S4; no second weighting
+S5,high,2055,C,0.2021020482175,432.1085830118,exact sum of S1-S4; no second weighting
+S5,high,2055,D,0.1725691888346,315.0489078086,exact sum of S1-S4; no second weighting
+S5,high,2060,A,0.2612826603325,862.2327790974,exact sum of S1-S4; no second weighting
+S5,high,2060,B,0.3800475059382,1824.228028504,exact sum of S1-S4; no second weighting
+S5,high,2060,C,0.1923990498812,467.5296912114,exact sum of S1-S4; no second weighting
+S5,high,2060,D,0.166270783848,349.1686460808,exact sum of S1-S4; no second weighting
+S5,low,2025,A,0.4520547945205,2.983561643836,exact sum of S1-S4; no second weighting
+S5,low,2025,B,0.5479452054795,4.383561643836,exact sum of S1-S4; no second weighting
+S5,low,2025,C,0,0,exact sum of S1-S4; no second weighting
+S5,low,2025,D,0,0,exact sum of S1-S4; no second weighting
+S5,low,2030,A,0.306976744186,20.26046511628,exact sum of S1-S4; no second weighting
+S5,low,2030,B,0.3720930232558,29.76744186047,exact sum of S1-S4; no second weighting
+S5,low,2030,C,0.1255813953488,3.390697674419,exact sum of S1-S4; no second weighting
+S5,low,2030,D,0.1953488372093,8.204651162791,exact sum of S1-S4; no second weighting
+S5,low,2035,A,0.2758935596323,37.34070197969,exact sum of S1-S4; no second weighting
+S5,low,2035,B,0.4169977122567,85.30346995789,exact sum of S1-S4; no second weighting
+S5,low,2035,C,0.1005394011891,4.958746894362,exact sum of S1-S4; no second weighting
+S5,low,2035,D,0.206569326922,20.93297823269,exact sum of S1-S4; no second weighting
+S5,low,2040,A,0.2553568354948,55.02456697387,exact sum of S1-S4; no second weighting
+S5,low,2040,B,0.4507907250061,171.4792604396,exact sum of S1-S4; no second weighting
+S5,low,2040,C,0.08365130772348,5.904826310332,exact sum of S1-S4; no second weighting
+S5,low,2040,D,0.2102011317755,37.28479487583,exact sum of S1-S4; no second weighting
+S5,low,2045,A,0.2428557736661,74.60824732152,exact sum of S1-S4; no second weighting
+S5,low,2045,B,0.4803752521045,291.91151226,exact sum of S1-S4; no second weighting
+S5,low,2045,C,0.07138010226305,6.445317319629,exact sum of S1-S4; no second weighting
+S5,low,2045,D,0.2053888719664,53.36343673161,exact sum of S1-S4; no second weighting
+S5,low,2050,A,0.2361144108565,97.12342939112,exact sum of S1-S4; no second weighting
+S5,low,2050,B,0.5089071403666,451.1865127915,exact sum of S1-S4; no second weighting
+S5,low,2050,C,0.06195721642646,6.687484920454,exact sum of S1-S4; no second weighting
+S5,low,2050,D,0.1930212323505,64.90664903881,exact sum of S1-S4; no second weighting
+S5,low,2055,A,0.2336525445422,123.5248381258,exact sum of S1-S4; no second weighting
+S5,low,2055,B,0.5379999779883,654.904205499,exact sum of S1-S4; no second weighting
+S5,low,2055,C,0.05436470898311,6.687247524272,exact sum of S1-S4; no second weighting
+S5,low,2055,D,0.1739827684864,68.4897747596,exact sum of S1-S4; no second weighting
+S5,low,2060,A,0.234458259325,154.7424511545,exact sum of S1-S4; no second weighting
+S5,low,2060,B,0.5683836589698,909.4138543517,exact sum of S1-S4; no second weighting
+S5,low,2060,C,0.04795737122558,6.474245115453,exact sum of S1-S4; no second weighting
+S5,low,2060,D,0.1492007104796,62.66429840142,exact sum of S1-S4; no second weighting
+S5,mid,2025,A,0.3739376770538,9.871954674221,exact sum of S1-S4; no second weighting
+S5,mid,2025,B,0.5665722379603,22.66288951841,exact sum of S1-S4; no second weighting
+S5,mid,2025,C,0,0,exact sum of S1-S4; no second weighting
+S5,mid,2025,D,0.05949008498584,0.2498583569405,exact sum of S1-S4; no second weighting
+S5,mid,2030,A,0.2727272727273,54,exact sum of S1-S4; no second weighting
+S5,mid,2030,B,0.3305785123967,79.33884297521,exact sum of S1-S4; no second weighting
+S5,mid,2030,C,0.2231404958678,36.14876033058,exact sum of S1-S4; no second weighting
+S5,mid,2030,D,0.1735537190083,21.86776859504,exact sum of S1-S4; no second weighting
+S5,mid,2035,A,0.260505150999,103.1319329183,exact sum of S1-S4; no second weighting
+S5,mid,2035,B,0.3522923362049,188.6109569395,exact sum of S1-S4; no second weighting
+S5,mid,2035,C,0.1947270884355,57.62530909917,exact sum of S1-S4; no second weighting
+S5,mid,2035,D,0.1924754243606,56.30035054586,exact sum of S1-S4; no second weighting
+S5,mid,2040,A,0.2557322000589,161.2250237372,exact sum of S1-S4; no second weighting
+S5,mid,2040,B,0.3676056838689,333.1394430447,exact sum of S1-S4; no second weighting
+S5,mid,2040,C,0.171800341715,72.76284415562,exact sum of S1-S4; no second weighting
+S5,mid,2040,D,0.2048617743572,103.4626218422,exact sum of S1-S4; no second weighting
+S5,mid,2045,A,0.2553966833802,230.8517604329,exact sum of S1-S4; no second weighting
+S5,mid,2045,B,0.3829574240349,519.0433973612,exact sum of S1-S4; no second weighting
+S5,mid,2045,C,0.1530790307629,82.93428254938,exact sum of S1-S4; no second weighting
+S5,mid,2045,D,0.208566861822,153.9548226253,exact sum of S1-S4; no second weighting
+S5,mid,2050,A,0.2584880512999,314.9623965261,exact sum of S1-S4; no second weighting
+S5,mid,2050,B,0.3999900069784,754.1817937668,exact sum of S1-S4; no second weighting
+S5,mid,2050,C,0.1373866098287,88.97470879044,exact sum of S1-S4; no second weighting
+S5,mid,2050,D,0.204135331893,196.4328509208,exact sum of S1-S4; no second weighting
+S5,mid,2055,A,0.2644991897489,416.9659293977,exact sum of S1-S4; no second weighting
+S5,mid,2055,B,0.4193666121061,1048.188957543,exact sum of S1-S4; no second weighting
+S5,mid,2055,C,0.1238310922177,91.39265310346,exact sum of S1-S4; no second weighting
+S5,mid,2055,D,0.1923031059273,220.4065391535,exact sum of S1-S4; no second weighting
+S5,mid,2060,A,0.2731034482759,540.7448275862,exact sum of S1-S4; no second weighting
+S5,mid,2060,B,0.4413793103448,1412.413793103,exact sum of S1-S4; no second weighting
+S5,mid,2060,C,0.111724137931,90.49655172414,exact sum of S1-S4; no second weighting
+S5,mid,2060,D,0.1737931034483,218.9793103448,exact sum of S1-S4; no second weighting
+S6,high,2025,A,0.17,10.098,fixed composition at S5 total
+S6,high,2025,B,0.5,40,fixed composition at S5 total
+S6,high,2025,C,0.17,0,fixed composition at S5 total
+S6,high,2025,D,0.16,2.016,fixed composition at S5 total
+S6,high,2030,A,0.17,67.32,fixed composition at S5 total
+S6,high,2030,B,0.5,200,fixed composition at S5 total
+S6,high,2030,C,0.17,68.85,fixed composition at S5 total
 S6,high,2030,D,0.16,40.32,fixed composition at S5 total
-S6,high,2035,A,0.17,132.73030009591267,fixed composition at S5 total
-S6,high,2035,B,0.5,428.92596092706356,fixed composition at S5 total
-S6,high,2035,C,0.17,132.17486567635905,fixed composition at S5 total
-S6,high,2035,D,0.16,83.78390875495063,fixed composition at S5 total
-S6,high,2040,A,0.17,210.2660339383208,fixed composition at S5 total
-S6,high,2040,B,0.5,709.7871347485459,fixed composition at S5 total
-S6,high,2040,C,0.17,193.83868520859664,fixed composition at S5 total
-S6,high,2040,D,0.16,134.45573663399287,fixed composition at S5 total
-S6,high,2045,A,0.17,297.9193373648265,fixed composition at S5 total
-S6,high,2045,B,0.5,1044.9543235155143,fixed composition at S5 total
-S6,high,2045,C,0.17,253.30228350189637,fixed composition at S5 total
-S6,high,2045,D,0.16,188.38447077002314,fixed composition at S5 total
-S6,high,2050,A,0.17,391.2846828980375,fixed composition at S5 total
-S6,high,2050,B,0.5,1436.798329279035,fixed composition at S5 total
-S6,high,2050,C,0.17,310.02648546144127,fixed composition at S5 total
-S6,high,2050,D,0.16,241.98944628320777,fixed composition at S5 total
-S6,high,2055,A,0.17,482.81315028246803,fixed composition at S5 total
-S6,high,2055,B,0.5,1887.6899540901743,fixed composition at S5 total
-S6,high,2055,C,0.17,363.4721159924146,fixed composition at S5 total
-S6,high,2055,D,0.16,292.1021161992393,fixed composition at S5 total
-S6,high,2060,A,0.17,561.0000000000001,fixed composition at S5 total
-S6,high,2060,B,0.5,2400.0,fixed composition at S5 total
+S6,high,2035,A,0.17,132.7303000959,fixed composition at S5 total
+S6,high,2035,B,0.5,428.9259609271,fixed composition at S5 total
+S6,high,2035,C,0.17,132.1748656764,fixed composition at S5 total
+S6,high,2035,D,0.16,83.78390875495,fixed composition at S5 total
+S6,high,2040,A,0.17,210.2660339383,fixed composition at S5 total
+S6,high,2040,B,0.5,709.7871347485,fixed composition at S5 total
+S6,high,2040,C,0.17,193.8386852086,fixed composition at S5 total
+S6,high,2040,D,0.16,134.455736634,fixed composition at S5 total
+S6,high,2045,A,0.17,297.9193373648,fixed composition at S5 total
+S6,high,2045,B,0.5,1044.954323516,fixed composition at S5 total
+S6,high,2045,C,0.17,253.3022835019,fixed composition at S5 total
+S6,high,2045,D,0.16,188.38447077,fixed composition at S5 total
+S6,high,2050,A,0.17,391.284682898,fixed composition at S5 total
+S6,high,2050,B,0.5,1436.798329279,fixed composition at S5 total
+S6,high,2050,C,0.17,310.0264854614,fixed composition at S5 total
+S6,high,2050,D,0.16,241.9894462832,fixed composition at S5 total
+S6,high,2055,A,0.17,482.8131502825,fixed composition at S5 total
+S6,high,2055,B,0.5,1887.68995409,fixed composition at S5 total
+S6,high,2055,C,0.17,363.4721159924,fixed composition at S5 total
+S6,high,2055,D,0.16,292.1021161992,fixed composition at S5 total
+S6,high,2060,A,0.17,561,fixed composition at S5 total
+S6,high,2060,B,0.5,2400,fixed composition at S5 total
 S6,high,2060,C,0.17,413.1,fixed composition at S5 total
-S6,high,2060,D,0.16,336.0,fixed composition at S5 total
+S6,high,2060,D,0.16,336,fixed composition at S5 total
 S6,low,2025,A,0.17,1.122,fixed composition at S5 total
-S6,low,2025,B,0.5,4.0,fixed composition at S5 total
-S6,low,2025,C,0.17,0.0,fixed composition at S5 total
-S6,low,2025,D,0.16,0.0,fixed composition at S5 total
+S6,low,2025,B,0.5,4,fixed composition at S5 total
+S6,low,2025,C,0.17,0,fixed composition at S5 total
+S6,low,2025,D,0.16,0,fixed composition at S5 total
 S6,low,2030,A,0.17,11.22,fixed composition at S5 total
-S6,low,2030,B,0.5,40.0,fixed composition at S5 total
-S6,low,2030,C,0.17,4.590000000000001,fixed composition at S5 total
+S6,low,2030,B,0.5,40,fixed composition at S5 total
+S6,low,2030,C,0.17,4.59,fixed composition at S5 total
 S6,low,2030,D,0.16,6.72,fixed composition at S5 total
-S6,low,2035,A,0.17,23.008581081081086,fixed composition at S5 total
-S6,low,2035,B,0.5,102.28289922294056,fixed composition at S5 total
-S6,low,2035,C,0.17,8.38464285714286,fixed composition at S5 total
-S6,low,2035,D,0.16,16.213813382347865,fixed composition at S5 total
-S6,low,2040,A,0.17,36.63178378378378,fixed composition at S5 total
-S6,low,2040,B,0.5,190.1983014815544,fixed composition at S5 total
-S6,low,2040,C,0.17,12.000057142857141,fixed composition at S5 total
-S6,low,2040,D,0.16,28.380280970625794,fixed composition at S5 total
-S6,low,2045,A,0.17,52.226067567567576,fixed composition at S5 total
-S6,low,2045,B,0.5,303.8369597322045,fixed composition at S5 total
-S6,low,2045,C,0.17,15.350271428571432,fixed composition at S5 total
-S6,low,2045,D,0.16,41.57065470643057,fixed composition at S5 total
-S6,low,2050,A,0.17,69.9278918918919,fixed composition at S5 total
-S6,low,2050,B,0.5,443.28962693125345,fixed composition at S5 total
-S6,low,2050,C,0.17,18.349314285714286,fixed composition at S5 total
-S6,low,2050,D,0.16,53.80270201235719,fixed composition at S5 total
-S6,low,2055,A,0.17,89.87371621621622,fixed composition at S5 total
-S6,low,2055,B,0.5,608.6470560350643,fixed composition at S5 total
-S6,low,2055,C,0.17,20.91121428571429,fixed composition at S5 total
-S6,low,2055,D,0.16,62.98534077180628,fixed composition at S5 total
+S6,low,2035,A,0.17,23.00858108108,fixed composition at S5 total
+S6,low,2035,B,0.5,102.2828992229,fixed composition at S5 total
+S6,low,2035,C,0.17,8.384642857143,fixed composition at S5 total
+S6,low,2035,D,0.16,16.21381338235,fixed composition at S5 total
+S6,low,2040,A,0.17,36.63178378378,fixed composition at S5 total
+S6,low,2040,B,0.5,190.1983014816,fixed composition at S5 total
+S6,low,2040,C,0.17,12.00005714286,fixed composition at S5 total
+S6,low,2040,D,0.16,28.38028097063,fixed composition at S5 total
+S6,low,2045,A,0.17,52.22606756757,fixed composition at S5 total
+S6,low,2045,B,0.5,303.8369597322,fixed composition at S5 total
+S6,low,2045,C,0.17,15.35027142857,fixed composition at S5 total
+S6,low,2045,D,0.16,41.57065470643,fixed composition at S5 total
+S6,low,2050,A,0.17,69.92789189189,fixed composition at S5 total
+S6,low,2050,B,0.5,443.2896269313,fixed composition at S5 total
+S6,low,2050,C,0.17,18.34931428571,fixed composition at S5 total
+S6,low,2050,D,0.16,53.80270201236,fixed composition at S5 total
+S6,low,2055,A,0.17,89.87371621622,fixed composition at S5 total
+S6,low,2055,B,0.5,608.6470560351,fixed composition at S5 total
+S6,low,2055,C,0.17,20.91121428571,fixed composition at S5 total
+S6,low,2055,D,0.16,62.98534077181,fixed composition at S5 total
 S6,low,2060,A,0.17,112.2,fixed composition at S5 total
-S6,low,2060,B,0.5,800.0,fixed composition at S5 total
-S6,low,2060,C,0.17,22.950000000000003,fixed composition at S5 total
+S6,low,2060,B,0.5,800,fixed composition at S5 total
+S6,low,2060,C,0.17,22.95,fixed composition at S5 total
 S6,low,2060,D,0.16,67.2,fixed composition at S5 total
 S6,mid,2025,A,0.17,4.488,fixed composition at S5 total
-S6,mid,2025,B,0.5,20.0,fixed composition at S5 total
-S6,mid,2025,C,0.17,0.0,fixed composition at S5 total
+S6,mid,2025,B,0.5,20,fixed composition at S5 total
+S6,mid,2025,C,0.17,0,fixed composition at S5 total
 S6,mid,2025,D,0.16,0.672,fixed composition at S5 total
-S6,mid,2030,A,0.17,33.66000000000001,fixed composition at S5 total
-S6,mid,2030,B,0.5,120.0,fixed composition at S5 total
-S6,mid,2030,C,0.17,27.540000000000003,fixed composition at S5 total
+S6,mid,2030,A,0.17,33.66,fixed composition at S5 total
+S6,mid,2030,B,0.5,120,fixed composition at S5 total
+S6,mid,2030,C,0.17,27.54,fixed composition at S5 total
 S6,mid,2030,D,0.16,20.16,fixed composition at S5 total
-S6,mid,2035,A,0.17,67.30165806269946,fixed composition at S5 total
-S6,mid,2035,B,0.5,267.69097359779556,fixed composition at S5 total
-S6,mid,2035,C,0.17,50.30785714285714,fixed composition at S5 total
-S6,mid,2035,D,0.16,46.80107144723147,fixed composition at S5 total
-S6,mid,2040,A,0.17,107.17560803454101,fixed composition at S5 total
-S6,mid,2040,B,0.5,453.1206366813688,fixed composition at S5 total
-S6,mid,2040,C,0.17,72.00034285714284,fixed composition at S5 total
-S6,mid,2040,D,0.16,80.80579965048763,fixed composition at S5 total
-S6,mid,2045,A,0.17,153.6621335648583,fixed composition at S5 total
-S6,mid,2045,B,0.5,677.6776800570478,fixed composition at S5 total
-S6,mid,2045,C,0.17,92.10162857142858,fixed composition at S5 total
-S6,mid,2045,D,0.16,118.10491563648515,fixed composition at S5 total
-S6,mid,2050,A,0.17,207.14151830298482,fixed composition at S5 total
-S6,mid,2050,B,0.5,942.7507945311608,fixed composition at S5 total
-S6,mid,2050,C,0.17,110.09588571428571,fixed composition at S5 total
-S6,mid,2050,D,0.16,153.96284345228034,fixed composition at S5 total
-S6,mid,2055,A,0.17,267.9940458982542,fixed composition at S5 total
-S6,mid,2055,B,0.5,1249.7286709100354,fixed composition at S5 total
-S6,mid,2055,C,0.17,125.4672857142857,fixed composition at S5 total
-S6,mid,2055,D,0.16,183.38261410025314,fixed composition at S5 total
-S6,mid,2060,A,0.17,336.6000000000001,fixed composition at S5 total
-S6,mid,2060,B,0.5,1600.0,fixed composition at S5 total
-S6,mid,2060,C,0.17,137.70000000000002,fixed composition at S5 total
+S6,mid,2035,A,0.17,67.3016580627,fixed composition at S5 total
+S6,mid,2035,B,0.5,267.6909735978,fixed composition at S5 total
+S6,mid,2035,C,0.17,50.30785714286,fixed composition at S5 total
+S6,mid,2035,D,0.16,46.80107144723,fixed composition at S5 total
+S6,mid,2040,A,0.17,107.1756080345,fixed composition at S5 total
+S6,mid,2040,B,0.5,453.1206366814,fixed composition at S5 total
+S6,mid,2040,C,0.17,72.00034285714,fixed composition at S5 total
+S6,mid,2040,D,0.16,80.80579965049,fixed composition at S5 total
+S6,mid,2045,A,0.17,153.6621335649,fixed composition at S5 total
+S6,mid,2045,B,0.5,677.677680057,fixed composition at S5 total
+S6,mid,2045,C,0.17,92.10162857143,fixed composition at S5 total
+S6,mid,2045,D,0.16,118.1049156365,fixed composition at S5 total
+S6,mid,2050,A,0.17,207.141518303,fixed composition at S5 total
+S6,mid,2050,B,0.5,942.7507945312,fixed composition at S5 total
+S6,mid,2050,C,0.17,110.0958857143,fixed composition at S5 total
+S6,mid,2050,D,0.16,153.9628434523,fixed composition at S5 total
+S6,mid,2055,A,0.17,267.9940458983,fixed composition at S5 total
+S6,mid,2055,B,0.5,1249.72867091,fixed composition at S5 total
+S6,mid,2055,C,0.17,125.4672857143,fixed composition at S5 total
+S6,mid,2055,D,0.16,183.3826141003,fixed composition at S5 total
+S6,mid,2060,A,0.17,336.6,fixed composition at S5 total
+S6,mid,2060,B,0.5,1600,fixed composition at S5 total
+S6,mid,2060,C,0.17,137.7,fixed composition at S5 total
 S6,mid,2060,D,0.16,201.6,fixed composition at S5 total
 S7,high,2025,A,0.3,17.82,fixed composition at S5 total
-S7,high,2025,B,0.3,24.0,fixed composition at S5 total
-S7,high,2025,C,0.25,0.0,fixed composition at S5 total
-S7,high,2025,D,0.15,1.8900000000000001,fixed composition at S5 total
-S7,high,2030,A,0.3,118.80000000000001,fixed composition at S5 total
-S7,high,2030,B,0.3,120.0,fixed composition at S5 total
+S7,high,2025,B,0.3,24,fixed composition at S5 total
+S7,high,2025,C,0.25,0,fixed composition at S5 total
+S7,high,2025,D,0.15,1.89,fixed composition at S5 total
+S7,high,2030,A,0.3,118.8,fixed composition at S5 total
+S7,high,2030,B,0.3,120,fixed composition at S5 total
 S7,high,2030,C,0.25,101.25,fixed composition at S5 total
 S7,high,2030,D,0.15,37.8,fixed composition at S5 total
-S7,high,2035,A,0.3,234.22994134572824,fixed composition at S5 total
-S7,high,2035,B,0.3,257.35557655623813,fixed composition at S5 total
-S7,high,2035,C,0.25,194.3748024652339,fixed composition at S5 total
-S7,high,2035,D,0.15,78.54741445776621,fixed composition at S5 total
-S7,high,2040,A,0.3,371.05770694997784,fixed composition at S5 total
-S7,high,2040,B,0.3,425.87228084912755,fixed composition at S5 total
-S7,high,2040,C,0.25,285.0568900126421,fixed composition at S5 total
-S7,high,2040,D,0.15,126.0522530943683,fixed composition at S5 total
-S7,high,2045,A,0.3,525.7400071143996,fixed composition at S5 total
-S7,high,2045,B,0.3,626.9725941093085,fixed composition at S5 total
-S7,high,2045,C,0.25,372.50335809102404,fixed composition at S5 total
-S7,high,2045,D,0.15,176.6104413468967,fixed composition at S5 total
-S7,high,2050,A,0.3,690.502381584772,fixed composition at S5 total
-S7,high,2050,B,0.3,862.078997567421,fixed composition at S5 total
-S7,high,2050,C,0.25,455.9213021491783,fixed composition at S5 total
-S7,high,2050,D,0.15,226.86510589050727,fixed composition at S5 total
-S7,high,2055,A,0.3,852.0232063808259,fixed composition at S5 total
-S7,high,2055,B,0.3,1132.6139724541044,fixed composition at S5 total
-S7,high,2055,C,0.25,534.5178176359038,fixed composition at S5 total
-S7,high,2055,D,0.15,273.84573393678676,fixed composition at S5 total
-S7,high,2060,A,0.3,990.0000000000001,fixed composition at S5 total
-S7,high,2060,B,0.3,1440.0,fixed composition at S5 total
+S7,high,2035,A,0.3,234.2299413457,fixed composition at S5 total
+S7,high,2035,B,0.3,257.3555765562,fixed composition at S5 total
+S7,high,2035,C,0.25,194.3748024652,fixed composition at S5 total
+S7,high,2035,D,0.15,78.54741445777,fixed composition at S5 total
+S7,high,2040,A,0.3,371.05770695,fixed composition at S5 total
+S7,high,2040,B,0.3,425.8722808491,fixed composition at S5 total
+S7,high,2040,C,0.25,285.0568900126,fixed composition at S5 total
+S7,high,2040,D,0.15,126.0522530944,fixed composition at S5 total
+S7,high,2045,A,0.3,525.7400071144,fixed composition at S5 total
+S7,high,2045,B,0.3,626.9725941093,fixed composition at S5 total
+S7,high,2045,C,0.25,372.503358091,fixed composition at S5 total
+S7,high,2045,D,0.15,176.6104413469,fixed composition at S5 total
+S7,high,2050,A,0.3,690.5023815848,fixed composition at S5 total
+S7,high,2050,B,0.3,862.0789975674,fixed composition at S5 total
+S7,high,2050,C,0.25,455.9213021492,fixed composition at S5 total
+S7,high,2050,D,0.15,226.8651058905,fixed composition at S5 total
+S7,high,2055,A,0.3,852.0232063808,fixed composition at S5 total
+S7,high,2055,B,0.3,1132.613972454,fixed composition at S5 total
+S7,high,2055,C,0.25,534.5178176359,fixed composition at S5 total
+S7,high,2055,D,0.15,273.8457339368,fixed composition at S5 total
+S7,high,2060,A,0.3,990,fixed composition at S5 total
+S7,high,2060,B,0.3,1440,fixed composition at S5 total
 S7,high,2060,C,0.25,607.5,fixed composition at S5 total
-S7,high,2060,D,0.15,315.0,fixed composition at S5 total
+S7,high,2060,D,0.15,315,fixed composition at S5 total
 S7,low,2025,A,0.3,1.98,fixed composition at S5 total
 S7,low,2025,B,0.3,2.4,fixed composition at S5 total
-S7,low,2025,C,0.25,0.0,fixed composition at S5 total
-S7,low,2025,D,0.15,0.0,fixed composition at S5 total
+S7,low,2025,C,0.25,0,fixed composition at S5 total
+S7,low,2025,D,0.15,0,fixed composition at S5 total
 S7,low,2030,A,0.3,19.8,fixed composition at S5 total
-S7,low,2030,B,0.3,24.0,fixed composition at S5 total
+S7,low,2030,B,0.3,24,fixed composition at S5 total
 S7,low,2030,C,0.25,6.75,fixed composition at S5 total
 S7,low,2030,D,0.15,6.3,fixed composition at S5 total
-S7,low,2035,A,0.3,40.60337837837838,fixed composition at S5 total
-S7,low,2035,B,0.3,61.36973953376433,fixed composition at S5 total
-S7,low,2035,C,0.25,12.330357142857146,fixed composition at S5 total
-S7,low,2035,D,0.15,15.200450045951122,fixed composition at S5 total
-S7,low,2040,A,0.3,64.64432432432432,fixed composition at S5 total
-S7,low,2040,B,0.3,114.11898088893264,fixed composition at S5 total
-S7,low,2040,C,0.25,17.647142857142853,fixed composition at S5 total
-S7,low,2040,D,0.15,26.606513409961682,fixed composition at S5 total
-S7,low,2045,A,0.3,92.16364864864866,fixed composition at S5 total
-S7,low,2045,B,0.3,182.3021758393227,fixed composition at S5 total
-S7,low,2045,C,0.25,22.573928571428574,fixed composition at S5 total
-S7,low,2045,D,0.15,38.97248878727866,fixed composition at S5 total
-S7,low,2050,A,0.3,123.40216216216217,fixed composition at S5 total
-S7,low,2050,B,0.3,265.97377615875206,fixed composition at S5 total
-S7,low,2050,C,0.25,26.984285714285715,fixed composition at S5 total
-S7,low,2050,D,0.15,50.44003313658486,fixed composition at S5 total
-S7,low,2055,A,0.3,158.6006756756757,fixed composition at S5 total
-S7,low,2055,B,0.3,365.1882336210386,fixed composition at S5 total
-S7,low,2055,C,0.25,30.751785714285717,fixed composition at S5 total
-S7,low,2055,D,0.15,59.04875697356838,fixed composition at S5 total
-S7,low,2060,A,0.3,198.0,fixed composition at S5 total
-S7,low,2060,B,0.3,480.0,fixed composition at S5 total
+S7,low,2035,A,0.3,40.60337837838,fixed composition at S5 total
+S7,low,2035,B,0.3,61.36973953376,fixed composition at S5 total
+S7,low,2035,C,0.25,12.33035714286,fixed composition at S5 total
+S7,low,2035,D,0.15,15.20045004595,fixed composition at S5 total
+S7,low,2040,A,0.3,64.64432432432,fixed composition at S5 total
+S7,low,2040,B,0.3,114.1189808889,fixed composition at S5 total
+S7,low,2040,C,0.25,17.64714285714,fixed composition at S5 total
+S7,low,2040,D,0.15,26.60651340996,fixed composition at S5 total
+S7,low,2045,A,0.3,92.16364864865,fixed composition at S5 total
+S7,low,2045,B,0.3,182.3021758393,fixed composition at S5 total
+S7,low,2045,C,0.25,22.57392857143,fixed composition at S5 total
+S7,low,2045,D,0.15,38.97248878728,fixed composition at S5 total
+S7,low,2050,A,0.3,123.4021621622,fixed composition at S5 total
+S7,low,2050,B,0.3,265.9737761588,fixed composition at S5 total
+S7,low,2050,C,0.25,26.98428571429,fixed composition at S5 total
+S7,low,2050,D,0.15,50.44003313658,fixed composition at S5 total
+S7,low,2055,A,0.3,158.6006756757,fixed composition at S5 total
+S7,low,2055,B,0.3,365.188233621,fixed composition at S5 total
+S7,low,2055,C,0.25,30.75178571429,fixed composition at S5 total
+S7,low,2055,D,0.15,59.04875697357,fixed composition at S5 total
+S7,low,2060,A,0.3,198,fixed composition at S5 total
+S7,low,2060,B,0.3,480,fixed composition at S5 total
 S7,low,2060,C,0.25,33.75,fixed composition at S5 total
-S7,low,2060,D,0.15,63.0,fixed composition at S5 total
+S7,low,2060,D,0.15,63,fixed composition at S5 total
 S7,mid,2025,A,0.3,7.92,fixed composition at S5 total
-S7,mid,2025,B,0.3,12.0,fixed composition at S5 total
-S7,mid,2025,C,0.25,0.0,fixed composition at S5 total
+S7,mid,2025,B,0.3,12,fixed composition at S5 total
+S7,mid,2025,C,0.25,0,fixed composition at S5 total
 S7,mid,2025,D,0.15,0.63,fixed composition at S5 total
-S7,mid,2030,A,0.3,59.400000000000006,fixed composition at S5 total
-S7,mid,2030,B,0.3,72.0,fixed composition at S5 total
+S7,mid,2030,A,0.3,59.4,fixed composition at S5 total
+S7,mid,2030,B,0.3,72,fixed composition at S5 total
 S7,mid,2030,C,0.25,40.5,fixed composition at S5 total
 S7,mid,2030,D,0.15,18.9,fixed composition at S5 total
-S7,mid,2035,A,0.3,118.76763187535198,fixed composition at S5 total
-S7,mid,2035,B,0.3,160.61458415867733,fixed composition at S5 total
-S7,mid,2035,C,0.25,73.98214285714285,fixed composition at S5 total
-S7,mid,2035,D,0.15,43.8760044817795,fixed composition at S5 total
-S7,mid,2040,A,0.3,189.13342594330766,fixed composition at S5 total
-S7,mid,2040,B,0.3,271.87238200882126,fixed composition at S5 total
-S7,mid,2040,C,0.25,105.8828571428571,fixed composition at S5 total
-S7,mid,2040,D,0.15,75.75543717233215,fixed composition at S5 total
-S7,mid,2045,A,0.3,271.1684709968087,fixed composition at S5 total
-S7,mid,2045,B,0.3,406.6066080342287,fixed composition at S5 total
-S7,mid,2045,C,0.25,135.44357142857143,fixed composition at S5 total
-S7,mid,2045,D,0.15,110.72335840920482,fixed composition at S5 total
-S7,mid,2050,A,0.3,365.5438558287967,fixed composition at S5 total
-S7,mid,2050,B,0.3,565.6504767186964,fixed composition at S5 total
-S7,mid,2050,C,0.25,161.90571428571428,fixed composition at S5 total
-S7,mid,2050,D,0.15,144.3401657365128,fixed composition at S5 total
-S7,mid,2055,A,0.3,472.9306692322133,fixed composition at S5 total
-S7,mid,2055,B,0.3,749.8372025460212,fixed composition at S5 total
-S7,mid,2055,C,0.25,184.51071428571424,fixed composition at S5 total
-S7,mid,2055,D,0.15,171.9212007189873,fixed composition at S5 total
-S7,mid,2060,A,0.3,594.0,fixed composition at S5 total
-S7,mid,2060,B,0.3,960.0,fixed composition at S5 total
+S7,mid,2035,A,0.3,118.7676318754,fixed composition at S5 total
+S7,mid,2035,B,0.3,160.6145841587,fixed composition at S5 total
+S7,mid,2035,C,0.25,73.98214285714,fixed composition at S5 total
+S7,mid,2035,D,0.15,43.87600448178,fixed composition at S5 total
+S7,mid,2040,A,0.3,189.1334259433,fixed composition at S5 total
+S7,mid,2040,B,0.3,271.8723820088,fixed composition at S5 total
+S7,mid,2040,C,0.25,105.8828571429,fixed composition at S5 total
+S7,mid,2040,D,0.15,75.75543717233,fixed composition at S5 total
+S7,mid,2045,A,0.3,271.1684709968,fixed composition at S5 total
+S7,mid,2045,B,0.3,406.6066080342,fixed composition at S5 total
+S7,mid,2045,C,0.25,135.4435714286,fixed composition at S5 total
+S7,mid,2045,D,0.15,110.7233584092,fixed composition at S5 total
+S7,mid,2050,A,0.3,365.5438558288,fixed composition at S5 total
+S7,mid,2050,B,0.3,565.6504767187,fixed composition at S5 total
+S7,mid,2050,C,0.25,161.9057142857,fixed composition at S5 total
+S7,mid,2050,D,0.15,144.3401657365,fixed composition at S5 total
+S7,mid,2055,A,0.3,472.9306692322,fixed composition at S5 total
+S7,mid,2055,B,0.3,749.837202546,fixed composition at S5 total
+S7,mid,2055,C,0.25,184.5107142857,fixed composition at S5 total
+S7,mid,2055,D,0.15,171.921200719,fixed composition at S5 total
+S7,mid,2060,A,0.3,594,fixed composition at S5 total
+S7,mid,2060,B,0.3,960,fixed composition at S5 total
 S7,mid,2060,C,0.25,202.5,fixed composition at S5 total
-S7,mid,2060,D,0.15,189.0,fixed composition at S5 total
-S8,high,2025,A,0.25,14.850000000000001,fixed composition at S5 total
-S8,high,2025,B,0.25,20.0,fixed composition at S5 total
-S8,high,2025,C,0.25,0.0,fixed composition at S5 total
-S8,high,2025,D,0.25,3.1500000000000004,fixed composition at S5 total
-S8,high,2030,A,0.25,99.00000000000001,fixed composition at S5 total
-S8,high,2030,B,0.25,100.0,fixed composition at S5 total
+S7,mid,2060,D,0.15,189,fixed composition at S5 total
+S8,high,2025,A,0.25,14.85,fixed composition at S5 total
+S8,high,2025,B,0.25,20,fixed composition at S5 total
+S8,high,2025,C,0.25,0,fixed composition at S5 total
+S8,high,2025,D,0.25,3.15,fixed composition at S5 total
+S8,high,2030,A,0.25,99,fixed composition at S5 total
+S8,high,2030,B,0.25,100,fixed composition at S5 total
 S8,high,2030,C,0.25,101.25,fixed composition at S5 total
-S8,high,2030,D,0.25,63.0,fixed composition at S5 total
-S8,high,2035,A,0.25,195.19161778810687,fixed composition at S5 total
-S8,high,2035,B,0.25,214.46298046353178,fixed composition at S5 total
-S8,high,2035,C,0.25,194.3748024652339,fixed composition at S5 total
-S8,high,2035,D,0.25,130.91235742961035,fixed composition at S5 total
-S8,high,2040,A,0.25,309.2147557916482,fixed composition at S5 total
-S8,high,2040,B,0.25,354.89356737427295,fixed composition at S5 total
-S8,high,2040,C,0.25,285.0568900126421,fixed composition at S5 total
-S8,high,2040,D,0.25,210.08708849061384,fixed composition at S5 total
-S8,high,2045,A,0.25,438.11667259533306,fixed composition at S5 total
-S8,high,2045,B,0.25,522.4771617577571,fixed composition at S5 total
-S8,high,2045,C,0.25,372.50335809102404,fixed composition at S5 total
-S8,high,2045,D,0.25,294.35073557816116,fixed composition at S5 total
-S8,high,2050,A,0.25,575.4186513206433,fixed composition at S5 total
-S8,high,2050,B,0.25,718.3991646395175,fixed composition at S5 total
-S8,high,2050,C,0.25,455.9213021491783,fixed composition at S5 total
-S8,high,2050,D,0.25,378.10850981751213,fixed composition at S5 total
-S8,high,2055,A,0.25,710.0193386506883,fixed composition at S5 total
-S8,high,2055,B,0.25,943.8449770450871,fixed composition at S5 total
-S8,high,2055,C,0.25,534.5178176359038,fixed composition at S5 total
-S8,high,2055,D,0.25,456.4095565613113,fixed composition at S5 total
-S8,high,2060,A,0.25,825.0000000000001,fixed composition at S5 total
-S8,high,2060,B,0.25,1200.0,fixed composition at S5 total
+S8,high,2030,D,0.25,63,fixed composition at S5 total
+S8,high,2035,A,0.25,195.1916177881,fixed composition at S5 total
+S8,high,2035,B,0.25,214.4629804635,fixed composition at S5 total
+S8,high,2035,C,0.25,194.3748024652,fixed composition at S5 total
+S8,high,2035,D,0.25,130.9123574296,fixed composition at S5 total
+S8,high,2040,A,0.25,309.2147557916,fixed composition at S5 total
+S8,high,2040,B,0.25,354.8935673743,fixed composition at S5 total
+S8,high,2040,C,0.25,285.0568900126,fixed composition at S5 total
+S8,high,2040,D,0.25,210.0870884906,fixed composition at S5 total
+S8,high,2045,A,0.25,438.1166725953,fixed composition at S5 total
+S8,high,2045,B,0.25,522.4771617578,fixed composition at S5 total
+S8,high,2045,C,0.25,372.503358091,fixed composition at S5 total
+S8,high,2045,D,0.25,294.3507355782,fixed composition at S5 total
+S8,high,2050,A,0.25,575.4186513206,fixed composition at S5 total
+S8,high,2050,B,0.25,718.3991646395,fixed composition at S5 total
+S8,high,2050,C,0.25,455.9213021492,fixed composition at S5 total
+S8,high,2050,D,0.25,378.1085098175,fixed composition at S5 total
+S8,high,2055,A,0.25,710.0193386507,fixed composition at S5 total
+S8,high,2055,B,0.25,943.8449770451,fixed composition at S5 total
+S8,high,2055,C,0.25,534.5178176359,fixed composition at S5 total
+S8,high,2055,D,0.25,456.4095565613,fixed composition at S5 total
+S8,high,2060,A,0.25,825,fixed composition at S5 total
+S8,high,2060,B,0.25,1200,fixed composition at S5 total
 S8,high,2060,C,0.25,607.5,fixed composition at S5 total
-S8,high,2060,D,0.25,525.0,fixed composition at S5 total
-S8,low,2025,A,0.25,1.6500000000000001,fixed composition at S5 total
-S8,low,2025,B,0.25,2.0,fixed composition at S5 total
-S8,low,2025,C,0.25,0.0,fixed composition at S5 total
-S8,low,2025,D,0.25,0.0,fixed composition at S5 total
+S8,high,2060,D,0.25,525,fixed composition at S5 total
+S8,low,2025,A,0.25,1.65,fixed composition at S5 total
+S8,low,2025,B,0.25,2,fixed composition at S5 total
+S8,low,2025,C,0.25,0,fixed composition at S5 total
+S8,low,2025,D,0.25,0,fixed composition at S5 total
 S8,low,2030,A,0.25,16.5,fixed composition at S5 total
-S8,low,2030,B,0.25,20.0,fixed composition at S5 total
+S8,low,2030,B,0.25,20,fixed composition at S5 total
 S8,low,2030,C,0.25,6.75,fixed composition at S5 total
 S8,low,2030,D,0.25,10.5,fixed composition at S5 total
-S8,low,2035,A,0.25,33.83614864864865,fixed composition at S5 total
-S8,low,2035,B,0.25,51.14144961147028,fixed composition at S5 total
-S8,low,2035,C,0.25,12.330357142857146,fixed composition at S5 total
-S8,low,2035,D,0.25,25.334083409918538,fixed composition at S5 total
-S8,low,2040,A,0.25,53.87027027027027,fixed composition at S5 total
-S8,low,2040,B,0.25,95.0991507407772,fixed composition at S5 total
-S8,low,2040,C,0.25,17.647142857142853,fixed composition at S5 total
-S8,low,2040,D,0.25,44.344189016602805,fixed composition at S5 total
-S8,low,2045,A,0.25,76.80304054054055,fixed composition at S5 total
-S8,low,2045,B,0.25,151.91847986610225,fixed composition at S5 total
-S8,low,2045,C,0.25,22.573928571428574,fixed composition at S5 total
-S8,low,2045,D,0.25,64.95414797879776,fixed composition at S5 total
-S8,low,2050,A,0.25,102.83513513513515,fixed composition at S5 total
-S8,low,2050,B,0.25,221.64481346562673,fixed composition at S5 total
-S8,low,2050,C,0.25,26.984285714285715,fixed composition at S5 total
-S8,low,2050,D,0.25,84.0667218943081,fixed composition at S5 total
-S8,low,2055,A,0.25,132.16722972972974,fixed composition at S5 total
-S8,low,2055,B,0.25,304.32352801753217,fixed composition at S5 total
-S8,low,2055,C,0.25,30.751785714285717,fixed composition at S5 total
-S8,low,2055,D,0.25,98.41459495594731,fixed composition at S5 total
-S8,low,2060,A,0.25,165.0,fixed composition at S5 total
-S8,low,2060,B,0.25,400.0,fixed composition at S5 total
+S8,low,2035,A,0.25,33.83614864865,fixed composition at S5 total
+S8,low,2035,B,0.25,51.14144961147,fixed composition at S5 total
+S8,low,2035,C,0.25,12.33035714286,fixed composition at S5 total
+S8,low,2035,D,0.25,25.33408340992,fixed composition at S5 total
+S8,low,2040,A,0.25,53.87027027027,fixed composition at S5 total
+S8,low,2040,B,0.25,95.09915074078,fixed composition at S5 total
+S8,low,2040,C,0.25,17.64714285714,fixed composition at S5 total
+S8,low,2040,D,0.25,44.3441890166,fixed composition at S5 total
+S8,low,2045,A,0.25,76.80304054054,fixed composition at S5 total
+S8,low,2045,B,0.25,151.9184798661,fixed composition at S5 total
+S8,low,2045,C,0.25,22.57392857143,fixed composition at S5 total
+S8,low,2045,D,0.25,64.9541479788,fixed composition at S5 total
+S8,low,2050,A,0.25,102.8351351351,fixed composition at S5 total
+S8,low,2050,B,0.25,221.6448134656,fixed composition at S5 total
+S8,low,2050,C,0.25,26.98428571429,fixed composition at S5 total
+S8,low,2050,D,0.25,84.06672189431,fixed composition at S5 total
+S8,low,2055,A,0.25,132.1672297297,fixed composition at S5 total
+S8,low,2055,B,0.25,304.3235280175,fixed composition at S5 total
+S8,low,2055,C,0.25,30.75178571429,fixed composition at S5 total
+S8,low,2055,D,0.25,98.41459495595,fixed composition at S5 total
+S8,low,2060,A,0.25,165,fixed composition at S5 total
+S8,low,2060,B,0.25,400,fixed composition at S5 total
 S8,low,2060,C,0.25,33.75,fixed composition at S5 total
-S8,low,2060,D,0.25,105.0,fixed composition at S5 total
-S8,mid,2025,A,0.25,6.6000000000000005,fixed composition at S5 total
-S8,mid,2025,B,0.25,10.0,fixed composition at S5 total
-S8,mid,2025,C,0.25,0.0,fixed composition at S5 total
+S8,low,2060,D,0.25,105,fixed composition at S5 total
+S8,mid,2025,A,0.25,6.6,fixed composition at S5 total
+S8,mid,2025,B,0.25,10,fixed composition at S5 total
+S8,mid,2025,C,0.25,0,fixed composition at S5 total
 S8,mid,2025,D,0.25,1.05,fixed composition at S5 total
-S8,mid,2030,A,0.25,49.50000000000001,fixed composition at S5 total
-S8,mid,2030,B,0.25,60.0,fixed composition at S5 total
+S8,mid,2030,A,0.25,49.5,fixed composition at S5 total
+S8,mid,2030,B,0.25,60,fixed composition at S5 total
 S8,mid,2030,C,0.25,40.5,fixed composition at S5 total
 S8,mid,2030,D,0.25,31.5,fixed composition at S5 total
-S8,mid,2035,A,0.25,98.97302656279332,fixed composition at S5 total
-S8,mid,2035,B,0.25,133.84548679889778,fixed composition at S5 total
-S8,mid,2035,C,0.25,73.98214285714285,fixed composition at S5 total
-S8,mid,2035,D,0.25,73.12667413629917,fixed composition at S5 total
-S8,mid,2040,A,0.25,157.6111882860897,fixed composition at S5 total
-S8,mid,2040,B,0.25,226.5603183406844,fixed composition at S5 total
-S8,mid,2040,C,0.25,105.8828571428571,fixed composition at S5 total
-S8,mid,2040,D,0.25,126.25906195388693,fixed composition at S5 total
-S8,mid,2045,A,0.25,225.97372583067394,fixed composition at S5 total
-S8,mid,2045,B,0.25,338.8388400285239,fixed composition at S5 total
-S8,mid,2045,C,0.25,135.44357142857143,fixed composition at S5 total
-S8,mid,2045,D,0.25,184.53893068200804,fixed composition at S5 total
-S8,mid,2050,A,0.25,304.6198798573306,fixed composition at S5 total
-S8,mid,2050,B,0.25,471.3753972655804,fixed composition at S5 total
-S8,mid,2050,C,0.25,161.90571428571428,fixed composition at S5 total
-S8,mid,2050,D,0.25,240.566942894188,fixed composition at S5 total
-S8,mid,2055,A,0.25,394.10889102684445,fixed composition at S5 total
-S8,mid,2055,B,0.25,624.8643354550177,fixed composition at S5 total
-S8,mid,2055,C,0.25,184.51071428571424,fixed composition at S5 total
-S8,mid,2055,D,0.25,286.5353345316455,fixed composition at S5 total
-S8,mid,2060,A,0.25,495.00000000000006,fixed composition at S5 total
-S8,mid,2060,B,0.25,800.0,fixed composition at S5 total
+S8,mid,2035,A,0.25,98.97302656279,fixed composition at S5 total
+S8,mid,2035,B,0.25,133.8454867989,fixed composition at S5 total
+S8,mid,2035,C,0.25,73.98214285714,fixed composition at S5 total
+S8,mid,2035,D,0.25,73.1266741363,fixed composition at S5 total
+S8,mid,2040,A,0.25,157.6111882861,fixed composition at S5 total
+S8,mid,2040,B,0.25,226.5603183407,fixed composition at S5 total
+S8,mid,2040,C,0.25,105.8828571429,fixed composition at S5 total
+S8,mid,2040,D,0.25,126.2590619539,fixed composition at S5 total
+S8,mid,2045,A,0.25,225.9737258307,fixed composition at S5 total
+S8,mid,2045,B,0.25,338.8388400285,fixed composition at S5 total
+S8,mid,2045,C,0.25,135.4435714286,fixed composition at S5 total
+S8,mid,2045,D,0.25,184.538930682,fixed composition at S5 total
+S8,mid,2050,A,0.25,304.6198798573,fixed composition at S5 total
+S8,mid,2050,B,0.25,471.3753972656,fixed composition at S5 total
+S8,mid,2050,C,0.25,161.9057142857,fixed composition at S5 total
+S8,mid,2050,D,0.25,240.5669428942,fixed composition at S5 total
+S8,mid,2055,A,0.25,394.1088910268,fixed composition at S5 total
+S8,mid,2055,B,0.25,624.864335455,fixed composition at S5 total
+S8,mid,2055,C,0.25,184.5107142857,fixed composition at S5 total
+S8,mid,2055,D,0.25,286.5353345316,fixed composition at S5 total
+S8,mid,2060,A,0.25,495,fixed composition at S5 total
+S8,mid,2060,B,0.25,800,fixed composition at S5 total
 S8,mid,2060,C,0.25,202.5,fixed composition at S5 total
-S8,mid,2060,D,0.25,315.0,fixed composition at S5 total
+S8,mid,2060,D,0.25,315,fixed composition at S5 total

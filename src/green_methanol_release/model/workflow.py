@@ -26,7 +26,7 @@ from .demand import (
     preprocess_demand,
     write_demand_outputs,
 )
-from .io import read_csv, sha256, verify_registered_hashes, write_csv
+from .io import CSV_FLOAT_FORMAT, read_csv, sha256, verify_registered_hashes, write_csv
 from .network import (
     NETWORK_INPUTS,
     NETWORK_STAGE_INPUTS,
@@ -98,7 +98,12 @@ def _validate_stage_inputs(
 
 
 def _frame_hash(frame: pd.DataFrame) -> str:
-    payload = frame.to_csv(index=False, encoding="utf-8", lineterminator="\n").encode("utf-8")
+    payload = frame.to_csv(
+        index=False,
+        encoding="utf-8",
+        lineterminator="\n",
+        float_format=CSV_FLOAT_FORMAT,
+    ).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
 

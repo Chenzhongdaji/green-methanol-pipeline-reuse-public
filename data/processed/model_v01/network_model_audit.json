@@ -1,5 +1,5 @@
 {
-  "audit_sha256": "83efbce17b1ac706232c727fd373e12acfe48a393de977710504a945a32cdc62",
+  "audit_sha256": "775aab23936b908f36327f9fac046631428db944a27c4c2964604db5fc96ed0b",
   "boundary": "capacity-constrained directed model on author-derived segment and node carriers; no engineering qualification is inferred; legacy pressure/cost details are omitted",
   "candidate_scope": "Figure-5 sensitivity only; candidate links are excluded from the base graph",
   "capacity_basis": "同管道运输任务_万吨",
@@ -12,11 +12,11 @@
     "status": "PASS"
   },
   "input_hashes": {
-    "demand::data/processed/model_v01/component_demand.csv": "c327260505c0cea313826b763e0f367e5ed9d16ca5ae7cb5fc5e5b8f0f93cd62",
-    "demand::data/processed/model_v01/demand_nodes.csv": "e84eb9cf7b6bb9d03ba17e64dc8036e3210fba7bcb825b9300d7b20f0e3b6cda",
-    "demand::data/processed/model_v01/demand_preprocessing_audit.json": "c70eea825f4fffe84317b81c11cfb61a23fab797231e8d631c3942a866ab1c9f",
-    "demand::data/processed/model_v01/demand_totals.csv": "16ef018f11d96ba3a7fa00850527db9ea9ec0895a73c85e120cf0bffd23af887",
-    "demand::data/processed/model_v01/supply_nodes.csv": "2017a9c2293c4da74196db84e0317a460997488a85bb55a8ac7cb6263aa729f4",
+    "demand::data/processed/model_v01/component_demand.csv": "fc8b36233b89b8644d1d9b3291e95465a1e0269e2415422e2ee4d61d457ea456",
+    "demand::data/processed/model_v01/demand_nodes.csv": "6ce29241c6a12d7c46f3cba6d19d6f0878a250b9ba89ab4488c3578bf6969a84",
+    "demand::data/processed/model_v01/demand_preprocessing_audit.json": "74fb82308dddebd9fec39c9d6f5cbaaca50ca99ca18619b77ee32fd45437498f",
+    "demand::data/processed/model_v01/demand_totals.csv": "de5662fe297830c502af47c3a7f080ba2803cda6a632152f1ba4a5a25cbfb4c2",
+    "demand::data/processed/model_v01/supply_nodes.csv": "4e0858fde7e4377f5a478121484d7005baf3618da0639cd6b60b7ea456354924",
     "network::config/model_parameters_v01.csv": "8ff309ee7484f6b4311061d5f682134135b6baff881fa0cbcef6b5fa2bf14406",
     "network::data/raw/pipeline/pipeline_network_segments_v01.csv": "b52f3b2bd17fade12a4b2ab79da5818049fb8971cf71197c9eb1d07ebb3e3752",
     "network::data/raw/pipeline/pipeline_nodes_geocoded.csv": "98b637c2b3b9050134e6e2dbc84f0f8d41829a630a90151499d3e30cac5f00f7",
@@ -35,11 +35,11 @@
   ],
   "network_variant": "base",
   "output_hashes": {
-    "data/processed/model_v01/network_edge_catalog.csv": "ff2eb5cfcf57472ca7f996f6c0c726d5a39d84a8bece88a1c7a6ce3d40a8a13e",
-    "data/processed/model_v01/network_edge_flows.csv": "e9f93be99eac7150a5f1f85657933aca66dc3b31fa02d3f65bacd0c48d0d8537",
+    "data/processed/model_v01/network_edge_catalog.csv": "c556b61f4c7481b5c47e37dc73a60ba08810eed23ed2d57ab99cef4b1f7a31a4",
+    "data/processed/model_v01/network_edge_flows.csv": "533cbaf3eb146482cb7fd69bbda95307b9295a0999bca6b7181c58433ed2fa95",
     "data/processed/model_v01/network_node_catalog.csv": "fcd4046a5074877b159728119b068284369c2d63cdc40c3d330e90b3a6272800",
-    "data/processed/model_v01/network_service.csv": "f88bea75761c7205346434e4ccf9d4b97bfcd7b587ca683a0e251a6f904fc150",
-    "data/processed/model_v01/network_summary.csv": "bedcb228df3f575aa127f41662515a4f0f77cb228d60cbf89f15b50e0d84168a"
+    "data/processed/model_v01/network_service.csv": "de09db2a8c2121bbbeee35c3e3a2edf8deb5bce2d45cbf324322d38e26f5fc3d",
+    "data/processed/model_v01/network_summary.csv": "f4e33045884b8834bf0d5bb2ef2e19f38934c2ca2289d41dd18975eb5bcf55ab"
   },
   "rows": {
     "edge_catalog": 1120,
