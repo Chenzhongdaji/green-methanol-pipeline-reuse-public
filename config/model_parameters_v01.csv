@@ -1,0 +1,100 @@
+parameter,sector,tier,year,scenario,value,unit,notes
+sector_activity_10kt,A,0,0,,3000,10kt/y,constant activity basis
+conversion_factor,A,0,0,,2.2,factor,methanol route conversion
+adoption_share,A,low,2025,,0.01,fraction,scenario anchor
+route_share,A,low,2025,,0.1,fraction,scenario anchor
+adoption_share,A,low,2030,,0.05,fraction,scenario anchor
+route_share,A,low,2030,,0.2,fraction,scenario anchor
+adoption_share,A,low,2060,,0.5,fraction,scenario anchor
+route_share,A,low,2060,,0.2,fraction,scenario anchor
+adoption_share,A,mid,2025,,0.02,fraction,scenario anchor
+route_share,A,mid,2025,,0.2,fraction,scenario anchor
+adoption_share,A,mid,2030,,0.075,fraction,scenario anchor
+route_share,A,mid,2030,,0.4,fraction,scenario anchor
+adoption_share,A,mid,2060,,0.75,fraction,scenario anchor
+route_share,A,mid,2060,,0.4,fraction,scenario anchor
+adoption_share,A,high,2025,,0.03,fraction,scenario anchor
+route_share,A,high,2025,,0.3,fraction,scenario anchor
+adoption_share,A,high,2030,,0.1,fraction,scenario anchor
+route_share,A,high,2030,,0.6,fraction,scenario anchor
+adoption_share,A,high,2060,,1,fraction,scenario anchor
+route_share,A,high,2060,,0.5,fraction,scenario anchor
+sector_activity_10kt,B,0,0,,8000,10kt/y,constant activity basis
+conversion_factor,B,0,0,,1,factor,methanol route conversion
+adoption_share,B,low,2025,,0.001,fraction,scenario anchor
+route_share,B,low,2025,,1,fraction,scenario anchor
+adoption_share,B,low,2030,,0.01,fraction,scenario anchor
+route_share,B,low,2030,,1,fraction,scenario anchor
+adoption_share,B,low,2060,,0.2,fraction,scenario anchor
+route_share,B,low,2060,,1,fraction,scenario anchor
+adoption_share,B,mid,2025,,0.005,fraction,scenario anchor
+route_share,B,mid,2025,,1,fraction,scenario anchor
+adoption_share,B,mid,2030,,0.03,fraction,scenario anchor
+route_share,B,mid,2030,,1,fraction,scenario anchor
+adoption_share,B,mid,2060,,0.4,fraction,scenario anchor
+route_share,B,mid,2060,,1,fraction,scenario anchor
+adoption_share,B,high,2025,,0.01,fraction,scenario anchor
+route_share,B,high,2025,,1,fraction,scenario anchor
+adoption_share,B,high,2030,,0.05,fraction,scenario anchor
+route_share,B,high,2030,,1,fraction,scenario anchor
+adoption_share,B,high,2060,,0.6,fraction,scenario anchor
+route_share,B,high,2060,,1,fraction,scenario anchor
+sector_activity_10kt,C,0,0,,5000,10kt/y,constant activity basis
+conversion_factor,C,0,0,,2.7,factor,methanol route conversion
+adoption_share,C,low,2025,,0,fraction,scenario anchor
+route_share,C,low,2025,,0,fraction,scenario anchor
+adoption_share,C,low,2030,,0.01,fraction,scenario anchor
+route_share,C,low,2030,,0.2,fraction,scenario anchor
+adoption_share,C,low,2060,,0.05,fraction,scenario anchor
+route_share,C,low,2060,,0.2,fraction,scenario anchor
+adoption_share,C,mid,2025,,0,fraction,scenario anchor
+route_share,C,mid,2025,,0,fraction,scenario anchor
+adoption_share,C,mid,2030,,0.03,fraction,scenario anchor
+route_share,C,mid,2030,,0.4,fraction,scenario anchor
+adoption_share,C,mid,2060,,0.15,fraction,scenario anchor
+route_share,C,mid,2060,,0.4,fraction,scenario anchor
+adoption_share,C,high,2025,,0,fraction,scenario anchor
+route_share,C,high,2025,,0,fraction,scenario anchor
+adoption_share,C,high,2030,,0.05,fraction,scenario anchor
+route_share,C,high,2030,,0.6,fraction,scenario anchor
+adoption_share,C,high,2060,,0.3,fraction,scenario anchor
+route_share,C,high,2060,,0.6,fraction,scenario anchor
+sector_activity_10kt,D,0,0,,4000,10kt/y,constant activity basis
+conversion_factor,D,0,0,,2.1,factor,methanol route conversion
+adoption_share,D,low,2025,,0.05,fraction,scenario anchor
+route_share,D,low,2025,,0,fraction,scenario anchor
+adoption_share,D,low,2030,,0.2,fraction,scenario anchor
+route_share,D,low,2030,,0.025,fraction,scenario anchor
+adoption_share,D,low,2060,,0.5,fraction,scenario anchor
+route_share,D,low,2060,,0.1,fraction,scenario anchor
+adoption_share,D,mid,2025,,0.05,fraction,scenario anchor
+route_share,D,mid,2025,,0.01,fraction,scenario anchor
+adoption_share,D,mid,2030,,0.2,fraction,scenario anchor
+route_share,D,mid,2030,,0.075,fraction,scenario anchor
+adoption_share,D,mid,2060,,0.75,fraction,scenario anchor
+route_share,D,mid,2060,,0.2,fraction,scenario anchor
+adoption_share,D,high,2025,,0.05,fraction,scenario anchor
+route_share,D,high,2025,,0.03,fraction,scenario anchor
+adoption_share,D,high,2030,,0.2,fraction,scenario anchor
+route_share,D,high,2030,,0.15,fraction,scenario anchor
+adoption_share,D,high,2060,,1,fraction,scenario anchor
+route_share,D,high,2060,,0.25,fraction,scenario anchor
+structural_share,A,0,0,S6,0.17,fraction,S5 composition assumption
+structural_share,B,0,0,S6,0.5,fraction,S5 composition assumption
+structural_share,C,0,0,S6,0.17,fraction,S5 composition assumption
+structural_share,D,0,0,S6,0.16,fraction,S5 composition assumption
+structural_share,A,0,0,S7,0.3,fraction,S5 composition assumption
+structural_share,B,0,0,S7,0.3,fraction,S5 composition assumption
+structural_share,C,0,0,S7,0.25,fraction,S5 composition assumption
+structural_share,D,0,0,S7,0.15,fraction,S5 composition assumption
+structural_share,A,0,0,S8,0.25,fraction,S5 composition assumption
+structural_share,B,0,0,S8,0.25,fraction,S5 composition assumption
+structural_share,C,0,0,S8,0.25,fraction,S5 composition assumption
+structural_share,D,0,0,S8,0.25,fraction,S5 composition assumption
+supply_scenario,,low,0,low,0,text,tier to public supply scenario
+supply_scenario,,mid,0,base,0,text,tier to public supply scenario
+supply_scenario,,high,0,high,0,text,tier to public supply scenario
+flow_scale,,0,0,,1000,integer,flow unit scale
+capacity_relaxation_factor,,0,0,,1.1,factor,counterfactual spare-capacity multiplier
+transport_cost_per_km,,0,0,,1,relative_cost,ranking cost on analytical coordinates
+transport_emission_per_km,,0,0,,1,relative_emission,screening metric only

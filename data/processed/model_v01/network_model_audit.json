@@ -1,0 +1,86 @@
+{
+  "boundary": "capacity-constrained directed model on author-derived segment and node carriers; no engineering qualification is inferred",
+  "capacity_factor": 1.0,
+  "input_hashes": {
+    "config/model_parameters_v01.csv": "2125cf9ab5e87d673f7650b642ceea871a70d1e8e4a038a577ebac43a8670f7d",
+    "data/raw/city_topology_v01/aviation_refinery_city_activity.csv": "a34539eb46c5662e920905bcc234dc5bbcb683e9321d8034667a2cb08bde2cdd",
+    "data/raw/city_topology_v01/city_master_2024.csv": "0f21ab953c22e8f7cf93879bbcae499bc3900a2d6cb5309b26109a7534aa0045",
+    "data/raw/demand/province_demand_corrected_product_coeff.csv": "fb7c0bffdff9473601026a5cba6d8871e0c8309ec42fcf38c1964b10ebe0c05b",
+    "data/raw/demand/province_origin_2024.csv": "e0b7481bad60c450a86d1dada28addd8d5896196c6eb172aa5832724e867fd00",
+    "data/raw/official_sources/mot_2025_shipping_port_weights.csv": "e7cbb5372dff62cc4330245806dc843fa0325ea1b3b29c1d3ef63587f2e2cc39",
+    "data/raw/pipeline/pipeline_network_segments_v01.csv": "b52f3b2bd17fade12a4b2ab79da5818049fb8971cf71197c9eb1d07ebb3e3752",
+    "data/raw/pipeline/pipeline_nodes_geocoded.csv": "98b637c2b3b9050134e6e2dbc84f0f8d41829a630a90151499d3e30cac5f00f7",
+    "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv": "8d603eab33bd48fbb058431ecf7b9d2a395db0c978d68658b7d5fa390415ea8f",
+    "data/raw/supply/province_projection_nbs_generation.csv": "f658f36a42cb73e809d615f073bb35663d122fbec53776e6c0d48f5a3c431577",
+    "data/raw/topology/best_two_link_plans.csv": "31719b2e24fc247da52e254f7ea3625c230ff489f2756a211f6c24a41fabc627",
+    "data/raw/topology/candidate_links.csv": "db214bfc36956a865f007d503a4d6b264d54fe96f8ac02080ee1b1c33a24594b"
+  },
+  "input_paths": [
+    "config/model_parameters_v01.csv",
+    "data/raw/city_topology_v01/aviation_refinery_city_activity.csv",
+    "data/raw/city_topology_v01/city_master_2024.csv",
+    "data/raw/demand/province_demand_corrected_product_coeff.csv",
+    "data/raw/demand/province_origin_2024.csv",
+    "data/raw/official_sources/mot_2025_shipping_port_weights.csv",
+    "data/raw/pipeline/pipeline_network_segments_v01.csv",
+    "data/raw/pipeline/pipeline_nodes_geocoded.csv",
+    "data/raw/pipeline/segment_transport_task_pipeline_adjusted_long.csv",
+    "data/raw/supply/province_projection_nbs_generation.csv",
+    "data/raw/topology/best_two_link_plans.csv",
+    "data/raw/topology/candidate_links.csv"
+  ],
+  "network_variant": "base",
+  "rows": {
+    "edge_flows": 316,
+    "service": 5568,
+    "summary": 192
+  },
+  "schema": {
+    "edge_flows": [
+      "scenario",
+      "tier",
+      "year",
+      "segment_id",
+      "from_node_id",
+      "to_node_id",
+      "flow_10kt",
+      "capacity_10kt",
+      "flow_to_capacity_pct",
+      "distance_km"
+    ],
+    "service": [
+      "scenario",
+      "tier",
+      "year",
+      "province_key",
+      "demand_10kt",
+      "supply_10kt",
+      "local_direct_10kt",
+      "pipeline_served_10kt",
+      "served_10kt",
+      "unserved_10kt"
+    ],
+    "summary": [
+      "scenario",
+      "tier",
+      "year",
+      "demand_10kt",
+      "supply_10kt",
+      "local_direct_10kt",
+      "pipeline_served_10kt",
+      "served_10kt",
+      "unserved_10kt",
+      "demand_met_pct",
+      "pipeline_tonne_km",
+      "edges_used",
+      "max_edge_util_pct",
+      "min_cost_objective",
+      "active_segments",
+      "capacity_factor",
+      "connector_count"
+    ]
+  },
+  "solver": "NetworkX maximum-flow followed by max-flow-min-cost",
+  "stage": "directed_network_flow",
+  "status": "PASS"
+}

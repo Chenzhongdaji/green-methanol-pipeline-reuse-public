@@ -1,0 +1,93 @@
+{
+  "input_hashes": {
+    "config/model_parameters_v01.csv": "2125cf9ab5e87d673f7650b642ceea871a70d1e8e4a038a577ebac43a8670f7d",
+    "data/raw/city_topology_v01/aviation_refinery_city_activity.csv": "a34539eb46c5662e920905bcc234dc5bbcb683e9321d8034667a2cb08bde2cdd",
+    "data/raw/city_topology_v01/city_master_2024.csv": "0f21ab953c22e8f7cf93879bbcae499bc3900a2d6cb5309b26109a7534aa0045",
+    "data/raw/demand/province_demand_corrected_product_coeff.csv": "fb7c0bffdff9473601026a5cba6d8871e0c8309ec42fcf38c1964b10ebe0c05b",
+    "data/raw/demand/province_origin_2024.csv": "e0b7481bad60c450a86d1dada28addd8d5896196c6eb172aa5832724e867fd00",
+    "data/raw/official_sources/mot_2025_shipping_port_weights.csv": "e7cbb5372dff62cc4330245806dc843fa0325ea1b3b29c1d3ef63587f2e2cc39",
+    "data/raw/supply/province_projection_nbs_generation.csv": "f658f36a42cb73e809d615f073bb35663d122fbec53776e6c0d48f5a3c431577"
+  },
+  "input_paths": [
+    "config/model_parameters_v01.csv",
+    "data/raw/city_topology_v01/aviation_refinery_city_activity.csv",
+    "data/raw/city_topology_v01/city_master_2024.csv",
+    "data/raw/demand/province_demand_corrected_product_coeff.csv",
+    "data/raw/demand/province_origin_2024.csv",
+    "data/raw/official_sources/mot_2025_shipping_port_weights.csv",
+    "data/raw/supply/province_projection_nbs_generation.csv"
+  ],
+  "proxy_boundaries": {
+    "aviation_origin": "validated as a public sensitivity proxy; not used as the primary city allocation",
+    "city_activity": "documented refinery-city activity proxy; not measured methanol demand"
+  },
+  "rows": {
+    "component_totals": 768,
+    "demand_nodes": 15552,
+    "demand_totals": 192,
+    "supply_nodes": 744
+  },
+  "scenarios": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8"
+  ],
+  "schema": {
+    "component_totals": [
+      "scenario",
+      "tier",
+      "year",
+      "sector",
+      "composition_share",
+      "component_demand_10kt",
+      "scenario_semantics"
+    ],
+    "demand_nodes": [
+      "scenario",
+      "tier",
+      "year",
+      "sector",
+      "province_key",
+      "allocation_weight",
+      "component_demand_10kt",
+      "demand_10kt",
+      "allocation_basis"
+    ],
+    "demand_totals": [
+      "scenario",
+      "tier",
+      "year",
+      "demand_10kt",
+      "scenario_semantics"
+    ],
+    "supply_nodes": [
+      "scenario",
+      "tier",
+      "year",
+      "province_key",
+      "supply_10kt"
+    ]
+  },
+  "stage": "demand_preprocessing",
+  "status": "PASS",
+  "tiers": [
+    "low",
+    "mid",
+    "high"
+  ],
+  "years": [
+    2025,
+    2030,
+    2035,
+    2040,
+    2045,
+    2050,
+    2055,
+    2060
+  ]
+}
