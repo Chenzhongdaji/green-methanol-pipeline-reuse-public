@@ -1,4 +1,5 @@
 import csv
+import base64
 import hashlib
 import json
 import os
@@ -7,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import zlib
 
 import pytest
 
@@ -54,6 +56,9 @@ def _minimal_output_row(
         "input_dataset_ids": "carrier-1",
         "expected_artifact": expected_artifact,
         "secondary_artifacts": secondary_artifacts,
+        "artifact_digest_policy": (
+            "platform_rendered" if expected_artifact.endswith((".png", ".pdf")) else "frozen_bytes"
+        ),
     }
 
 
@@ -71,6 +76,7 @@ def _minimal_release(
     builder.parent.mkdir(parents=True, exist_ok=True)
     builder.write_text(
         "import argparse\n"
+        "import base64\n"
         "from pathlib import Path\n"
         "import sys\n"
         "parser = argparse.ArgumentParser()\n"
@@ -87,7 +93,7 @@ def _minimal_release(
         "if not args.skip:\n"
         "    output = Path(args.output)\n"
         "    output.parent.mkdir(parents=True, exist_ok=True)\n"
-        "    output.write_text(args.label + chr(10), encoding='utf-8', newline=chr(10))\n",
+        "    output.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='))\n",
         encoding="utf-8",
         newline="\n",
     )
@@ -143,6 +149,12 @@ def test_full_real_release_executes_all_registered_outputs(tmp_path):
     assert report["workflow_status"]["network_model"] == "reproduced"
     assert report["workflow_status"]["dynamic_analysis"] == "reproduced"
     assert report["workflow_status"]["figure_source_regeneration"] == "reproduced"
+    assert report["artifact_digest_checks"] == {
+        "status": "PASS",
+        "artifacts": 25,
+        "frozen_bytes": 16,
+        "platform_rendered": 9,
+    }
     figure2e_secondary = report["artifacts"]["figure-02e"]["secondary_artifacts"]
     assert figure2e_secondary[0]["path"] == "figures/figure-02e.pdf"
     assert len(figure2e_secondary[0]["sha256"]) == 64
@@ -213,6 +225,133 @@ def test_full_run_rejects_artifact_digest_drift_against_frozen_inventories(tmp_p
     assert "frozen manifest/checksum digest mismatch" in report["error"]
 
 
+def test_platform_rendered_artifact_uses_signature_not_cross_os_digest(tmp_path):
+    artifact = tmp_path / "figure.png"
+    artifact.write_bytes(base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    ))
+    frozen = "0" * 64
+    contract = {
+        "manifest": {"figures/figure.png": frozen},
+        "checksums": {"figures/figure.png": frozen},
+    }
+
+    validation = pipeline_module._validate_artifacts(
+        contract, [("figures/figure.png", artifact)], "platform_rendered"
+    )
+    assert validation[0]["width"] == 1
+    assert validation[0]["height"] == 1
+
+
+def test_platform_rendered_artifact_rejects_invalid_signature(tmp_path):
+    artifact = tmp_path / "figure.png"
+    artifact.write_bytes(b"not-a-png")
+    frozen = "0" * 64
+    contract = {
+        "manifest": {"figures/figure.png": frozen},
+        "checksums": {"figures/figure.png": frozen},
+    }
+
+    with pytest.raises(ValueError, match="platform-rendered PNG is invalid"):
+        pipeline_module._validate_artifacts(
+            contract, [("figures/figure.png", artifact)], "platform_rendered"
+        )
+
+
+def test_platform_rendered_png_rejects_incomplete_scanlines(tmp_path):
+    artifact = tmp_path / "figure.png"
+    payload = bytearray(base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    ))
+    payload[16:20] = (2).to_bytes(4, "big")
+    payload[29:33] = (zlib.crc32(payload[12:29]) & 0xFFFFFFFF).to_bytes(4, "big")
+    artifact.write_bytes(payload)
+    frozen = "0" * 64
+
+    with pytest.raises(ValueError, match="pixel data is incomplete"):
+        pipeline_module._validate_artifacts(
+            {
+                "manifest": {"figures/figure.png": frozen},
+                "checksums": {"figures/figure.png": frozen},
+            },
+            [("figures/figure.png", artifact)],
+            "platform_rendered",
+        )
+
+
+def test_platform_rendered_pdf_rejects_truncated_or_pageless_payload(tmp_path):
+    artifact = tmp_path / "figure.pdf"
+    artifact.write_bytes(b"%PDF-1.4\nstartxref\n0\n%%EOF\n")
+    frozen = "0" * 64
+    contract = {
+        "manifest": {"figures/figure.pdf": frozen},
+        "checksums": {"figures/figure.pdf": frozen},
+    }
+
+    with pytest.raises(ValueError, match="platform-rendered PDF is invalid"):
+        pipeline_module._validate_artifacts(
+            contract, [("figures/figure.pdf", artifact)], "platform_rendered"
+        )
+
+
+def test_real_figure2e_png_and_pdf_pass_structural_validation():
+    artifacts = [
+        ("figures/figure-02e.png", ROOT / "figures/figure-02e.png"),
+        ("figures/figure-02e.pdf", ROOT / "figures/figure-02e.pdf"),
+    ]
+    frozen = {relative: "0" * 64 for relative, _ in artifacts}
+
+    validations = pipeline_module._validate_artifacts(
+        {"manifest": frozen, "checksums": frozen}, artifacts, "platform_rendered"
+    )
+
+    assert validations[0]["width"] > 0
+    assert validations[0]["height"] > 0
+    assert validations[1]["pages"] >= 1
+
+
+def test_non_rendered_artifact_still_requires_frozen_bytes(tmp_path):
+    artifact = tmp_path / "table.csv"
+    artifact.write_text("value\n1\n", encoding="utf-8")
+    frozen = "0" * 64
+    contract = {
+        "manifest": {"data/table.csv": frozen},
+        "checksums": {"data/table.csv": frozen},
+    }
+
+    with pytest.raises(ValueError, match="frozen manifest/checksum digest mismatch"):
+        pipeline_module._validate_artifacts(
+            contract, [("data/table.csv", artifact)], "frozen_bytes"
+        )
+
+
+def test_isolated_copy_ignores_links_and_exact_private_component(tmp_path):
+    target = tmp_path / "outside"
+    target.mkdir()
+    link = tmp_path / "linked"
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except OSError:
+        pytest.skip("directory symlink creation is unavailable")
+
+    ignored = pipeline_module._copy_ignore(
+        str(tmp_path), [link.name, "管道数据", "ordinary"]
+    )
+
+    assert ignored == {link.name, "管道数据"}
+
+
+def test_isolated_copy_ignores_junction_without_following_target(tmp_path, monkeypatch):
+    candidate = tmp_path / "junction"
+    candidate.mkdir()
+    monkeypatch.setattr(pipeline_module.Path, "is_symlink", lambda self: False)
+    monkeypatch.setattr(pipeline_module.os.path, "isjunction", lambda path: Path(path) == candidate)
+
+    assert pipeline_module._copy_ignore(str(tmp_path), [candidate.name, "ordinary"]) == {
+        candidate.name
+    }
+
+
 def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_path):
     root = _minimal_release(tmp_path)
     requested = tmp_path / "requested.json"
@@ -221,18 +360,23 @@ def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_pat
 
     first = root / "figures" / "first.png"
     second = root / "figures" / "second.png"
+    rendered = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    )
     assert report["status"] == "PASS"
     assert report["executed_output_ids"] == ["first", "second"]
     assert report["command_return_codes"] == {"first": 0, "second": 0}
     assert report["artifacts"] == {
         "first": {
             "path": "figures/first.png",
-            "sha256": hashlib.sha256(first.read_bytes()).hexdigest(),
+            "sha256": hashlib.sha256(rendered).hexdigest(),
+            "validation": {"policy": "platform_rendered", "format": "png", "width": 1, "height": 1},
             "secondary_artifacts": [],
         },
         "second": {
             "path": "figures/second.png",
-            "sha256": hashlib.sha256(second.read_bytes()).hexdigest(),
+            "sha256": hashlib.sha256(rendered).hexdigest(),
+            "validation": {"policy": "platform_rendered", "format": "png", "width": 1, "height": 1},
             "secondary_artifacts": [],
         },
     }
@@ -242,6 +386,8 @@ def test_full_runs_outputs_in_registry_order_and_reports_exact_artifacts(tmp_pat
     ) == report
     assert (tmp_path / "logs" / "first.log").is_file()
     assert (tmp_path / "logs" / "second.log").is_file()
+    assert not first.exists()
+    assert not second.exists()
     assert str(root) not in (tmp_path / "full_reproduction.json").read_text(encoding="utf-8")
 
 

@@ -197,6 +197,7 @@ _DICTIONARY_SPECS: dict[str, tuple[str, ...]] = {
         "input_dataset_ids",
         "expected_artifact",
         "secondary_artifacts",
+        "artifact_digest_policy",
     ),
     "data/dictionaries/figure_02.md": _FIGURE_SPECS["data/figure_source/figure-02.csv"],
     "data/dictionaries/figure_01.md": _FIGURE_SPECS["figures/source_data/figure-01.csv"],

@@ -28,7 +28,20 @@ registered carrier and its hash, executes the registered builders in registry
 order, checks the expected artifacts, and writes sanitized logs plus
 `full_reproduction.json` to the external output directory. The model rows run
 from public raw carriers through demand allocation, directed flow, dynamic
-accounts, and model-v01 Figure 4/5 source regeneration. The network model
+accounts, and model-v01 Figure 4/5 source regeneration.
+
+Analytical CSV/JSON artifacts are checked byte-for-byte against the frozen
+manifest and checksums. PNG/PDF artifacts are checked as platform-rendered
+outputs: complete PNG scanlines or structural PDF page markers, reported
+SHA-256 values, and equality across
+two independent full runs on the same platform. Cross-operating-system byte
+equality for raster/PDF files is not claimed; their deposited source carriers
+and numerical inputs remain frozen-byte checked.
+Each full run executes in a fresh temporary copy of the release payload, so
+regenerated platform-rendered files never modify the source checkout; CI also
+requires two independent reports to contain identical artifact hashes.
+
+The network model
 uses `同管道运输任务_万吨` for occupied capacity and WGS84 haversine
 kilometres for `distance_km` and `pipeline_tonne_km`, with the v08 one-km
 lower bound for coincident analytical coordinates; candidate links are

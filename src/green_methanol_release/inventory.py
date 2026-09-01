@@ -13,7 +13,7 @@ import io
 import os
 import re
 import shlex
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from .contracts import ReleaseRoot, safe_relative_path
 from .safety import assert_public_path, resolve_public_path
@@ -68,6 +68,7 @@ OUTPUT_REGISTRY_FIELDS = (
     "input_dataset_ids",
     "expected_artifact",
     "secondary_artifacts",
+    "artifact_digest_policy",
 )
 
 EXPECTED_OUTPUT_IDS = (
@@ -102,6 +103,8 @@ _COMMAND_INPUT_OPTION = "--input"
 _COMMAND_OUTPUT_OPTION = "--output"
 _NON_GENERATING_COMMANDS = {"cat", "echo", "printf", "type", "write-output"}
 _INTERNAL_INPUT_PREFIXES = ("data/", "figures/source_data/")
+_ARTIFACT_DIGEST_POLICIES = {"frozen_bytes", "platform_rendered"}
+_RENDERED_ARTIFACT_SUFFIXES = {".pdf", ".png"}
 
 # These paths are generated or environment-specific and therefore are not
 # release payload.  Keep this rule identical to the audit closure contract;
@@ -394,6 +397,24 @@ def load_output_registry(
                 f"output {row['output_id']!r} repeats its primary artifact"
             )
         row["secondary_artifacts"] = ";".join(secondary)
+        policy = row["artifact_digest_policy"]
+        if policy not in _ARTIFACT_DIGEST_POLICIES:
+            raise ValueError(
+                f"output {row['output_id']!r} has unknown artifact_digest_policy "
+                f"at row {line_number}: {policy!r}"
+            )
+        artifact_suffixes = {
+            PurePosixPath(value).suffix.casefold()
+            for value in (row["expected_artifact"], *secondary)
+        }
+        if policy == "platform_rendered" and not artifact_suffixes <= _RENDERED_ARTIFACT_SUFFIXES:
+            raise ValueError(
+                f"output {row['output_id']!r} platform_rendered policy requires PNG/PDF artifacts"
+            )
+        if policy == "frozen_bytes" and artifact_suffixes & _RENDERED_ARTIFACT_SUFFIXES:
+            raise ValueError(
+                f"output {row['output_id']!r} rendered artifacts require platform_rendered policy"
+            )
     if enforce_fixed_ids:
         expected = set(EXPECTED_OUTPUT_IDS)
         actual = {row["output_id"] for row in rows}

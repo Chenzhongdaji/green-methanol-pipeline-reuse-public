@@ -195,6 +195,7 @@ OUTPUT_REGISTRY_FIELDS = (
     "input_dataset_ids",
     "expected_artifact",
     "secondary_artifacts",
+    "artifact_digest_policy",
 )
 
 
@@ -251,6 +252,9 @@ def _output_row(
         "input_dataset_ids": input_dataset_ids,
         "expected_artifact": expected_artifact,
         "secondary_artifacts": secondary_artifacts,
+        "artifact_digest_policy": (
+            "platform_rendered" if expected_artifact.endswith((".png", ".pdf")) else "frozen_bytes"
+        ),
     }
     row.update(overrides)
     return row
@@ -387,6 +391,27 @@ def test_output_registry_rejects_malformed_expected_artifact_path(tmp_path: Path
         inventory_module.load_output_registry(root / "data" / "output_registry.csv")
 
 
+@pytest.mark.parametrize(
+    ("artifact", "policy"),
+    [
+        ("figures/figure.png", "frozen_bytes"),
+        ("data/result.csv", "platform_rendered"),
+        ("figures/figure.png", "unknown"),
+    ],
+)
+def test_output_registry_rejects_invalid_artifact_digest_policy(
+    tmp_path: Path, artifact: str, policy: str
+):
+    root = _write_registry(
+        tmp_path,
+        [_dataset_row()],
+        [_output_row(expected_artifact=artifact, artifact_digest_policy=policy)],
+    )
+
+    with pytest.raises(ValueError, match="artifact_digest_policy|policy"):
+        inventory_module.load_output_registry(root / "data" / "output_registry.csv")
+
+
 def test_dataset_registry_rejects_invalid_hash(tmp_path: Path):
     root = _write_registry(tmp_path, [_dataset_row(sha256="A" * 64)], [_output_row()])
 
@@ -442,6 +467,7 @@ def test_figure2e_has_concrete_generation_contract():
     assert "--output" in row["generation_command"]
     assert row["expected_artifact"].endswith(".png")
     assert row["secondary_artifacts"] == "figures/figure-02e.pdf"
+    assert row["artifact_digest_policy"] == "platform_rendered"
     assert not any(
         marker in row["generation_command"].casefold()
         for marker in ("withheld", "status", "not_reproduced")

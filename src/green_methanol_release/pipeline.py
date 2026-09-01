@@ -9,9 +9,12 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shlex
+import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Any
+import zlib
 
 from .contracts import ReleaseRoot, safe_relative_path
 from .inventory import (
@@ -147,25 +150,117 @@ def _load_frozen_digest_contract(root: Path) -> dict[str, dict[str, str]] | None
     return {"manifest": manifest, "checksums": checksums}
 
 
-def _validate_frozen_artifacts(
-    contract: dict[str, dict[str, str]],
+def _validate_png(path: Path, relative: str) -> dict[str, int | str]:
+    payload = path.read_bytes()
+    if not payload.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError(f"platform-rendered PNG is invalid for artifact {relative!r}")
+    offset = 8
+    width = height = bit_depth = color_type = interlace = 0
+    saw_idat = saw_iend = False
+    compressed = bytearray()
+    while offset < len(payload):
+        if offset + 12 > len(payload):
+            raise ValueError(f"platform-rendered PNG is truncated for artifact {relative!r}")
+        length = int.from_bytes(payload[offset : offset + 4], "big")
+        kind = payload[offset + 4 : offset + 8]
+        end = offset + 12 + length
+        if end > len(payload):
+            raise ValueError(f"platform-rendered PNG is truncated for artifact {relative!r}")
+        data = payload[offset + 8 : offset + 8 + length]
+        expected_crc = int.from_bytes(payload[offset + 8 + length : end], "big")
+        if zlib.crc32(kind + data) & 0xFFFFFFFF != expected_crc:
+            raise ValueError(f"platform-rendered PNG has invalid CRC for artifact {relative!r}")
+        if kind == b"IHDR":
+            if length != 13:
+                raise ValueError(f"platform-rendered PNG has invalid IHDR for artifact {relative!r}")
+            width = int.from_bytes(data[:4], "big")
+            height = int.from_bytes(data[4:8], "big")
+            bit_depth = data[8]
+            color_type = data[9]
+            interlace = data[12]
+        elif kind == b"IDAT":
+            saw_idat = True
+            compressed.extend(data)
+        elif kind == b"IEND":
+            saw_iend = True
+            if end != len(payload):
+                raise ValueError(f"platform-rendered PNG has trailing bytes for artifact {relative!r}")
+            break
+        offset = end
+    try:
+        decoded = zlib.decompress(bytes(compressed)) if compressed else b""
+    except zlib.error as exc:
+        raise ValueError(f"platform-rendered PNG has invalid image data for artifact {relative!r}") from exc
+    valid_depths = {
+        0: {1, 2, 4, 8, 16},
+        2: {8, 16},
+        3: {1, 2, 4, 8},
+        4: {8, 16},
+        6: {8, 16},
+    }
+    channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color_type)
+    if (
+        width <= 0
+        or height <= 0
+        or not saw_idat
+        or not saw_iend
+        or not decoded
+        or channels is None
+        or bit_depth not in valid_depths[color_type]
+        or interlace != 0
+    ):
+        raise ValueError(f"platform-rendered PNG is incomplete for artifact {relative!r}")
+    row_bytes = (width * channels * bit_depth + 7) // 8
+    if len(decoded) != height * (row_bytes + 1):
+        raise ValueError(f"platform-rendered PNG pixel data is incomplete for artifact {relative!r}")
+    return {"policy": "platform_rendered", "format": "png", "width": width, "height": height}
+
+
+def _validate_pdf(path: Path, relative: str) -> dict[str, int | str]:
+    payload = path.read_bytes()
+    page_count = len(re.findall(rb"/Type\s*/Page\b", payload))
+    if (
+        not payload.startswith(b"%PDF-")
+        or not payload.rstrip().endswith(b"%%EOF")
+        or b"startxref" not in payload
+        or page_count < 1
+    ):
+        raise ValueError(f"platform-rendered PDF is invalid for artifact {relative!r}")
+    return {"policy": "platform_rendered", "format": "pdf", "pages": page_count}
+
+
+def _validate_artifacts(
+    contract: dict[str, dict[str, str]] | None,
     artifacts: list[tuple[str, Path]],
-) -> None:
+    policy: str,
+) -> list[dict[str, int | str]]:
+    validations: list[dict[str, int | str]] = []
     for relative, path in artifacts:
         actual = _sha256(path)
-        expected_manifest = contract["manifest"].get(relative)
-        expected_checksum = contract["checksums"].get(relative)
-        if expected_manifest is None or expected_checksum is None:
-            raise ValueError(
-                f"frozen manifest/checksum digest missing for artifact {relative!r}"
-            )
-        if (
-            expected_manifest != expected_checksum
-            or actual != expected_manifest
-        ):
-            raise ValueError(
-                f"frozen manifest/checksum digest mismatch for artifact {relative!r}"
-            )
+        expected_manifest = contract["manifest"].get(relative) if contract is not None else None
+        expected_checksum = contract["checksums"].get(relative) if contract is not None else None
+        if contract is not None:
+            if expected_manifest is None or expected_checksum is None:
+                raise ValueError(
+                    f"frozen manifest/checksum digest missing for artifact {relative!r}"
+                )
+            if expected_manifest != expected_checksum:
+                raise ValueError(
+                    f"frozen manifest/checksum digest mismatch for artifact {relative!r}"
+                )
+        if policy == "frozen_bytes":
+            if contract is not None and actual != expected_manifest:
+                raise ValueError(
+                    f"frozen manifest/checksum digest mismatch for artifact {relative!r}"
+                )
+            validations.append({"policy": "frozen_bytes"})
+        elif policy == "platform_rendered" and path.suffix.casefold() == ".png":
+            validations.append(_validate_png(path, relative))
+        elif policy == "platform_rendered" and path.suffix.casefold() == ".pdf":
+            validations.append(_validate_pdf(path, relative))
+        else:
+            raise ValueError(f"unsupported artifact digest policy for {relative!r}: {policy!r}")
+    return validations
 
 
 def _prepare_boundary(root: Path, output_root: Path) -> tuple[Path, Path]:
@@ -185,6 +280,22 @@ def _prepare_boundary(root: Path, output_root: Path) -> tuple[Path, Path]:
     if resolved_output == resolved_root or resolved_root in resolved_output.parents:
         raise ValueError("full reproduction output must be outside the release root")
     return resolved_root, resolved_output
+
+
+def _copy_ignore(directory: str, names: list[str]) -> set[str]:
+    """Exclude private components and all links without following their targets."""
+
+    ignored: set[str] = set()
+    for name in names:
+        if name == "管道数据":
+            ignored.add(name)
+            continue
+        candidate = Path(directory) / name
+        if candidate.is_symlink() or (
+            hasattr(os.path, "isjunction") and os.path.isjunction(candidate)
+        ):
+            ignored.add(name)
+    return ignored
 
 
 def _option_values(
@@ -315,6 +426,7 @@ def _validate_command(
         "script_path": script_path,
         "artifact_relative": expected_relative,
         "artifact_path": expected_path,
+        "artifact_digest_policy": row["artifact_digest_policy"],
         "secondary_artifacts": secondary_artifacts,
         "log_relative": _log_relative_path(output_id),
     }
@@ -360,7 +472,12 @@ def _base_report() -> dict[str, Any]:
         "command_return_codes": {},
         "artifacts": {},
         "logs": {},
-        "frozen_digest_checks": {"status": "not-run", "artifacts": 0},
+        "artifact_digest_checks": {
+            "status": "not-run",
+            "artifacts": 0,
+            "frozen_bytes": 0,
+            "platform_rendered": 0,
+        },
         "error": None,
         "errors": [],
     }
@@ -374,6 +491,7 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
     report: dict[str, Any] = _base_report()
     resolved_root: Path | None = None
     resolved_output: Path | None = None
+    workspace: tempfile.TemporaryDirectory[str] | None = None
     report_destination_ready = False
     try:
         resolved_root, resolved_output = _prepare_boundary(raw_root, raw_output)
@@ -381,6 +499,18 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
         if not resolved_output.is_dir():
             raise ValueError("full reproduction output is not a directory")
         report_destination_ready = True
+        workspace = tempfile.TemporaryDirectory(prefix="release-workspace-", dir=resolved_output)
+        execution_root = Path(workspace.name) / "release"
+        shutil.copytree(
+            resolved_root,
+            execution_root,
+            symlinks=True,
+            ignore=lambda directory, names: _copy_ignore(directory, names)
+            | set(shutil.ignore_patterns(".git", ".venv", "__pycache__", ".pytest_cache")(
+                directory, names
+            )),
+        )
+        resolved_root = execution_root
         registry_paths = {
             relative: _safe_repo_path(resolved_root, relative, "registry")[1]
             for relative in _REGISTRY_PATHS
@@ -445,6 +575,8 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 )
         report["workflow_status"]["carrier_validation"] = "reproduced"
 
+        frozen_bytes = 0
+        platform_rendered = 0
         for job in jobs:
             if not job["script_path"].is_file():
                 raise ValueError(
@@ -536,18 +668,23 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
                 )
                 break
 
-            if frozen_digest_contract is not None:
-                _validate_frozen_artifacts(frozen_digest_contract, artifact_paths)
+            validations = _validate_artifacts(
+                frozen_digest_contract, artifact_paths, job["artifact_digest_policy"]
+            )
+            frozen_bytes += sum(item["policy"] == "frozen_bytes" for item in validations)
+            platform_rendered += sum(item["policy"] == "platform_rendered" for item in validations)
             primary_relative, primary_path = artifact_paths[0]
             report["artifacts"][output_id] = {
                 "path": primary_relative,
                 "sha256": _sha256(primary_path),
+                "validation": validations[0],
                 "secondary_artifacts": [
                     {
                         "path": relative,
                         "sha256": _sha256(path),
+                        "validation": validation,
                     }
-                    for relative, path in artifact_paths[1:]
+                    for (relative, path), validation in zip(artifact_paths[1:], validations[1:])
                 ],
             }
             model_status = {
@@ -575,13 +712,15 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
             report["status"] = "PASS"
             report["workflow_status"]["manuscript_outputs"] = "reproduced"
             if frozen_digest_contract is not None:
-                report["frozen_digest_checks"] = {
+                report["artifact_digest_checks"] = {
                     "status": "PASS",
                     "artifacts": sum(
                         1
                         + len(job["secondary_artifacts"])
                         for job in jobs
                     ),
+                    "frozen_bytes": frozen_bytes,
+                    "platform_rendered": platform_rendered,
                 }
     except (OSError, UnicodeError, ValueError, KeyError, subprocess.SubprocessError) as exc:
         message = _redact_paths(
@@ -592,6 +731,8 @@ def run_full(root: Path, output_root: Path) -> dict[str, object]:
         report["error"] = message
         report["errors"] = [message]
 
+    if workspace is not None:
+        workspace.cleanup()
     if report_destination_ready and resolved_output is not None:
         _write_report(resolved_output, report)
     return report
