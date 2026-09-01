@@ -13,12 +13,13 @@ import pandas as pd
 from .config import YEARS, ModelConfig, load_config
 from .demand import DEMAND_OUTPUTS, DemandResult, preprocess_demand
 from .io import (
+    finalize_stage_audit,
     finite_float,
     hashes_for_paths,
     normalize_province,
     read_csv,
-    read_json,
     sorted_frame,
+    verify_persisted_stage,
     write_csv,
     write_json,
 )
@@ -860,14 +861,17 @@ def run_network(
 def load_network_outputs(root: Path) -> NetworkResult:
     """Load only persisted network-stage carriers for the analysis stage."""
 
+    payload = verify_persisted_stage(
+        root,
+        NETWORK_OUTPUTS["audit"],
+        NETWORK_OUTPUTS.values(),
+        "directed_network_flow",
+    )
     summary = read_csv(root, NETWORK_OUTPUTS["summary"], NETWORK_SUMMARY_COLUMNS)
     edge_flows = read_csv(root, NETWORK_OUTPUTS["edge_flows"], NETWORK_EDGE_FLOW_COLUMNS)
     service = read_csv(root, NETWORK_OUTPUTS["service"], NETWORK_SERVICE_COLUMNS)
     edge_catalog = read_csv(root, NETWORK_OUTPUTS["edge_catalog"], NETWORK_EDGE_CATALOG_COLUMNS)
     node_catalog = read_csv(root, NETWORK_OUTPUTS["node_catalog"], NETWORK_NODE_COLUMNS)
-    payload = read_json(root, NETWORK_OUTPUTS["audit"])
-    if not isinstance(payload, dict) or payload.get("stage") != "directed_network_flow":
-        raise ValueError("network-stage audit is missing or has the wrong stage")
     input_hashes = payload.get("input_hashes")
     expected_hash_keys = {
         *(f"demand::{path}" for path in DEMAND_OUTPUTS.values()),
@@ -906,8 +910,15 @@ def write_network_outputs(result: NetworkResult, root: Path) -> list[str]:
     write_csv(result.service, output_dir / "network_service.csv")
     write_csv(result.edge_catalog, output_dir / "network_edge_catalog.csv")
     write_csv(result.node_catalog, output_dir / "network_node_catalog.csv")
-    write_json(result.audit, output_dir / "network_model_audit.json")
-    return list(NETWORK_OUTPUTS.values())
+    output_paths = list(NETWORK_OUTPUTS.values())
+    audit = finalize_stage_audit(
+        result.audit,
+        root,
+        output_paths,
+        NETWORK_OUTPUTS["audit"],
+    )
+    write_json(audit, output_dir / "network_model_audit.json")
+    return output_paths
 
 
 __all__ = [

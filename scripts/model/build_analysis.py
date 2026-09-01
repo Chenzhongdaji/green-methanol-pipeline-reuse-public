@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if sorted(set(args.input)) != sorted(set(ANALYSIS_INPUTS.values())):
             raise ValueError("dynamic analysis inputs must match the public model registry")
-        result = run_model_stage(ROOT, "dynamic_analysis")
+        result = run_model_stage(ROOT, "dynamic_analysis", input_paths=args.input)
         expected = ROOT / "data" / "processed" / "model_v01" / "analysis_summary.csv"
         if args.output.resolve() != expected.resolve():
             raise ValueError("analysis output must be the registered analysis_summary.csv")

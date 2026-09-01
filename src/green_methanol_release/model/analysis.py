@@ -16,7 +16,15 @@ from .demand import (
     load_demand_outputs,
     preprocess_demand,
 )
-from .io import hashes_for_paths, read_csv, read_json, sorted_frame, write_csv, write_json
+from .io import (
+    finalize_stage_audit,
+    hashes_for_paths,
+    read_csv,
+    sorted_frame,
+    verify_persisted_stage,
+    write_csv,
+    write_json,
+)
 from .network import (
     CANDIDATE_INPUTS,
     NETWORK_OUTPUTS,
@@ -423,26 +431,36 @@ def write_analysis_outputs(result: AnalysisResult, root: Path) -> list[str]:
     write_csv(result.regional_accounts, output_dir / "regional_accounts.csv")
     write_csv(result.figure_04_source, output_dir / "figure_04_source.csv")
     write_csv(result.figure_05_source, output_dir / "figure_05_source.csv")
-    write_json(result.audit, output_dir / "dynamic_analysis_audit.json")
-    return [
+    output_paths = [
         "data/processed/model_v01/analysis_summary.csv",
         "data/processed/model_v01/regional_accounts.csv",
         "data/processed/model_v01/figure_04_source.csv",
         "data/processed/model_v01/figure_05_source.csv",
         "data/processed/model_v01/dynamic_analysis_audit.json",
     ]
+    audit = finalize_stage_audit(
+        result.audit,
+        root,
+        output_paths,
+        ANALYSIS_OUTPUTS["audit"],
+    )
+    write_json(audit, output_dir / "dynamic_analysis_audit.json")
+    return output_paths
 
 
 def load_analysis_outputs(root: Path) -> AnalysisResult:
     """Load only analysis source carriers for the model-figure stages."""
 
+    payload = verify_persisted_stage(
+        root,
+        ANALYSIS_OUTPUTS["audit"],
+        ANALYSIS_OUTPUTS.values(),
+        "dynamic_analysis",
+    )
     summary = read_csv(root, ANALYSIS_OUTPUTS["summary"], ANALYSIS_SUMMARY_COLUMNS)
     regional = read_csv(root, ANALYSIS_OUTPUTS["regional_accounts"], ANALYSIS_REGIONAL_COLUMNS)
     figure_04 = read_csv(root, ANALYSIS_OUTPUTS["figure_04_source"], ANALYSIS_FIGURE_04_COLUMNS)
     figure_05 = read_csv(root, ANALYSIS_OUTPUTS["figure_05_source"], ANALYSIS_FIGURE_05_COLUMNS)
-    payload = read_json(root, ANALYSIS_OUTPUTS["audit"])
-    if not isinstance(payload, dict) or payload.get("stage") != "dynamic_analysis":
-        raise ValueError("analysis-stage audit is missing or has the wrong stage")
     input_hashes = payload.get("input_hashes")
     if not isinstance(input_hashes, dict) or not input_hashes:
         raise ValueError("analysis-stage audit is missing input hashes")

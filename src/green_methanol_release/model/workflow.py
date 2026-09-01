@@ -9,17 +9,32 @@ from typing import Any
 
 import pandas as pd
 
+from ..contracts import safe_relative_path
 from ..safety import assert_public_path
 from .analysis import (
     ANALYSIS_FIGURE_SOURCES,
+    ANALYSIS_INPUTS,
     AnalysisResult,
     load_analysis_outputs,
     run_dynamic_analysis,
     write_analysis_outputs,
 )
-from .demand import DemandResult, load_demand_outputs, preprocess_demand, write_demand_outputs
-from .io import read_csv, sha256, write_csv
-from .network import NetworkResult, load_network_outputs, run_network, write_network_outputs
+from .demand import (
+    DEMAND_INPUTS,
+    DemandResult,
+    load_demand_outputs,
+    preprocess_demand,
+    write_demand_outputs,
+)
+from .io import read_csv, sha256, verify_registered_hashes, write_csv
+from .network import (
+    NETWORK_INPUTS,
+    NETWORK_STAGE_INPUTS,
+    NetworkResult,
+    load_network_outputs,
+    run_network,
+    write_network_outputs,
+)
 
 
 MODEL_OUTPUT_DIR = "data/processed/model_v01"
@@ -32,6 +47,54 @@ class ModelChainResult:
     analysis: AnalysisResult | None
     audit: dict[str, Any]
     output_paths: tuple[str, ...] = ()
+
+
+_STAGE_INPUTS = {
+    "demand_preprocessing": tuple(DEMAND_INPUTS.values()),
+    "directed_network_flow": tuple(NETWORK_STAGE_INPUTS.values()),
+    "dynamic_analysis": tuple(ANALYSIS_INPUTS.values()),
+    "figure_04": (ANALYSIS_FIGURE_SOURCES["figure_04"],),
+    "figure_05": (ANALYSIS_FIGURE_SOURCES["figure_05"],),
+}
+
+
+def _validate_stage_inputs(
+    root: Path,
+    stage: str,
+    input_paths: list[str] | tuple[str, ...] | None,
+) -> tuple[str, ...]:
+    expected = tuple(_STAGE_INPUTS[stage])
+    provided = expected if input_paths is None else tuple(
+        str(value).replace("\\", "/") for value in input_paths
+    )
+    normalized: list[str] = []
+    for value in provided:
+        try:
+            relative = safe_relative_path(value)
+            assert_public_path(Path(value))
+        except ValueError as exc:
+            raise ValueError(f"{stage} input path is not release-relative: {value!r}") from exc
+        normalized.append(relative.as_posix())
+    if len(normalized) != len(set(normalized)) or sorted(normalized) != sorted(expected):
+        raise ValueError(
+            f"{stage} inputs must match the registered stage contract: "
+            f"expected={sorted(expected)}, provided={sorted(normalized)}"
+        )
+
+    if stage == "demand_preprocessing":
+        verify_registered_hashes(root, DEMAND_INPUTS.values())
+    elif stage == "directed_network_flow":
+        verify_registered_hashes(root, NETWORK_INPUTS.values())
+    elif stage == "dynamic_analysis":
+        verify_registered_hashes(
+            root,
+            (
+                ANALYSIS_INPUTS["candidate_links"],
+                ANALYSIS_INPUTS["selected_plans"],
+                ANALYSIS_INPUTS["parameters"],
+            ),
+        )
+    return tuple(normalized)
 
 
 def _frame_hash(frame: pd.DataFrame) -> str:
@@ -179,6 +242,7 @@ def run_model_stage(
     stage: str,
     *,
     output_root: Path | None = None,
+    input_paths: list[str] | tuple[str, ...] | None = None,
 ) -> ModelChainResult:
     """Run one registered stage and only write that stage's artifacts."""
 
@@ -186,6 +250,9 @@ def run_model_stage(
     target = root if output_root is None else Path(output_root).resolve()
     assert_public_path(root)
     assert_public_path(target)
+    if stage not in _STAGE_INPUTS:
+        raise ValueError(f"unsupported public model stage: {stage}")
+    _validate_stage_inputs(root, stage, input_paths)
     if stage == "demand_preprocessing":
         demand = preprocess_demand(root)
         output_paths = write_demand_outputs(demand, target)
@@ -205,6 +272,7 @@ def run_model_stage(
         audit = _stage_audit(stage, analysis.audit, output_paths, target)
         return ModelChainResult(demand, network, analysis, audit, tuple(sorted(set(output_paths))))
     if stage in {"figure_04", "figure_05"}:
+        load_analysis_outputs(root)
         source_relative = ANALYSIS_FIGURE_SOURCES[stage]
         source = read_csv(root, source_relative)
         source_hash = sha256(root / Path(*source_relative.split("/")))

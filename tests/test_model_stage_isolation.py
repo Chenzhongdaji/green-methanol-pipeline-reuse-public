@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -13,6 +15,16 @@ from green_methanol_release.model.workflow import MODEL_OUTPUT_DIR, run_model_st
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _copy_release(tmp_path: Path, name: str = "release") -> Path:
+    root = tmp_path / name
+    shutil.copytree(
+        ROOT,
+        root,
+        ignore=shutil.ignore_patterns(".venv", ".git", "__pycache__", ".pytest_cache"),
+    )
+    return root
 
 
 def _payloads(root: Path) -> set[str]:
@@ -106,6 +118,37 @@ def test_analysis_stage_does_not_execute_upstream_models(monkeypatch, tmp_path: 
         f"{MODEL_OUTPUT_DIR}/figure_05_source.csv",
         f"{MODEL_OUTPUT_DIR}/dynamic_analysis_audit.json",
     }
+
+
+def test_network_stage_rejects_mutated_persisted_demand_artifact(tmp_path: Path):
+    root = _copy_release(tmp_path, "mutated_demand")
+    demand_path = root / "data" / "processed" / "model_v01" / "demand_nodes.csv"
+    network_path = root / "data" / "processed" / "model_v01" / "network_summary.csv"
+    before = network_path.read_bytes()
+    demand_path.write_bytes(demand_path.read_bytes() + b"\n")
+
+    with pytest.raises(ValueError, match="hash|persisted"):
+        run_model_stage(root, "directed_network_flow", output_root=root)
+
+    assert network_path.read_bytes() == before
+
+
+def test_stage_rejects_undeclared_input_path_before_execution():
+    with pytest.raises(ValueError, match="input"):
+        run_model_stage(
+            ROOT,
+            "demand_preprocessing",
+            input_paths=["data/raw/demand/not-declared.csv"],
+        )
+
+
+def test_network_loader_rejects_mutated_artifact_against_persisted_audit(tmp_path: Path):
+    root = _copy_release(tmp_path, "mutated_network")
+    artifact = root / "data" / "processed" / "model_v01" / "network_edge_flows.csv"
+    artifact.write_bytes(artifact.read_bytes() + b"\n")
+
+    with pytest.raises(ValueError, match="hash|artifact"):
+        workflow_module.load_network_outputs(root)
 
 
 @pytest.mark.parametrize(

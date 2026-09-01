@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import pandas as pd
 
@@ -102,6 +102,101 @@ def hashes_for_paths(root: Path, relatives: Iterable[str]) -> dict[str, str]:
             raise ValueError(f"model output/input is missing for hashing: {relative}")
         values[relative] = sha256(path)
     return values
+
+
+def verify_registered_hashes(root: Path, relatives: Iterable[str]) -> dict[str, str]:
+    """Verify raw release inputs against the committed dataset registry."""
+
+    from ..inventory import load_dataset_registry
+
+    registry_path = Path(root).resolve() / "data" / "dataset_registry.csv"
+    try:
+        rows = load_dataset_registry(registry_path)
+    except (OSError, ValueError) as exc:
+        raise ValueError("cannot validate model inputs against dataset registry") from exc
+    by_path = {row["public_path"]: row for row in rows}
+    hashes: dict[str, str] = {}
+    for relative in sorted(set(relatives)):
+        row = by_path.get(relative)
+        if row is None:
+            raise ValueError(f"model input is not declared in dataset registry: {relative}")
+        path = release_path(root, relative)
+        if not path.is_file():
+            raise ValueError(f"registered model input is missing: {relative}")
+        actual = sha256(path)
+        if actual != row["sha256"]:
+            raise ValueError(f"registered model input hash mismatch: {relative}")
+        hashes[relative] = actual
+    return hashes
+
+
+def persisted_stage_hashes(
+    root: Path,
+    output_paths: Iterable[str],
+    audit_path: str,
+) -> dict[str, str]:
+    """Hash persisted stage artifacts, excluding the self-describing audit JSON."""
+
+    return hashes_for_paths(
+        root,
+        [relative for relative in output_paths if relative != audit_path],
+    )
+
+
+def _canonical_audit_payload(payload: dict[str, Any]) -> bytes:
+    unsigned = dict(payload)
+    unsigned.pop("audit_sha256", None)
+    return json.dumps(
+        unsigned,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def finalize_stage_audit(
+    payload: dict[str, Any],
+    root: Path,
+    output_paths: Iterable[str],
+    audit_path: str,
+) -> dict[str, Any]:
+    """Attach persisted output hashes and a canonical self-integrity digest."""
+
+    finalized = dict(payload)
+    finalized["output_hashes"] = persisted_stage_hashes(root, output_paths, audit_path)
+    finalized.pop("audit_sha256", None)
+    finalized["audit_sha256"] = hashlib.sha256(
+        _canonical_audit_payload(finalized)
+    ).hexdigest()
+    return finalized
+
+
+def verify_persisted_stage(
+    root: Path,
+    audit_path: str,
+    output_paths: Iterable[str],
+    stage: str,
+) -> dict[str, Any]:
+    """Verify persisted artifacts against their upstream stage audit contract."""
+
+    payload = read_json(root, audit_path)
+    if not isinstance(payload, dict) or payload.get("stage") != stage:
+        raise ValueError(f"{stage} audit is missing or has the wrong stage")
+    output_hashes = payload.get("output_hashes")
+    expected = persisted_stage_hashes(root, output_paths, audit_path)
+    if not isinstance(output_hashes, dict) or set(output_hashes) != set(expected):
+        raise ValueError(f"{stage} audit output hash contract is missing or incomplete")
+    for relative, actual in expected.items():
+        declared = output_hashes.get(relative)
+        if declared != actual:
+            raise ValueError(f"{stage} persisted artifact hash mismatch: {relative}")
+    audit_digest = payload.get("audit_sha256")
+    if not isinstance(audit_digest, str) or len(audit_digest) != 64:
+        raise ValueError(f"{stage} audit self-integrity hash is missing")
+    actual_audit_digest = hashlib.sha256(_canonical_audit_payload(payload)).hexdigest()
+    if audit_digest != actual_audit_digest:
+        raise ValueError(f"{stage} audit self-integrity hash mismatch")
+    return payload
 
 
 def normalize_province(value: object) -> str:

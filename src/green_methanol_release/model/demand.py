@@ -20,12 +20,14 @@ from .config import (
     pchip_interpolate,
 )
 from .io import (
+    finalize_stage_audit,
     finite_float,
     hashes_for_paths,
     normalize_province,
     read_csv,
     read_json,
     sorted_frame,
+    verify_persisted_stage,
     write_csv,
     write_json,
 )
@@ -381,13 +383,16 @@ def preprocess_demand(root: Path) -> DemandResult:
 def load_demand_outputs(root: Path) -> DemandResult:
     """Load only the persisted demand-stage carriers for downstream stages."""
 
+    payload = verify_persisted_stage(
+        root,
+        DEMAND_OUTPUTS["audit"],
+        DEMAND_OUTPUTS.values(),
+        "demand_preprocessing",
+    )
     nodes = read_csv(root, DEMAND_OUTPUTS["nodes"], DEMAND_NODE_COLUMNS)
     totals = read_csv(root, DEMAND_OUTPUTS["totals"], DEMAND_TOTAL_COLUMNS)
     supply = read_csv(root, DEMAND_OUTPUTS["supply"], DEMAND_SUPPLY_COLUMNS)
     components = read_csv(root, DEMAND_OUTPUTS["components"], DEMAND_COMPONENT_COLUMNS)
-    payload = read_json(root, DEMAND_OUTPUTS["audit"])
-    if not isinstance(payload, dict) or payload.get("stage") != "demand_preprocessing":
-        raise ValueError("demand-stage audit is missing or has the wrong stage")
     input_hashes = payload.get("input_hashes")
     if not isinstance(input_hashes, dict) or set(input_hashes) != set(DEMAND_INPUTS.values()):
         raise ValueError("demand-stage audit input hashes do not match public demand inputs")
@@ -411,14 +416,21 @@ def write_demand_outputs(result: DemandResult, root: Path) -> list[str]:
     write_csv(result.totals, output_dir / "demand_totals.csv")
     write_csv(result.supply, output_dir / "supply_nodes.csv")
     write_csv(result.component_totals, output_dir / "component_demand.csv")
-    write_json(result.audit, output_dir / "demand_preprocessing_audit.json")
-    return [
+    output_paths = [
         "data/processed/model_v01/demand_nodes.csv",
         "data/processed/model_v01/demand_totals.csv",
         "data/processed/model_v01/supply_nodes.csv",
         "data/processed/model_v01/component_demand.csv",
         "data/processed/model_v01/demand_preprocessing_audit.json",
     ]
+    audit = finalize_stage_audit(
+        result.audit,
+        root,
+        output_paths,
+        DEMAND_OUTPUTS["audit"],
+    )
+    write_json(audit, output_dir / "demand_preprocessing_audit.json")
+    return output_paths
 
 
 __all__ = [
